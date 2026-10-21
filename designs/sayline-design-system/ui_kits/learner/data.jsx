@@ -146,17 +146,42 @@ const stats = {
 };
 
 const categories = [
-  { value: "all", label: "全部" },
-  { value: "spoken", label: "口语" },
-  { value: "listening", label: "听力" },
-  { value: "work", label: "职场" },
-  { value: "favorite", label: "我喜欢" },
+  {
+    value: "work",
+    label: "职场",
+    fullLabel: "职场英语",
+    description: "会议、协作与职场表达",
+    icon: "pen-line",
+    colorA: "#62704c",
+    colorB: "#8b5734",
+  },
+  {
+    value: "spoken",
+    label: "口语",
+    fullLabel: "日常口语",
+    description: "闲聊、社交与自然表达",
+    icon: "mic",
+    colorA: "#8b6651",
+    colorB: "#42271f",
+  },
+  {
+    value: "listening",
+    label: "听力",
+    fullLabel: "听力训练",
+    description: "抓住重点、适应真实语速",
+    icon: "headphones",
+    colorA: "#517671",
+    colorB: "#243a38",
+  },
 ];
+
+const defaultInterests = ["work", "spoken"];
 
 window.SaylineData = {
   courses,
   stats,
   categories,
+  defaultInterests,
   modes: [
     { value: "listen", label: "听", icon: "headphones" },
     { value: "read", label: "读", icon: "book-open" },

@@ -6,6 +6,7 @@ const {
   Checkbox,
   CourseCard,
   Icon,
+  IconButton,
   Input,
   ProgressBar,
   StatTile,
@@ -108,6 +109,7 @@ function ContinueCard({ course, onOpen }) {
 
 function HomeScreen({
   courses,
+  categories,
   category,
   onCategory,
   onOpenCourse,
@@ -116,10 +118,12 @@ function HomeScreen({
 }) {
   const categoryCourses = category === "favorite"
     ? courses.filter((course) => course.favorite)
-    : category === "all"
-      ? courses
-      : courses.filter((course) => course.category === category);
+    : courses.filter((course) => course.category === category);
   const continueCourse = courses.find((course) => course.progress > 0) || courses[0];
+  const tabItems = [
+    ...categories.map((item) => ({ value: item.value, label: item.label })),
+    { value: "favorite", label: "我喜欢" },
+  ];
 
   return (
     <div className="app-screen home-screen">
@@ -130,7 +134,7 @@ function HomeScreen({
       <Tabs
         ariaLabel="课程分类"
         className="home-tabs"
-        items={window.SaylineData.categories}
+        items={tabItems}
         onChange={onCategory}
         value={category}
       />
@@ -191,8 +195,18 @@ function HomeScreen({
   );
 }
 
-function MyScreen({ period, setPeriod, onNavigate }) {
+function MyScreen({
+  period,
+  setPeriod,
+  onNavigate,
+  onOpenPreferences,
+  interests,
+  defaultTab,
+}) {
   const report = window.SaylineData.stats[period];
+  const defaultLabel = defaultTab === "favorite"
+    ? "我喜欢"
+    : window.SaylineData.categories.find((item) => item.value === defaultTab)?.fullLabel;
 
   return (
     <div className="app-screen me-screen">
@@ -201,10 +215,9 @@ function MyScreen({ period, setPeriod, onNavigate }) {
           <p className="eyebrow">LEARNING REPORT</p>
           <h1>我的学习</h1>
         </div>
-        <button className="profile-button" onClick={() => onNavigate("home")} type="button">
-          <span>禾</span>
-          <i></i>
-        </button>
+        <IconButton label="学习偏好" onClick={onOpenPreferences} variant="outline">
+          <Icon name="settings-2" size={20} />
+        </IconButton>
       </header>
 
       <div className="me-scroll">
@@ -216,6 +229,15 @@ function MyScreen({ period, setPeriod, onNavigate }) {
             variant="pill"
           />
         </div>
+
+        <button className="preference-entry" onClick={onOpenPreferences} type="button">
+          <span className="preference-entry__icon"><Icon name="settings-2" size={18} /></span>
+          <span className="preference-entry__copy">
+            <strong>学习偏好</strong>
+            <small>{interests.length} 个兴趣分类 · 默认：{defaultLabel || "职场英语"}</small>
+          </span>
+          <Icon name="chevron-right" size={18} />
+        </button>
 
         <section className="report-summary">
           <StatTile value={report.studiedDays} label="学习天数" />
@@ -289,9 +311,240 @@ function MyScreen({ period, setPeriod, onNavigate }) {
   );
 }
 
+function InterestOnboardingScreen({ onComplete }) {
+  const [selected, setSelected] = React.useState([]);
+  const catalog = window.SaylineData.categories;
+
+  function toggleCategory(value) {
+    setSelected((current) =>
+      current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value],
+    );
+  }
+
+  const firstCategory = catalog.find((item) => item.value === selected[0]);
+
+  return (
+    <div className="app-screen onboarding-screen">
+      <header className="onboarding-header">
+        <SaylineWordmark compact />
+        <span>01 / 01</span>
+      </header>
+
+      <div className="onboarding-copy">
+        <p className="eyebrow">MAKE IT YOURS</p>
+        <h1>选择你感兴趣的<br />领域。</h1>
+        <p>首页只展示你选择的分类。第一个选择会成为默认 Tab，之后可以随时调整。</p>
+      </div>
+
+      <div className="interest-grid">
+        {catalog.map((item, index) => {
+          const selectionIndex = selected.indexOf(item.value);
+          const isSelected = selectionIndex >= 0;
+          return (
+            <button
+              aria-pressed={isSelected}
+              className={"interest-option " + (isSelected ? "is-selected" : "")}
+              key={item.value}
+              onClick={() => toggleCategory(item.value)}
+              style={{ "--category-a": item.colorA, "--category-b": item.colorB }}
+              type="button"
+            >
+              <span className="interest-option__number">{String(index + 1).padStart(2, "0")}</span>
+              <span className="interest-option__icon"><Icon name={item.icon} size={22} /></span>
+              <span className="interest-option__copy">
+                <strong>{item.fullLabel}</strong>
+                <small>{item.description}</small>
+              </span>
+              <span className="interest-option__check">
+                {isSelected ? <><Icon name="check" size={15} />{selectionIndex + 1}</> : "+"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="onboarding-foot">
+        <div className="onboarding-selection">
+          <span>{selected.length ? `${selected.length} 个已选` : "至少选择 1 个"}</span>
+          <strong>{firstCategory ? `默认：${firstCategory.fullLabel}` : "选择顺序决定首页顺序"}</strong>
+        </div>
+        <Button
+          disabled={!selected.length}
+          fullWidth
+          onClick={() => selected.length && onComplete(selected)}
+          size="lg"
+        >
+          完成，开始学习
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function PreferencesScreen({
+  interests,
+  defaultTab,
+  onBack,
+  onSave,
+}) {
+  const [ordered, setOrdered] = React.useState(interests);
+  const [selectedDefault, setSelectedDefault] = React.useState(defaultTab);
+  const [draggedIndex, setDraggedIndex] = React.useState(null);
+  const catalog = window.SaylineData.categories;
+  const selectedCategories = ordered
+    .map((value) => catalog.find((item) => item.value === value))
+    .filter(Boolean);
+  const availableCategories = catalog.filter((item) => !ordered.includes(item.value));
+
+  function moveInterest(index, direction) {
+    const target = index + direction;
+    if (target < 0 || target >= ordered.length) return;
+    const next = [...ordered];
+    [next[index], next[target]] = [next[target], next[index]];
+    setOrdered(next);
+  }
+
+  function removeInterest(value) {
+    if (ordered.length === 1) return;
+    const next = ordered.filter((item) => item !== value);
+    setOrdered(next);
+    if (selectedDefault === value) setSelectedDefault(next[0]);
+  }
+
+  function addInterest(value) {
+    setOrdered((current) => [...current, value]);
+  }
+
+  return (
+    <div className="app-screen preferences-screen">
+      <header className="preferences-header">
+        <IconButton label="返回我的学习" onClick={onBack}>
+          <Icon name="chevron-left" size={23} />
+        </IconButton>
+        <div>
+          <p className="eyebrow">SETTINGS</p>
+          <h1>学习偏好</h1>
+        </div>
+        <span className="preferences-header__count">{ordered.length + 1} TABS</span>
+      </header>
+
+      <div className="preferences-scroll">
+        <section className="preferences-section">
+          <div className="preferences-section__head">
+            <h2>首页分类</h2>
+            <span>拖动或使用箭头排序</span>
+          </div>
+          <p className="preferences-help">点击“设为默认”，登录后会直接进入该 Tab。</p>
+
+          <div className="preference-list">
+            {selectedCategories.map((item, index) => (
+              <div
+                className="preference-row"
+                draggable
+                key={item.value}
+                onDragOver={(event) => event.preventDefault()}
+                onDragStart={() => setDraggedIndex(index)}
+                onDrop={() => {
+                  if (draggedIndex == null || draggedIndex === index) return;
+                  const next = [...ordered];
+                  const [moved] = next.splice(draggedIndex, 1);
+                  next.splice(index, 0, moved);
+                  setOrdered(next);
+                  setDraggedIndex(null);
+                }}
+              >
+                <span className="preference-row__grip" aria-hidden="true">⋮⋮</span>
+                <span className="preference-row__icon"><Icon name={item.icon} size={19} /></span>
+                <div className="preference-row__copy">
+                  <strong>{item.fullLabel}</strong>
+                  <small>{selectedDefault === item.value ? "登录后默认进入" : item.description}</small>
+                </div>
+                <div className="preference-row__actions">
+                  <IconButton
+                    disabled={index === 0}
+                    label={`上移 ${item.fullLabel}`}
+                    onClick={() => moveInterest(index, -1)}
+                  >
+                    <Icon name="chevrons-up" size={17} />
+                  </IconButton>
+                  <IconButton
+                    disabled={index === ordered.length - 1}
+                    label={`下移 ${item.fullLabel}`}
+                    onClick={() => moveInterest(index, 1)}
+                  >
+                    <Icon name="chevrons-down" size={17} />
+                  </IconButton>
+                  <IconButton
+                    disabled={ordered.length === 1}
+                    label={`移除 ${item.fullLabel}`}
+                    onClick={() => removeInterest(item.value)}
+                  >
+                    <Icon name="x" size={17} />
+                  </IconButton>
+                </div>
+                <button
+                  aria-pressed={selectedDefault === item.value}
+                  className={"default-choice " + (selectedDefault === item.value ? "is-default" : "")}
+                  onClick={() => setSelectedDefault(item.value)}
+                  type="button"
+                >
+                  {selectedDefault === item.value ? "默认 Tab" : "设为默认"}
+                </button>
+              </div>
+            ))}
+
+            <div className="preference-row preference-row--fixed">
+              <span className="preference-row__grip" aria-hidden="true"></span>
+              <span className="preference-row__icon"><Icon name="heart" size={19} /></span>
+              <div className="preference-row__copy">
+                <strong>我喜欢</strong>
+                <small>固定显示在最后一个 Tab</small>
+              </div>
+              <button
+                aria-pressed={selectedDefault === "favorite"}
+                className={"default-choice " + (selectedDefault === "favorite" ? "is-default" : "")}
+                onClick={() => setSelectedDefault("favorite")}
+                type="button"
+              >
+                {selectedDefault === "favorite" ? "默认 Tab" : "设为默认"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="preferences-section">
+          <div className="preferences-section__head">
+            <h2>添加兴趣</h2>
+            <span>{availableCategories.length ? "点击添加" : "已添加全部"}</span>
+          </div>
+          <div className="interest-pool">
+            {availableCategories.length ? availableCategories.map((item) => (
+              <button key={item.value} onClick={() => addInterest(item.value)} type="button">
+                <Icon name="plus" size={15} />
+                {item.fullLabel}
+              </button>
+            )) : (
+              <p>当前所有课程分类都已经加入首页。</p>
+            )}
+          </div>
+        </section>
+      </div>
+
+      <div className="preferences-footer">
+        <p>修改会立即应用到首页 Tab，并同步到其他设备。</p>
+        <Button fullWidth onClick={() => onSave(ordered, selectedDefault)} size="lg">保存偏好</Button>
+      </div>
+    </div>
+  );
+}
+
 Object.assign(window, {
   LoginScreen,
   HomeScreen,
   MyScreen,
+  InterestOnboardingScreen,
+  PreferencesScreen,
   ContinueCard,
 });

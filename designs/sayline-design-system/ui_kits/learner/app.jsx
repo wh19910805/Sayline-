@@ -1,22 +1,32 @@
 const { SaylineWordmark, ReviewRail } = window.SaylineShared;
-const { LoginScreen, HomeScreen, MyScreen } = window;
+const {
+  LoginScreen,
+  HomeScreen,
+  MyScreen,
+  InterestOnboardingScreen,
+  PreferencesScreen,
+} = window;
 const { PlayerScreen } = window.SaylinePlayer;
 const { Toast } = window.SaylineDesignSystem_1a4fd3;
 
 function App() {
   const initialParams = new URLSearchParams(window.location.search);
   const requestedScreen = initialParams.get("screen");
-  const initialScreen = ["login", "home", "me", "player"].includes(requestedScreen)
+  const initialScreen = ["login", "interests", "home", "me", "player", "preferences"].includes(requestedScreen)
     ? requestedScreen
     : "home";
-  const initialCategory = window.SaylineData.categories.some((item) => item.value === initialParams.get("category"))
-    ? initialParams.get("category")
-    : "all";
+  const initialInterests = window.SaylineData.defaultInterests;
+  const requestedCategory = initialParams.get("category");
+  const initialCategory = requestedCategory === "favorite" || initialInterests.includes(requestedCategory)
+    ? requestedCategory
+    : initialInterests[0];
   const initialPeriod = initialParams.get("period") === "month" ? "month" : "week";
   const defaultPlayerCourse = window.SaylineData.courses.find((course) => course.progress > 0);
 
   const [screen, setScreen] = React.useState(initialScreen);
   const [category, setCategory] = React.useState(initialCategory);
+  const [interests, setInterests] = React.useState(initialInterests);
+  const [defaultTab, setDefaultTab] = React.useState(initialInterests[0]);
   const [period, setPeriod] = React.useState(initialPeriod);
   const [courses, setCourses] = React.useState(window.SaylineData.courses);
   const [playerCourseId, setPlayerCourseId] = React.useState(
@@ -24,16 +34,20 @@ function App() {
   );
   const [playerListIds, setPlayerListIds] = React.useState(
     initialScreen === "player"
-      ? (initialCategory === "all" ? courses : courses.filter((course) => course.category === initialCategory)).map((course) => course.id)
+      ? (initialCategory === "favorite"
+        ? courses.filter((course) => course.favorite)
+        : courses.filter((course) => course.category === initialCategory)).map((course) => course.id)
       : [],
   );
   const [toast, setToast] = React.useState("");
 
   const playerCourse = courses.find((course) => course.id === playerCourseId);
+  const homeCategories = interests
+    .map((value) => window.SaylineData.categories.find((item) => item.value === value))
+    .filter(Boolean);
 
   function listForCategory(value) {
     if (value === "favorite") return courses.filter((course) => course.favorite);
-    if (value === "all") return courses;
     return courses.filter((course) => course.category === value);
   }
 
@@ -94,14 +108,37 @@ function App() {
 
       <div className="device-stage">
         <div className="device-caption">
-          <span>{screen === "player" ? "immersive player" : screen === "me" ? "learning report" : screen === "login" ? "account entry" : "course discovery"}</span>
+          <span>
+            {screen === "player"
+              ? "immersive player"
+              : screen === "me"
+                ? "learning report"
+                : screen === "login"
+                  ? "account entry"
+                  : screen === "interests"
+                    ? "interest setup"
+                    : screen === "preferences"
+                      ? "learning preferences"
+                      : "course discovery"}
+          </span>
           <span>390 × 844</span>
         </div>
         <div className="phone-device">
-          {screen === "login" && <LoginScreen onLogin={() => setScreen("home")} />}
+          {screen === "login" && <LoginScreen onLogin={() => setScreen("interests")} />}
+          {screen === "interests" && (
+            <InterestOnboardingScreen
+              onComplete={(selected) => {
+                setInterests(selected);
+                setDefaultTab(selected[0]);
+                setCategory(selected[0]);
+                setScreen("home");
+              }}
+            />
+          )}
           {screen === "home" && (
             <HomeScreen
               category={category}
+              categories={homeCategories}
               courses={courses}
               onCategory={setCategory}
               onNavigate={navigate}
@@ -110,7 +147,29 @@ function App() {
             />
           )}
           {screen === "me" && (
-            <MyScreen onNavigate={navigate} period={period} setPeriod={setPeriod} />
+            <MyScreen
+              defaultTab={defaultTab}
+              interests={interests}
+              onNavigate={navigate}
+              onOpenPreferences={() => setScreen("preferences")}
+              period={period}
+              setPeriod={setPeriod}
+            />
+          )}
+          {screen === "preferences" && (
+            <PreferencesScreen
+              defaultTab={defaultTab}
+              interests={interests}
+              onBack={() => setScreen("me")}
+              onSave={(nextInterests, nextDefault) => {
+                setInterests(nextInterests);
+                setDefaultTab(nextDefault);
+                setCategory(nextDefault);
+                setScreen("home");
+                setToast("学习偏好已保存");
+                window.setTimeout(() => setToast(""), 2200);
+              }}
+            />
           )}
           {screen === "player" && playerCourse && (
             <PlayerScreen

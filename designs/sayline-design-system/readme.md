@@ -129,18 +129,22 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 包含：
 
 - 登录页
-- 首页课程分类与“我喜欢”
+- 首次登录兴趣选择
+- 首页仅展示已选兴趣与“我喜欢”
 - 播放器听、读、写、说四种模式
 - 播放控制、倍速、逐句定位、录音状态
 - 上下滑动/方向键切换课程
 - 周/月学习统计
+- 学习偏好：添加/移除兴趣、排序、设置默认 Tab
 
 可用 URL 参数快速定位：
 
 - `?screen=home`
 - `?screen=login`
+- `?screen=interests`
 - `?screen=player&mode=listen|read|write|speak`
 - `?screen=me&period=week|month`
+- `?screen=preferences`
 - `?screen=home&category=favorite`
 
 ## FILE INDEX

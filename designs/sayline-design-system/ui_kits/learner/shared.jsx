@@ -80,9 +80,11 @@ const MonthHeatmap = ({ values }) => {
 const ReviewRail = ({ screen, onNavigate }) => {
   const screens = [
     ["login", "01 / 登录"],
-    ["home", "02 / 首页"],
-    ["player", "03 / 播放器"],
-    ["me", "04 / 我的学习"],
+    ["interests", "02 / 兴趣选择"],
+    ["home", "03 / 首页"],
+    ["player", "04 / 播放器"],
+    ["me", "05 / 我的学习"],
+    ["preferences", "06 / 学习偏好"],
   ];
 
   return (
