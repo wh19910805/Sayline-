@@ -509,23 +509,25 @@ textarea.sl-field__control {
 .sl-course-card--feed {
   display: block;
   padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-card);
   break-inside: avoid;
   margin-bottom: 18px;
 }
 
 .sl-course-card--feed:hover {
-  border-color: transparent;
-  box-shadow: none;
-  transform: none;
+  border-color: var(--color-border-strong);
+  box-shadow: 0 12px 28px rgba(35, 39, 29, .085);
+  transform: translateY(-1px);
 }
 
 .sl-course-card__feed-cover-wrap {
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius-md);
+  border-radius: 0;
   background: var(--color-bg-subtle);
 }
 
@@ -578,7 +580,7 @@ textarea.sl-field__control {
 .sl-course-card__feed-body {
   display: grid;
   gap: 6px;
-  padding: 9px 2px 0;
+  padding: 10px 11px 12px;
 }
 
 .sl-course-card__feed-body .sl-course-card__title {
