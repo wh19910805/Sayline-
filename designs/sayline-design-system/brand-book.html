@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sayline Brand Book</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--color-text);
+      background: #e7e3da;
+      font-family: var(--font-ui);
+    }
+    .book {
+      width: 1440px;
+      margin: 0 auto;
+      background: var(--color-paper-100);
+      overflow: hidden;
+    }
+    .hero {
+      min-height: 820px;
+      position: relative;
+      overflow: hidden;
+      padding: 54px 58px 66px;
+      color: var(--color-paper-50);
+      background:
+        radial-gradient(circle at 82% 18%, rgba(217,181,110,.34), transparent 24%),
+        radial-gradient(circle at 15% 72%, rgba(104,116,90,.35), transparent 32%),
+        #171b16;
+    }
+    .hero:before {
+      content: "";
+      position: absolute;
+      width: 670px;
+      height: 670px;
+      right: -310px;
+      bottom: -300px;
+      border: 1px solid rgba(255,250,240,.12);
+      border-radius: 50%;
+    }
+    .hero:after {
+      content: "";
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      right: -90px;
+      bottom: -150px;
+      border: 1px solid rgba(255,250,240,.08);
+      border-radius: 50%;
+    }
+    .topline { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; }
+    .lockup { display: flex; align-items: center; gap: 15px; }
+    .lockup img { width: 58px; height: 58px; border-radius: 14px; }
+    .lockup__word { font-family: var(--font-display); font-size: 39px; line-height: .9; letter-spacing: -.03em; }
+    .lockup__cn { margin-top: 7px; font-size: 9px; letter-spacing: .32em; color: rgba(255,250,240,.56); }
+    .edition { color: rgba(255,250,240,.42); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; }
+    .hero-copy { position: relative; z-index: 1; max-width: 850px; margin-top: 155px; }
+    .eyebrow { margin: 0; font-size: 9px; letter-spacing: .19em; text-transform: uppercase; }
+    .hero h1 { margin: 22px 0 0; font-family: var(--font-display); font-size: 102px; font-weight: 400; line-height: .87; letter-spacing: -.04em; }
+    .hero-copy > p:last-child { max-width: 480px; margin: 31px 0 0; color: rgba(255,250,240,.55); font-size: 14px; line-height: 1.8; }
+    .hero-quote { position: absolute; z-index: 1; right: 62px; bottom: 53px; width: 370px; font-family: var(--font-display); font-size: 32px; font-style: italic; line-height: 1.18; color: rgba(255,250,240,.66); }
+    .hero-quote small { display: block; margin-top: 14px; font-family: var(--font-ui); font-size: 9px; font-style: normal; letter-spacing: .13em; color: rgba(255,250,240,.32); }
+    .story { padding: 74px 58px 58px; display: grid; grid-template-columns: 1.25fr .75fr; gap: 80px; }
+    .story h2 { margin: 8px 0 0; font-family: var(--font-display); font-size: 54px; font-weight: 400; line-height: 1; letter-spacing: -.025em; }
+    .story-copy { margin: 26px 0 0; color: var(--color-text-secondary); font-size: 14px; line-height: 1.8; max-width: 610px; }
+    .principles { display: grid; gap: 0; }
+    .principle { min-height: 104px; display: grid; grid-template-columns: 36px 1fr; gap: 14px; padding: 21px 0; border-bottom: 1px solid var(--color-border); }
+    .principle:first-child { border-top: 1px solid var(--color-border); }
+    .principle span { color: var(--color-action); font-size: 10px; font-weight: var(--weight-bold); }
+    .principle h3 { margin: 0; font-family: var(--font-display); font-size: 25px; font-weight: 400; }
+    .principle p { margin: 6px 0 0; color: var(--color-text-secondary); font-size: 11px; line-height: 1.7; }
+    .system { display: grid; grid-template-columns: 1.1fr .9fr; gap: 52px; padding: 0 58px 58px; }
+    .panel { border: 1px solid var(--color-border); border-radius: 24px; background: var(--color-paper-50); padding: 30px; }
+    .panel .eyebrow { color: var(--color-text-tertiary); }
+    .panel h2 { margin: 10px 0 28px; font-family: var(--font-display); font-size: 38px; font-weight: 400; line-height: 1; }
+    .palette { display: grid; grid-template-columns: repeat(6,1fr); gap: 9px; }
+    .swatch { display: grid; gap: 8px; color: var(--color-text-tertiary); font-size: 8px; }
+    .swatch i { height: 88px; border-radius: 12px; border: 1px solid rgba(0,0,0,.05); }
+    .type-spec { display: grid; gap: 22px; }
+    .type-display { font-family: var(--font-display); font-size: 53px; line-height: .94; letter-spacing: -.025em; }
+    .type-body { color: var(--color-text-secondary); font-size: 13px; line-height: 1.8; }
+    .type-meta { display: flex; gap: 20px; padding-top: 14px; border-top: 1px solid var(--color-border); color: var(--color-text-tertiary); font-size: 9px; }
+    .voice { padding: 0 58px 58px; }
+    .voice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .voice-card { padding: 28px; border-radius: 20px; background: var(--color-paper-200); }
+    .voice-card.good { background: var(--color-moss-100); }
+    .voice-card.bad { background: var(--color-ember-100); }
+    .voice-card h3 { margin: 0; font-family: var(--font-display); font-size: 28px; font-weight: 400; }
+    .voice-card p { margin: 13px 0 0; font-size: 13px; line-height: 1.8; }
+    .voice-card small { display: block; margin-top: 20px; color: var(--color-text-tertiary); font-size: 9px; letter-spacing: .08em; }
+    .ui-trace { margin: 0 58px 58px; padding: 34px; border-radius: 28px; background: #22281f; color: var(--color-paper-50); display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: center; }
+    .ui-trace h2 { margin: 10px 0 0; font-family: var(--font-display); font-size: 45px; font-weight: 400; line-height: 1; }
+    .ui-trace p { margin: 18px 0 0; color: rgba(255,250,240,.55); font-size: 12px; line-height: 1.8; }
+    .trace-player { border-radius: 20px; overflow: hidden; padding: 18px; background: linear-gradient(145deg,rgba(104,116,90,.65),rgba(63,39,22,.5)); }
+    .trace-player__head { display: flex; align-items: center; gap: 11px; }
+    .trace-cover { width: 48px; height: 48px; border-radius: 8px; background: radial-gradient(circle at 30% 30%, #d9b56e, transparent 28%), linear-gradient(145deg,#68745a,#273023); }
+    .trace-player__head b { display: block; font-family: var(--font-display); font-size: 20px; font-weight: 400; }
+    .trace-player__head span { display: block; margin-top: 4px; font-size: 8px; color: rgba(255,250,240,.42); }
+    .trace-line { margin: 35px 3px 28px; font-family: var(--font-display); font-size: 27px; line-height: 1.12; }
+    .trace-controls { display: flex; align-items: center; justify-content: space-between; color: rgba(255,250,240,.65); font-size: 11px; }
+    .trace-controls strong { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--color-paper-50); color: var(--color-ink-900); }
+    .footer { padding: 20px 58px 25px; display: flex; justify-content: space-between; color: var(--color-text-tertiary); font-size: 8px; letter-spacing: .09em; text-transform: uppercase; border-top: 1px solid var(--color-border); }
+    @media print { body { background: white; } .book { width: 100%; } }
+  </style>
+</head>
+<body>
+  <main class="book">
+    <section class="hero">
+      <div class="topline">
+        <div class="lockup">
+          <img src="assets/brand/sayline-mark.svg" alt="">
+          <div><div class="lockup__word">Sayline</div><div class="lockup__cn">逐 句 英 语</div></div>
+        </div>
+        <span class="edition">Brand book · 01 / 2026</span>
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow">ONE LINE AT A TIME</p>
+        <h1>把英语，<br>听成自己的语言。</h1>
+        <p>Sayline 为成人自学者提供以音频和双语字幕为核心的学习体验。把课程拆成句子，把进步还给真实的学习节奏。</p>
+      </div>
+      <div class="hero-quote">“Every line is a place<br>to pause and listen.”<small>Brand line / 2026</small></div>
+    </section>
+
+    <section class="story">
+      <div>
+        <p class="eyebrow">THE IDEA</p>
+        <h2>安静，但不失力量。</h2>
+        <p class="story-copy">Sayline 的品牌不是一间热闹的教室，而是一张留白的书页。Instrument Serif 提供编辑感，陶土橙标记正在发生的学习动作，深绿记录长期练习。用户不需要被推着走，只需要知道下一句在哪里。</p>
+      </div>
+      <div class="principles">
+        <article class="principle"><span>01</span><div><h3>一句也算进步。</h3><p>把大体量课程拆成可完成的句子和练习。</p></div></article>
+        <article class="principle"><span>02</span><div><h3>声音先于装饰。</h3><p>封面、字幕与操作层永远优先于品牌纹样。</p></div></article>
+        <article class="principle"><span>03</span><div><h3>反馈要诚实。</h3><p>不夸张庆祝，准确说明完成、错误和下一步。</p></div></article>
+      </div>
+    </section>
+
+    <section class="system">
+      <div class="panel">
+        <p class="eyebrow">COLOR & MATERIAL</p>
+        <h2>墨、纸与正在学习的橙色。</h2>
+        <div class="palette">
+          <div class="swatch"><i style="background:#171A16"></i>Ink 900</div>
+          <div class="swatch"><i style="background:#F4F0E8"></i>Paper 100</div>
+          <div class="swatch"><i style="background:#C85D36"></i>Ember 500</div>
+          <div class="swatch"><i style="background:#68745A"></i>Moss 500</div>
+          <div class="swatch"><i style="background:#273023"></i>Night 800</div>
+          <div class="swatch"><i style="background:#D9B56E"></i>Oat 500</div>
+        </div>
+      </div>
+      <div class="panel">
+        <p class="eyebrow">TYPE SYSTEM</p>
+        <div class="type-spec">
+          <div class="type-display">Say it again,<br><em>a little closer.</em></div>
+          <p class="type-body">Instrument Serif 负责情绪、停顿与记忆点。Manrope 负责清楚的控制与数据。中文正文使用系统黑体回退，并保持更宽松的行高。</p>
+          <div class="type-meta"><span>Display / Instrument Serif</span><span>UI / Manrope</span><span>Body CJK / 1.78 line-height</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="voice">
+      <div class="voice-grid">
+        <article class="voice-card good">
+          <p class="eyebrow">SAY IT LIKE THIS</p>
+          <h3>像一位可靠的学习同伴。</h3>
+          <p>“这一句已听 2 次。”<br>“还差 3 句完成听写。”<br>“本列表已学完。”</p>
+          <small>短、具体、尊重用户的节奏。</small>
+        </article>
+        <article class="voice-card bad">
+          <p class="eyebrow">NOT THIS</p>
+          <h3>不要制造虚假的亢奋。</h3>
+          <p>“冲鸭！今天也要元气满满！”<br>“击败 99% 的学习者！”<br>“再不看就晚了！”</p>
+          <small>不用 emoji、热梗或焦虑驱动。</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="ui-trace">
+      <div>
+        <p class="eyebrow" style="color:rgba(255,250,240,.42)">BRAND IN PRODUCT</p>
+        <h2>让品牌退后一步，<br>让学习走到前面。</h2>
+        <p>课程封面生成背景氛围；字幕、播放和模式切换使用稳定的可读层。Sayline 的标记只出现在入口和关键状态，不覆盖学习内容。</p>
+      </div>
+      <div class="trace-player">
+        <div class="trace-player__head">
+          <div class="trace-cover"></div>
+          <div><b>Meeting a New Colleague</b><span>职场英语 · 4 分 28 秒</span></div>
+        </div>
+        <div class="trace-line">Could we move the meeting<br>to Friday morning?</div>
+        <div class="trace-controls"><span>听</span><span>读</span><strong>▶</strong><span>写</span><span>说</span></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Sayline 逐句英语 · Brand system</span>
+      <span>Quiet confidence, built one line at a time</span>
+    </footer>
+  </main>
+</body>
+</html>

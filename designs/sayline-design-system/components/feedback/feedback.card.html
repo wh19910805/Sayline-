@@ -1,0 +1,40 @@
+<!-- @dsCard group="Components" viewport="760x600" name="Feedback" subtitle="Calm confirmation dialogs and short status messages" -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    body { margin: 0; background: var(--color-bg); font-family: var(--font-ui); }
+    .card-page { padding: 30px; display: grid; gap: 24px; }
+    .label { color: var(--color-text-tertiary); font-size: var(--text-caption); letter-spacing: var(--tracking-label); text-transform: uppercase; margin-bottom: 10px; }
+    .dialog-stage { position: relative; min-height: 300px; overflow: hidden; border-radius: 22px; background: linear-gradient(145deg,#5f674c,#272d23); transform: translateZ(0); }
+    .dialog-stage .sl-dialog-backdrop { position: absolute; }
+  </style>
+</head>
+<body>
+  <main class="card-page">
+    <section><div class="label">Status</div><div style="display:grid;gap:10px"><div id="toast-one"></div><div id="toast-two"></div></div></section>
+    <section><div class="label">Confirmation</div><div class="dialog-stage" id="dialog-stage"></div></section>
+  </main>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="../../_ds_bundle.js"></script>
+  <script type="text/babel">
+    const { Dialog, Toast } = window.SaylineDesignSystem_1a4fd3;
+    ReactDOM.createRoot(document.getElementById("toast-one")).render(<Toast message="已加入我喜欢" tone="success" />);
+    ReactDOM.createRoot(document.getElementById("toast-two")).render(<Toast message="网络已恢复，学习记录继续同步" />);
+    ReactDOM.createRoot(document.getElementById("dialog-stage")).render(
+      <Dialog
+        open
+        eyebrow="本课已完成"
+        title="即将进入下一课"
+        description="3 秒后开始 No Small Talk at Work。你也可以回到首页。"
+        actions={<><button className="sl-button sl-button--ghost">取消</button><button className="sl-button sl-button--accent">现在进入</button></>}
+      />,
+    );
+  </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+:root {
+  --color-ink-900: #171a16;
+  --color-ink-800: #20251f;
+  --color-ink-700: #30362f;
+  --color-ink-600: #4c534b;
+
+  --color-paper-50: #fffdfa;
+  --color-paper-100: #f4f0e8;
+  --color-paper-200: #eae4d9;
+  --color-paper-300: #ddd6c9;
+
+  --color-ember-700: #a84624;
+  --color-ember-600: #b9502a;
+  --color-ember-500: #c85d36;
+  --color-ember-200: #e9bda8;
+  --color-ember-100: #f4dfd4;
+
+  --color-moss-700: #4f5b47;
+  --color-moss-500: #68745a;
+  --color-moss-200: #c7d0bb;
+  --color-moss-100: #e4e8dc;
+
+  --color-oat-500: #d9b56e;
+  --color-oat-200: #ead5aa;
+  --color-oat-100: #f3e7c9;
+
+  --color-silver-500: #8d948b;
+  --color-silver-300: #c9c8c1;
+  --color-silver-200: #dddcd6;
+
+  --color-success: #4f6d51;
+  --color-success-soft: #e1e9de;
+  --color-warning: #976a2f;
+  --color-warning-soft: #f3e4c8;
+  --color-danger: #a74137;
+  --color-danger-soft: #f2ded9;
+  --color-info: #426970;
+  --color-info-soft: #dce9e9;
+
+  --color-bg: var(--color-paper-100);
+  --color-bg-elevated: var(--color-paper-50);
+  --color-bg-subtle: var(--color-paper-200);
+  --color-surface: var(--color-paper-50);
+  --color-surface-muted: #f0ece4;
+  --color-text: var(--color-ink-900);
+  --color-text-secondary: #62685f;
+  --color-text-tertiary: #858b82;
+  --color-text-inverse: var(--color-paper-50);
+  --color-border: rgba(23, 26, 22, .12);
+  --color-border-strong: rgba(23, 26, 22, .24);
+  --color-action: var(--color-ember-600);
+  --color-action-hover: var(--color-ember-700);
+  --color-action-soft: var(--color-ember-100);
+  --color-focus: var(--color-ember-500);
+
+  --player-base: #1d221c;
+  --player-overlay: rgba(10, 13, 9, .52);
+  --player-text: #fffaf0;
+  --player-text-muted: rgba(255, 250, 240, .62);
+  --player-border: rgba(255, 255, 255, .18);
+  --player-active: var(--color-oat-500);
+  --course-color-a: #6c7350;
+  --course-color-b: #9f5f31;
+}
+
+[data-theme="night"] {
+  --color-bg: #1d221c;
+  --color-bg-elevated: #252b24;
+  --color-bg-subtle: #2e352d;
+  --color-surface: #252b24;
+  --color-surface-muted: #31382f;
+  --color-text: #f6f0e5;
+  --color-text-secondary: #c4c9bf;
+  --color-text-tertiary: #929a90;
+  --color-border: rgba(255, 255, 255, .12);
+  --color-border-strong: rgba(255, 255, 255, .24);
+  --color-action: #e47b57;
+  --color-action-hover: #ef906e;
+  --color-action-soft: rgba(228, 123, 87, .16);
+}

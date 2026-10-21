@@ -1,0 +1,53 @@
+<!-- @dsCard group="Components" viewport="760x560" name="Navigation" subtitle="Category tabs and persistent learner navigation" -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    body { margin: 0; background: var(--color-bg); font-family: var(--font-ui); }
+    .card-page { padding: 30px; display: grid; gap: 30px; }
+    .label { color: var(--color-text-tertiary); font-size: var(--text-caption); letter-spacing: var(--tracking-label); text-transform: uppercase; margin-bottom: 9px; }
+    h3 { margin: 0 0 14px; font-family: var(--font-display); font-size: 25px; font-weight: 400; }
+    .nav-frame { width: 360px; margin: 0 auto; overflow: hidden; border: 1px solid var(--color-border); border-radius: 18px; background: var(--color-bg-elevated); }
+  </style>
+</head>
+<body>
+  <main class="card-page">
+    <section><h3>Find the next thing to learn.</h3><div class="label">Underline tabs</div><div id="tabs-underline"></div></section>
+    <section><div class="label">Pill tabs</div><div style="width:390px"><div id="tabs-pill"></div></div></section>
+    <section>
+      <div class="label">Learner shell</div>
+      <div class="nav-frame">
+        <div style="height:46px"></div>
+        <div id="bottom-nav"></div>
+      </div>
+    </section>
+  </main>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="../../_ds_bundle.js"></script>
+  <script type="text/babel">
+    const { Tabs, BottomNav } = window.SaylineDesignSystem_1a4fd3;
+    const tabItems = [
+      { value: "all", label: "全部" },
+      { value: "spoken", label: "口语" },
+      { value: "listening", label: "听力" },
+      { value: "work", label: "职场" },
+      { value: "favorite", label: "我喜欢" },
+    ];
+
+    ReactDOM.createRoot(document.getElementById("tabs-underline")).render(
+      <Tabs items={tabItems} value="all" />,
+    );
+    ReactDOM.createRoot(document.getElementById("tabs-pill")).render(
+      <Tabs items={[{ value: "week", label: "本周" }, { value: "month", label: "本月" }]} value="week" variant="pill" />,
+    );
+    ReactDOM.createRoot(document.getElementById("bottom-nav")).render(
+      <BottomNav value="home" />,
+    );
+  </script>
+</body>
+</html>

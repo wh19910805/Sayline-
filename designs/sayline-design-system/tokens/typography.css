@@ -1,0 +1,33 @@
+:root {
+  --font-display: "Instrument Serif", "Songti SC", "STSong", serif; /* @kind font */
+  --font-ui: "Manrope", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif; /* @kind font */
+  --font-reading: "Manrope", "PingFang SC", "Microsoft YaHei", sans-serif; /* @kind font */
+
+  --text-display-xl: clamp(2.75rem, 6vw, 4.5rem); /* @kind font */
+  --text-display-lg: clamp(2.25rem, 4.4vw, 3.5rem); /* @kind font */
+  --text-display-md: clamp(1.85rem, 3.2vw, 2.75rem); /* @kind font */
+  --text-heading-xl: 1.75rem; /* @kind font */
+  --text-heading-lg: 1.375rem; /* @kind font */
+  --text-heading-md: 1.125rem; /* @kind font */
+  --text-body-lg: 1rem; /* @kind font */
+  --text-body: .9375rem; /* @kind font */
+  --text-body-sm: .8125rem; /* @kind font */
+  --text-caption: .6875rem; /* @kind font */
+  --text-micro: .5625rem; /* @kind font */
+
+  --leading-none: 1; /* @kind font */
+  --leading-tight: 1.12; /* @kind font */
+  --leading-heading: 1.32; /* @kind font */
+  --leading-body: 1.7; /* @kind font */
+  --leading-cjk: 1.78; /* @kind font */
+
+  --tracking-display: -.025em; /* @kind font */
+  --tracking-heading: -.015em; /* @kind font */
+  --tracking-body: -.005em; /* @kind font */
+  --tracking-label: .16em; /* @kind font */
+
+  --weight-regular: 400; /* @kind font */
+  --weight-medium: 520; /* @kind font */
+  --weight-semibold: 650; /* @kind font */
+  --weight-bold: 760; /* @kind font */
+}

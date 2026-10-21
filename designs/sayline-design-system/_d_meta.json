@@ -1,0 +1,54 @@
+{
+  "type": "design",
+  "designSystems": [],
+  "primaryDesignSystem": null,
+  "assets": {
+    "Sayline Brand Book": {
+      "versions": [
+        {
+          "path": "brand-book.html",
+          "createdAt": "2026-10-21T08:57:54.733Z",
+          "status": "needs-review",
+          "subtitle": "Brand identity, tone, palette, type, and product expression",
+          "viewport": {
+            "width": 1440,
+            "height": 2000
+          },
+          "section": "Brand"
+        }
+      ]
+    },
+    "Sayline Learner UI": {
+      "versions": [
+        {
+          "path": "ui_kits/learner/index.html",
+          "createdAt": "2026-10-21T08:57:54.847Z",
+          "status": "needs-review",
+          "subtitle": "Interactive login, course discovery, player, and learning report",
+          "viewport": {
+            "width": 1440,
+            "height": 960
+          },
+          "section": "Product"
+        }
+      ]
+    },
+    "Sayline Learner Gallery": {
+      "versions": [
+        {
+          "path": "ui_kits/learner/screen-gallery.html",
+          "createdAt": "2026-10-21T08:57:54.949Z",
+          "status": "needs-review",
+          "subtitle": "All nine mobile learner screens in one review board",
+          "viewport": {
+            "width": 1440,
+            "height": 2200
+          },
+          "section": "Product"
+        }
+      ]
+    }
+  },
+  "createdAt": "2026-10-21T08:57:54.734Z",
+  "updatedAt": "2026-10-21T08:57:54.950Z"
+}

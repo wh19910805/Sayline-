@@ -1,0 +1,12 @@
+:root {
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  --border-hairline: 1px solid var(--color-border); /* @kind other */
+  --border-strong: 1px solid var(--color-border-strong); /* @kind other */
+  --border-focus: 2px solid var(--color-focus); /* @kind other */
+}
