@@ -117,6 +117,8 @@ function HomeScreen({
   onToggleFavorite,
   onNavigate,
 }) {
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
   const categoryCourses = category === "favorite"
     ? courses.filter((course) => course.favorite)
     : courses.filter((course) => course.category === category);
@@ -126,23 +128,61 @@ function HomeScreen({
     { value: "favorite", label: "我喜欢" },
   ];
   const currentCategory = categories.find((item) => item.value === category);
+  const normalizedQuery = searchTerm.trim().toLowerCase();
+  const searchPool = courses.filter((course) =>
+    categories.some((item) => item.value === course.category),
+  );
+  const searchResults = normalizedQuery
+    ? searchPool.filter((course) =>
+        [course.title, course.titleZh, course.categoryLabel]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedQuery),
+      )
+    : [];
+  const visibleCourses = searchOpen ? searchResults : categoryCourses;
+  const showFeed = !searchOpen || normalizedQuery;
 
   return (
     <div className="app-screen home-screen">
       <header className="home-header">
         <span className="home-header__label">课程</span>
+        <IconButton
+          aria-expanded={searchOpen}
+          label={searchOpen ? "关闭搜索" : "搜索课程"}
+          onClick={() => {
+            setSearchOpen((value) => !value);
+            setSearchTerm("");
+          }}
+        >
+          <Icon name={searchOpen ? "x" : "search"} size={21} />
+        </IconButton>
       </header>
 
-      <Tabs
-        ariaLabel="课程分类"
-        className="home-tabs"
-        items={tabItems}
-        onChange={onCategory}
-        value={category}
-      />
+      {searchOpen ? (
+        <label className="course-search">
+          <Icon name="search" size={19} />
+          <input
+            autoFocus
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="搜索课程或分类"
+            type="search"
+            value={searchTerm}
+          />
+          <span>{normalizedQuery ? `${searchResults.length} 个结果` : "输入关键词"}</span>
+        </label>
+      ) : (
+        <Tabs
+          ariaLabel="课程分类"
+          className="home-tabs"
+          items={tabItems}
+          onChange={onCategory}
+          value={category}
+        />
+      )}
 
       <div className="home-scroll">
-        {category !== "favorite" && (
+        {!searchOpen && category !== "favorite" && (
           <section className="home-section">
             <div className="section-heading">
               <span className="eyebrow">PICK UP WHERE YOU LEFT OFF</span>
@@ -155,25 +195,35 @@ function HomeScreen({
         <section className="home-section home-section--courses">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">{category === "favorite" ? "YOUR SAVED LINES" : "COURSE SHELF"}</p>
-              <h2>{category === "favorite" ? "我喜欢" : "为你准备"}</h2>
+              <p className="eyebrow">
+                {searchOpen ? "SEARCH RESULTS" : category === "favorite" ? "YOUR SAVED LINES" : "COURSE SHELF"}
+              </p>
+              <h2>
+                {searchOpen ? "搜索结果" : category === "favorite" ? "我喜欢" : "为你准备"}
+              </h2>
             </div>
-            <span className="section-count">{categoryCourses.length} 门</span>
+            <span className="section-count">{searchOpen ? visibleCourses.length : categoryCourses.length} 门</span>
           </div>
 
-          {categoryCourses.length > 0 ? (
+          {searchOpen && !normalizedQuery ? (
+            <div className="search-idle">
+              <span><Icon name="search" size={23} /></span>
+              <h3>搜索你想学的课程</h3>
+              <p>可以输入课程名、中文标题或分类名称。</p>
+            </div>
+          ) : showFeed && visibleCourses.length > 0 ? (
             <div className="course-feed">
-              {currentCategory && (
+              {!searchOpen && currentCategory && (
                 <CategoryCard
                   colorA={currentCategory.colorA}
                   colorB={currentCategory.colorB}
-                  courseCount={categoryCourses.length}
+                  courseCount={visibleCourses.length}
                   coverUrl={currentCategory.coverUrl}
                   description={currentCategory.description}
                   title={currentCategory.fullLabel}
                 />
               )}
-              {categoryCourses.map((course) => (
+              {visibleCourses.map((course) => (
                 <CourseCard
                   colorA={course.colorA}
                   colorB={course.colorB}
@@ -189,12 +239,18 @@ function HomeScreen({
                 />
               ))}
             </div>
+          ) : searchOpen ? (
+            <div className="search-empty">
+              <span><Icon name="search" size={22} /></span>
+              <h3>没有找到相关课程</h3>
+              <p>换一个关键词试试，或关闭搜索返回分类。</p>
+            </div>
           ) : (
             <div className="favorite-empty">
               <span className="favorite-empty__icon"><Icon name="heart" size={24} /></span>
               <h3>还没有收藏课程</h3>
               <p>在课程列表点亮爱心，喜欢的内容会留在这里。</p>
-              <Button variant="secondary" onClick={() => onCategory("all")}>去发现课程</Button>
+              <Button variant="secondary" onClick={() => onCategory(categories[0]?.value || "favorite")}>去发现课程</Button>
             </div>
           )}
         </section>
@@ -216,6 +272,7 @@ function MyScreen({
   defaultTab,
 }) {
   const report = window.SaylineData.stats[period];
+  const profile = window.SaylineData.profile;
   const defaultLabel = defaultTab === "favorite"
     ? "我喜欢"
     : window.SaylineData.categories.find((item) => item.value === defaultTab)?.fullLabel;
@@ -224,8 +281,8 @@ function MyScreen({
     <div className="app-screen me-screen">
       <header className="me-header">
         <div>
-          <p className="eyebrow">LEARNING REPORT</p>
-          <h1>我的学习</h1>
+          <p className="eyebrow">MY SPACE</p>
+          <h1>我的</h1>
         </div>
         <IconButton label="学习偏好" onClick={onOpenPreferences} variant="outline">
           <Icon name="settings-2" size={20} />
@@ -233,14 +290,15 @@ function MyScreen({
       </header>
 
       <div className="me-scroll">
-        <div className="period-switch">
-          <Tabs
-            items={[{ value: "week", label: "本周" }, { value: "month", label: "本月" }]}
-            onChange={setPeriod}
-            value={period}
-            variant="pill"
-          />
-        </div>
+        <section className="profile-card">
+          <span className="profile-card__avatar">{profile.nickname.slice(0, 1)}</span>
+          <div className="profile-card__copy">
+            <span>PERSONAL PROFILE</span>
+            <h2>{profile.nickname}</h2>
+            <p>{profile.phone}</p>
+          </div>
+          <span className="profile-card__joined">{profile.joinedAt}</span>
+        </section>
 
         <button className="preference-entry" onClick={onOpenPreferences} type="button">
           <span className="preference-entry__icon"><Icon name="settings-2" size={18} /></span>
@@ -250,6 +308,23 @@ function MyScreen({
           </span>
           <Icon name="chevron-right" size={18} />
         </button>
+
+        <div className="report-title">
+          <div>
+            <p className="eyebrow">LEARNING REPORT</p>
+            <h2>学习统计</h2>
+          </div>
+          <span>{report.studiedDays} 天有学习</span>
+        </div>
+
+        <div className="period-switch">
+          <Tabs
+            items={[{ value: "week", label: "本周" }, { value: "month", label: "本月" }]}
+            onChange={setPeriod}
+            value={period}
+            variant="pill"
+          />
+        </div>
 
         <section className="report-summary">
           <StatTile value={report.studiedDays} label="学习天数" />

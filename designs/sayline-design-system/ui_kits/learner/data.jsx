@@ -180,11 +180,19 @@ const categories = [
 
 const defaultInterests = ["work", "spoken"];
 
+const profile = {
+  nickname: "林禾",
+  phone: "138****8000",
+  joinedAt: "2026 年 10 月加入",
+  studyDays: 27,
+};
+
 window.SaylineData = {
   courses,
   stats,
   categories,
   defaultInterests,
+  profile,
   modes: [
     { value: "listen", label: "听", icon: "headphones" },
     { value: "read", label: "读", icon: "book-open" },
