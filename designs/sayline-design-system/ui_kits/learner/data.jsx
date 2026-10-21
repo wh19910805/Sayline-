@@ -154,6 +154,7 @@ const categories = [
     icon: "pen-line",
     colorA: "#62704c",
     colorB: "#8b5734",
+    coverUrl: "../../assets/covers/work.jpg",
   },
   {
     value: "spoken",
@@ -163,6 +164,7 @@ const categories = [
     icon: "mic",
     colorA: "#8b6651",
     colorB: "#42271f",
+    coverUrl: "../../assets/covers/spoken.jpg",
   },
   {
     value: "listening",
@@ -172,6 +174,7 @@ const categories = [
     icon: "headphones",
     colorA: "#517671",
     colorB: "#243a38",
+    coverUrl: "../../assets/covers/listening.jpg",
   },
 ];
 

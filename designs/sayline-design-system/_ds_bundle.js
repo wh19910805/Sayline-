@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"5e325bd687ee","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CourseCard.jsx":"91495d6bfafe","components/learning/ModeSwitcher.jsx":"dbe4b187057d","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"d15dd1c2f905","ui_kits/learner/data.jsx":"8d233408c5ab","ui_kits/learner/player.jsx":"3d8d6170bc40","ui_kits/learner/screens.jsx":"f70b6e81e454","ui_kits/learner/shared.jsx":"abb48e7a2c01"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CategoryCard","sourcePath":"components/learning/CategoryCard.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"5e325bd687ee","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CategoryCard.jsx":"ac9d9ad798aa","components/learning/CourseCard.jsx":"91495d6bfafe","components/learning/ModeSwitcher.jsx":"dbe4b187057d","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"ae8a0f5b6241","ui_kits/learner/data.jsx":"ebf0146f2103","ui_kits/learner/player.jsx":"3d8d6170bc40","ui_kits/learner/screens.jsx":"f97818952d52","ui_kits/learner/shared.jsx":"a20116a63ff4"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -332,6 +332,45 @@ function Toast({
 Object.assign(__ds_scope, { Toast });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "components/feedback/Toast.jsx", error: String((e && e.message) || e) }); }
 
+// components/learning/CategoryCard.jsx
+try { (() => {
+function CategoryCard({
+  title,
+  description,
+  courseCount,
+  coverUrl,
+  colorA = "#68745a",
+  colorB = "#273023",
+  className = ""
+}) {
+  const style = {
+    "--category-card-a": colorA,
+    "--category-card-b": colorB
+  };
+  return /*#__PURE__*/React.createElement("figure", {
+    "aria-label": `${title}，${courseCount} 门课程`,
+    className: ["sl-category-card", className].filter(Boolean).join(" "),
+    style: style
+  }, /*#__PURE__*/React.createElement("div", {
+    "aria-hidden": "true",
+    className: "sl-category-card__image",
+    style: coverUrl ? {
+      backgroundImage: `url("${coverUrl}")`
+    } : undefined
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "sl-category-card__shade",
+    "aria-hidden": "true"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "sl-category-card__top"
+  }, /*#__PURE__*/React.createElement("span", null, "Course collection"), /*#__PURE__*/React.createElement("span", null, courseCount, " \u95E8\u8BFE\u7A0B")), /*#__PURE__*/React.createElement("figcaption", {
+    className: "sl-category-card__copy"
+  }, /*#__PURE__*/React.createElement("span", null, description), /*#__PURE__*/React.createElement("h2", null, title), /*#__PURE__*/React.createElement("i", {
+    "aria-hidden": "true"
+  })));
+}
+Object.assign(__ds_scope, { CategoryCard });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/learning/CategoryCard.jsx", error: String((e && e.message) || e) }); }
+
 // components/learning/ProgressBar.jsx
 try { (() => {
 function ProgressBar({
@@ -610,7 +649,9 @@ const {
 const {
   LoginScreen,
   HomeScreen,
-  MyScreen
+  MyScreen,
+  InterestOnboardingScreen,
+  PreferencesScreen
 } = window;
 const {
   PlayerScreen
@@ -621,21 +662,25 @@ const {
 function App() {
   const initialParams = new URLSearchParams(window.location.search);
   const requestedScreen = initialParams.get("screen");
-  const initialScreen = ["login", "home", "me", "player"].includes(requestedScreen) ? requestedScreen : "home";
-  const initialCategory = window.SaylineData.categories.some(item => item.value === initialParams.get("category")) ? initialParams.get("category") : "all";
+  const initialScreen = ["login", "interests", "home", "me", "player", "preferences"].includes(requestedScreen) ? requestedScreen : "home";
+  const initialInterests = window.SaylineData.defaultInterests;
+  const requestedCategory = initialParams.get("category");
+  const initialCategory = requestedCategory === "favorite" || initialInterests.includes(requestedCategory) ? requestedCategory : initialInterests[0];
   const initialPeriod = initialParams.get("period") === "month" ? "month" : "week";
   const defaultPlayerCourse = window.SaylineData.courses.find(course => course.progress > 0);
   const [screen, setScreen] = React.useState(initialScreen);
   const [category, setCategory] = React.useState(initialCategory);
+  const [interests, setInterests] = React.useState(initialInterests);
+  const [defaultTab, setDefaultTab] = React.useState(initialInterests[0]);
   const [period, setPeriod] = React.useState(initialPeriod);
   const [courses, setCourses] = React.useState(window.SaylineData.courses);
   const [playerCourseId, setPlayerCourseId] = React.useState(initialScreen === "player" ? defaultPlayerCourse.id : null);
-  const [playerListIds, setPlayerListIds] = React.useState(initialScreen === "player" ? (initialCategory === "all" ? courses : courses.filter(course => course.category === initialCategory)).map(course => course.id) : []);
+  const [playerListIds, setPlayerListIds] = React.useState(initialScreen === "player" ? (initialCategory === "favorite" ? courses.filter(course => course.favorite) : courses.filter(course => course.category === initialCategory)).map(course => course.id) : []);
   const [toast, setToast] = React.useState("");
   const playerCourse = courses.find(course => course.id === playerCourseId);
+  const homeCategories = interests.map(value => window.SaylineData.categories.find(item => item.value === value)).filter(Boolean);
   function listForCategory(value) {
     if (value === "favorite") return courses.filter(course => course.favorite);
-    if (value === "all") return courses;
     return courses.filter(course => course.category === value);
   }
   function navigate(next) {
@@ -687,21 +732,44 @@ function App() {
     className: "device-stage"
   }, /*#__PURE__*/React.createElement("div", {
     className: "device-caption"
-  }, /*#__PURE__*/React.createElement("span", null, screen === "player" ? "immersive player" : screen === "me" ? "learning report" : screen === "login" ? "account entry" : "course discovery"), /*#__PURE__*/React.createElement("span", null, "390 \xD7 844")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, screen === "player" ? "immersive player" : screen === "me" ? "learning report" : screen === "login" ? "account entry" : screen === "interests" ? "interest setup" : screen === "preferences" ? "learning preferences" : "course discovery"), /*#__PURE__*/React.createElement("span", null, "390 \xD7 844")), /*#__PURE__*/React.createElement("div", {
     className: "phone-device"
   }, screen === "login" && /*#__PURE__*/React.createElement(LoginScreen, {
-    onLogin: () => setScreen("home")
+    onLogin: () => setScreen("interests")
+  }), screen === "interests" && /*#__PURE__*/React.createElement(InterestOnboardingScreen, {
+    onComplete: selected => {
+      setInterests(selected);
+      setDefaultTab(selected[0]);
+      setCategory(selected[0]);
+      setScreen("home");
+    }
   }), screen === "home" && /*#__PURE__*/React.createElement(HomeScreen, {
     category: category,
+    categories: homeCategories,
     courses: courses,
     onCategory: setCategory,
     onNavigate: navigate,
     onOpenCourse: openCourse,
     onToggleFavorite: toggleFavorite
   }), screen === "me" && /*#__PURE__*/React.createElement(MyScreen, {
+    defaultTab: defaultTab,
+    interests: interests,
     onNavigate: navigate,
+    onOpenPreferences: () => setScreen("preferences"),
     period: period,
     setPeriod: setPeriod
+  }), screen === "preferences" && /*#__PURE__*/React.createElement(PreferencesScreen, {
+    defaultTab: defaultTab,
+    interests: interests,
+    onBack: () => setScreen("me"),
+    onSave: (nextInterests, nextDefault) => {
+      setInterests(nextInterests);
+      setDefaultTab(nextDefault);
+      setCategory(nextDefault);
+      setScreen("home");
+      setToast("学习偏好已保存");
+      window.setTimeout(() => setToast(""), 2200);
+    }
   }), screen === "player" && playerCourse && /*#__PURE__*/React.createElement(PlayerScreen, {
     course: playerCourse,
     initialMode: initialParams.get("mode"),
@@ -1006,25 +1074,39 @@ const stats = {
   }
 };
 const categories = [{
-  value: "all",
-  label: "全部"
+  value: "work",
+  label: "职场",
+  fullLabel: "职场英语",
+  description: "会议、协作与职场表达",
+  icon: "pen-line",
+  colorA: "#62704c",
+  colorB: "#8b5734",
+  coverUrl: "../../assets/covers/work.jpg"
 }, {
   value: "spoken",
-  label: "口语"
+  label: "口语",
+  fullLabel: "日常口语",
+  description: "闲聊、社交与自然表达",
+  icon: "mic",
+  colorA: "#8b6651",
+  colorB: "#42271f",
+  coverUrl: "../../assets/covers/spoken.jpg"
 }, {
   value: "listening",
-  label: "听力"
-}, {
-  value: "work",
-  label: "职场"
-}, {
-  value: "favorite",
-  label: "我喜欢"
+  label: "听力",
+  fullLabel: "听力训练",
+  description: "抓住重点、适应真实语速",
+  icon: "headphones",
+  colorA: "#517671",
+  colorB: "#243a38",
+  coverUrl: "../../assets/covers/listening.jpg"
 }];
+const defaultInterests = ["work", "spoken"];
 window.SaylineData = {
   courses,
   stats,
   categories,
+  defaultInterests,
   modes: [{
     value: "listen",
     label: "听",
@@ -1628,9 +1710,11 @@ const {
   Badge,
   BottomNav,
   Button,
+  CategoryCard,
   Checkbox,
   CourseCard,
   Icon,
+  IconButton,
   Input,
   ProgressBar,
   StatTile,
@@ -1741,14 +1825,23 @@ function ContinueCard({
 }
 function HomeScreen({
   courses,
+  categories,
   category,
   onCategory,
   onOpenCourse,
   onToggleFavorite,
   onNavigate
 }) {
-  const categoryCourses = category === "favorite" ? courses.filter(course => course.favorite) : category === "all" ? courses : courses.filter(course => course.category === category);
+  const categoryCourses = category === "favorite" ? courses.filter(course => course.favorite) : courses.filter(course => course.category === category);
   const continueCourse = courses.find(course => course.progress > 0) || courses[0];
+  const tabItems = [...categories.map(item => ({
+    value: item.value,
+    label: item.label
+  })), {
+    value: "favorite",
+    label: "我喜欢"
+  }];
+  const currentCategory = categories.find(item => item.value === category);
   return /*#__PURE__*/React.createElement("div", {
     className: "app-screen home-screen"
   }, /*#__PURE__*/React.createElement("header", {
@@ -1758,7 +1851,7 @@ function HomeScreen({
   }, "\u8BFE\u7A0B")), /*#__PURE__*/React.createElement(Tabs, {
     ariaLabel: "\u8BFE\u7A0B\u5206\u7C7B",
     className: "home-tabs",
-    items: window.SaylineData.categories,
+    items: tabItems,
     onChange: onCategory,
     value: category
   }), /*#__PURE__*/React.createElement("div", {
@@ -1786,7 +1879,14 @@ function HomeScreen({
     className: "section-count"
   }, categoryCourses.length, " \u95E8")), categoryCourses.length > 0 ? /*#__PURE__*/React.createElement("div", {
     className: "course-feed"
-  }, categoryCourses.map(course => /*#__PURE__*/React.createElement(CourseCard, {
+  }, currentCategory && /*#__PURE__*/React.createElement(CategoryCard, {
+    colorA: currentCategory.colorA,
+    colorB: currentCategory.colorB,
+    courseCount: categoryCourses.length,
+    coverUrl: currentCategory.coverUrl,
+    description: currentCategory.description,
+    title: currentCategory.fullLabel
+  }), categoryCourses.map(course => /*#__PURE__*/React.createElement(CourseCard, {
     colorA: course.colorA,
     colorB: course.colorB,
     duration: course.duration,
@@ -1818,20 +1918,27 @@ function HomeScreen({
 function MyScreen({
   period,
   setPeriod,
-  onNavigate
+  onNavigate,
+  onOpenPreferences,
+  interests,
+  defaultTab
 }) {
   const report = window.SaylineData.stats[period];
+  const defaultLabel = defaultTab === "favorite" ? "我喜欢" : window.SaylineData.categories.find(item => item.value === defaultTab)?.fullLabel;
   return /*#__PURE__*/React.createElement("div", {
     className: "app-screen me-screen"
   }, /*#__PURE__*/React.createElement("header", {
     className: "me-header"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "eyebrow"
-  }, "LEARNING REPORT"), /*#__PURE__*/React.createElement("h1", null, "\u6211\u7684\u5B66\u4E60")), /*#__PURE__*/React.createElement("button", {
-    className: "profile-button",
-    onClick: () => onNavigate("home"),
-    type: "button"
-  }, /*#__PURE__*/React.createElement("span", null, "\u79BE"), /*#__PURE__*/React.createElement("i", null))), /*#__PURE__*/React.createElement("div", {
+  }, "LEARNING REPORT"), /*#__PURE__*/React.createElement("h1", null, "\u6211\u7684\u5B66\u4E60")), /*#__PURE__*/React.createElement(IconButton, {
+    label: "\u5B66\u4E60\u504F\u597D",
+    onClick: onOpenPreferences,
+    variant: "outline"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "settings-2",
+    size: 20
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "me-scroll"
   }, /*#__PURE__*/React.createElement("div", {
     className: "period-switch"
@@ -1846,6 +1953,20 @@ function MyScreen({
     onChange: setPeriod,
     value: period,
     variant: "pill"
+  })), /*#__PURE__*/React.createElement("button", {
+    className: "preference-entry",
+    onClick: onOpenPreferences,
+    type: "button"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "preference-entry__icon"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "settings-2",
+    size: 18
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "preference-entry__copy"
+  }, /*#__PURE__*/React.createElement("strong", null, "\u5B66\u4E60\u504F\u597D"), /*#__PURE__*/React.createElement("small", null, interests.length, " \u4E2A\u5174\u8DA3\u5206\u7C7B \xB7 \u9ED8\u8BA4\uFF1A", defaultLabel || "职场英语")), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevron-right",
+    size: 18
   })), /*#__PURE__*/React.createElement("section", {
     className: "report-summary"
   }, /*#__PURE__*/React.createElement(StatTile, {
@@ -1914,10 +2035,214 @@ function MyScreen({
     onChange: onNavigate
   })));
 }
+function InterestOnboardingScreen({
+  onComplete
+}) {
+  const [selected, setSelected] = React.useState([]);
+  const catalog = window.SaylineData.categories;
+  function toggleCategory(value) {
+    setSelected(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value]);
+  }
+  const firstCategory = catalog.find(item => item.value === selected[0]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "app-screen onboarding-screen"
+  }, /*#__PURE__*/React.createElement("header", {
+    className: "onboarding-header"
+  }, /*#__PURE__*/React.createElement(SaylineWordmark, {
+    compact: true
+  }), /*#__PURE__*/React.createElement("span", null, "01 / 01")), /*#__PURE__*/React.createElement("div", {
+    className: "onboarding-copy"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "eyebrow"
+  }, "MAKE IT YOURS"), /*#__PURE__*/React.createElement("h1", null, "\u9009\u62E9\u4F60\u611F\u5174\u8DA3\u7684", /*#__PURE__*/React.createElement("br", null), "\u9886\u57DF\u3002"), /*#__PURE__*/React.createElement("p", null, "\u9996\u9875\u53EA\u5C55\u793A\u4F60\u9009\u62E9\u7684\u5206\u7C7B\u3002\u7B2C\u4E00\u4E2A\u9009\u62E9\u4F1A\u6210\u4E3A\u9ED8\u8BA4 Tab\uFF0C\u4E4B\u540E\u53EF\u4EE5\u968F\u65F6\u8C03\u6574\u3002")), /*#__PURE__*/React.createElement("div", {
+    className: "interest-grid"
+  }, catalog.map((item, index) => {
+    const selectionIndex = selected.indexOf(item.value);
+    const isSelected = selectionIndex >= 0;
+    return /*#__PURE__*/React.createElement("button", {
+      "aria-pressed": isSelected,
+      className: "interest-option " + (isSelected ? "is-selected" : ""),
+      key: item.value,
+      onClick: () => toggleCategory(item.value),
+      style: {
+        "--category-a": item.colorA,
+        "--category-b": item.colorB
+      },
+      type: "button"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "interest-option__number"
+    }, String(index + 1).padStart(2, "0")), /*#__PURE__*/React.createElement("span", {
+      className: "interest-option__icon"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: item.icon,
+      size: 22
+    })), /*#__PURE__*/React.createElement("span", {
+      className: "interest-option__copy"
+    }, /*#__PURE__*/React.createElement("strong", null, item.fullLabel), /*#__PURE__*/React.createElement("small", null, item.description)), /*#__PURE__*/React.createElement("span", {
+      className: "interest-option__check"
+    }, isSelected ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Icon, {
+      name: "check",
+      size: 15
+    }), selectionIndex + 1) : "+"));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "onboarding-foot"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "onboarding-selection"
+  }, /*#__PURE__*/React.createElement("span", null, selected.length ? `${selected.length} 个已选` : "至少选择 1 个"), /*#__PURE__*/React.createElement("strong", null, firstCategory ? `默认：${firstCategory.fullLabel}` : "选择顺序决定首页顺序")), /*#__PURE__*/React.createElement(Button, {
+    disabled: !selected.length,
+    fullWidth: true,
+    onClick: () => selected.length && onComplete(selected),
+    size: "lg"
+  }, "\u5B8C\u6210\uFF0C\u5F00\u59CB\u5B66\u4E60")));
+}
+function PreferencesScreen({
+  interests,
+  defaultTab,
+  onBack,
+  onSave
+}) {
+  const [ordered, setOrdered] = React.useState(interests);
+  const [selectedDefault, setSelectedDefault] = React.useState(defaultTab);
+  const [draggedIndex, setDraggedIndex] = React.useState(null);
+  const catalog = window.SaylineData.categories;
+  const selectedCategories = ordered.map(value => catalog.find(item => item.value === value)).filter(Boolean);
+  const availableCategories = catalog.filter(item => !ordered.includes(item.value));
+  function moveInterest(index, direction) {
+    const target = index + direction;
+    if (target < 0 || target >= ordered.length) return;
+    const next = [...ordered];
+    [next[index], next[target]] = [next[target], next[index]];
+    setOrdered(next);
+  }
+  function removeInterest(value) {
+    if (ordered.length === 1) return;
+    const next = ordered.filter(item => item !== value);
+    setOrdered(next);
+    if (selectedDefault === value) setSelectedDefault(next[0]);
+  }
+  function addInterest(value) {
+    setOrdered(current => [...current, value]);
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "app-screen preferences-screen"
+  }, /*#__PURE__*/React.createElement("header", {
+    className: "preferences-header"
+  }, /*#__PURE__*/React.createElement(IconButton, {
+    label: "\u8FD4\u56DE\u6211\u7684\u5B66\u4E60",
+    onClick: onBack
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "chevron-left",
+    size: 23
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "eyebrow"
+  }, "SETTINGS"), /*#__PURE__*/React.createElement("h1", null, "\u5B66\u4E60\u504F\u597D")), /*#__PURE__*/React.createElement("span", {
+    className: "preferences-header__count"
+  }, ordered.length + 1, " TABS")), /*#__PURE__*/React.createElement("div", {
+    className: "preferences-scroll"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "preferences-section"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "preferences-section__head"
+  }, /*#__PURE__*/React.createElement("h2", null, "\u9996\u9875\u5206\u7C7B"), /*#__PURE__*/React.createElement("span", null, "\u62D6\u52A8\u6216\u4F7F\u7528\u7BAD\u5934\u6392\u5E8F")), /*#__PURE__*/React.createElement("p", {
+    className: "preferences-help"
+  }, "\u70B9\u51FB\u201C\u8BBE\u4E3A\u9ED8\u8BA4\u201D\uFF0C\u767B\u5F55\u540E\u4F1A\u76F4\u63A5\u8FDB\u5165\u8BE5 Tab\u3002"), /*#__PURE__*/React.createElement("div", {
+    className: "preference-list"
+  }, selectedCategories.map((item, index) => /*#__PURE__*/React.createElement("div", {
+    className: "preference-row",
+    draggable: true,
+    key: item.value,
+    onDragOver: event => event.preventDefault(),
+    onDragStart: () => setDraggedIndex(index),
+    onDrop: () => {
+      if (draggedIndex == null || draggedIndex === index) return;
+      const next = [...ordered];
+      const [moved] = next.splice(draggedIndex, 1);
+      next.splice(index, 0, moved);
+      setOrdered(next);
+      setDraggedIndex(null);
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "preference-row__grip",
+    "aria-hidden": "true"
+  }, "\u22EE\u22EE"), /*#__PURE__*/React.createElement("span", {
+    className: "preference-row__icon"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: item.icon,
+    size: 19
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "preference-row__copy"
+  }, /*#__PURE__*/React.createElement("strong", null, item.fullLabel), /*#__PURE__*/React.createElement("small", null, selectedDefault === item.value ? "登录后默认进入" : item.description)), /*#__PURE__*/React.createElement("div", {
+    className: "preference-row__actions"
+  }, /*#__PURE__*/React.createElement(IconButton, {
+    disabled: index === 0,
+    label: `上移 ${item.fullLabel}`,
+    onClick: () => moveInterest(index, -1)
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "chevrons-up",
+    size: 17
+  })), /*#__PURE__*/React.createElement(IconButton, {
+    disabled: index === ordered.length - 1,
+    label: `下移 ${item.fullLabel}`,
+    onClick: () => moveInterest(index, 1)
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "chevrons-down",
+    size: 17
+  })), /*#__PURE__*/React.createElement(IconButton, {
+    disabled: ordered.length === 1,
+    label: `移除 ${item.fullLabel}`,
+    onClick: () => removeInterest(item.value)
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "x",
+    size: 17
+  }))), /*#__PURE__*/React.createElement("button", {
+    "aria-pressed": selectedDefault === item.value,
+    className: "default-choice " + (selectedDefault === item.value ? "is-default" : ""),
+    onClick: () => setSelectedDefault(item.value),
+    type: "button"
+  }, selectedDefault === item.value ? "默认 Tab" : "设为默认"))), /*#__PURE__*/React.createElement("div", {
+    className: "preference-row preference-row--fixed"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "preference-row__grip",
+    "aria-hidden": "true"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "preference-row__icon"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "heart",
+    size: 19
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "preference-row__copy"
+  }, /*#__PURE__*/React.createElement("strong", null, "\u6211\u559C\u6B22"), /*#__PURE__*/React.createElement("small", null, "\u56FA\u5B9A\u663E\u793A\u5728\u6700\u540E\u4E00\u4E2A Tab")), /*#__PURE__*/React.createElement("button", {
+    "aria-pressed": selectedDefault === "favorite",
+    className: "default-choice " + (selectedDefault === "favorite" ? "is-default" : ""),
+    onClick: () => setSelectedDefault("favorite"),
+    type: "button"
+  }, selectedDefault === "favorite" ? "默认 Tab" : "设为默认")))), /*#__PURE__*/React.createElement("section", {
+    className: "preferences-section"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "preferences-section__head"
+  }, /*#__PURE__*/React.createElement("h2", null, "\u6DFB\u52A0\u5174\u8DA3"), /*#__PURE__*/React.createElement("span", null, availableCategories.length ? "点击添加" : "已添加全部")), /*#__PURE__*/React.createElement("div", {
+    className: "interest-pool"
+  }, availableCategories.length ? availableCategories.map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.value,
+    onClick: () => addInterest(item.value),
+    type: "button"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "plus",
+    size: 15
+  }), item.fullLabel)) : /*#__PURE__*/React.createElement("p", null, "\u5F53\u524D\u6240\u6709\u8BFE\u7A0B\u5206\u7C7B\u90FD\u5DF2\u7ECF\u52A0\u5165\u9996\u9875\u3002")))), /*#__PURE__*/React.createElement("div", {
+    className: "preferences-footer"
+  }, /*#__PURE__*/React.createElement("p", null, "\u4FEE\u6539\u4F1A\u7ACB\u5373\u5E94\u7528\u5230\u9996\u9875 Tab\uFF0C\u5E76\u540C\u6B65\u5230\u5176\u4ED6\u8BBE\u5907\u3002"), /*#__PURE__*/React.createElement(Button, {
+    fullWidth: true,
+    onClick: () => onSave(ordered, selectedDefault),
+    size: "lg"
+  }, "\u4FDD\u5B58\u504F\u597D")));
+}
 Object.assign(window, {
   LoginScreen,
   HomeScreen,
   MyScreen,
+  InterestOnboardingScreen,
+  PreferencesScreen,
   ContinueCard
 });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/learner/screens.jsx", error: String((e && e.message) || e) }); }
@@ -2003,7 +2328,7 @@ const ReviewRail = ({
   screen,
   onNavigate
 }) => {
-  const screens = [["login", "01 / 登录"], ["home", "02 / 首页"], ["player", "03 / 播放器"], ["me", "04 / 我的学习"]];
+  const screens = [["login", "01 / 登录"], ["interests", "02 / 兴趣选择"], ["home", "03 / 首页"], ["player", "04 / 播放器"], ["me", "05 / 我的学习"], ["preferences", "06 / 学习偏好"]];
   return /*#__PURE__*/React.createElement("aside", {
     className: "review-rail"
   }, /*#__PURE__*/React.createElement(SaylineWordmark, null), /*#__PURE__*/React.createElement("p", {
@@ -2045,6 +2370,8 @@ __ds_ns.Textarea = __ds_scope.Textarea;
 __ds_ns.Dialog = __ds_scope.Dialog;
 
 __ds_ns.Toast = __ds_scope.Toast;
+
+__ds_ns.CategoryCard = __ds_scope.CategoryCard;
 
 __ds_ns.CourseCard = __ds_scope.CourseCard;
 

@@ -117,7 +117,7 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 
 - Core：`Icon`、`Button`、`IconButton`、`Input`、`Textarea`、`Checkbox`、`Badge`
 - Navigation：`Tabs`、`BottomNav`
-- Learning：`ProgressBar`、`ModeSwitcher`、`CourseCard`、`StatTile`
+- Learning：`CategoryCard`、`ProgressBar`、`ModeSwitcher`、`CourseCard`、`StatTile`
 - Feedback：`Dialog`、`Toast`
 
 所有组件都包含 `.d.ts` props 契约与 `.prompt.md` 使用说明。
@@ -131,6 +131,7 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 - 登录页
 - 首次登录兴趣选择
 - 首页仅展示已选兴趣与“我喜欢”
+- 每个兴趣分类的瀑布流第一张为正方形分类图片，后续课程卡片使用不同高度形成错位
 - 播放器听、读、写、说四种模式
 - 播放控制、倍速、逐句定位、录音状态
 - 上下滑动/方向键切换课程
@@ -152,6 +153,7 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 - `assets/brand/`：Logo 标记、反白版本、App 图标
 - `assets/fonts/`：Instrument Serif 与 Manrope
 - `assets/icons/`：Lucide 图标资产
+- `assets/covers/`：分类封面演示图，正式产品由管理端按分类上传
 - `components/`：可复用组件与组件展示卡
 - `guidelines/`：色彩、字体、间距、材质、动效和无障碍规范卡
 - `ui_kits/learner/`：高保真可交互学习端
@@ -159,6 +161,12 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 - `scripts/generate-icons.mjs`：从本地 Lucide 资产重建 `Icon.jsx`
 
 字体许可见 `assets/fonts/LICENSE-*.txt`；Lucide 许可见 `assets/icons/LICENSE-Lucide.txt`。
+
+分类演示图片来源：
+
+- 职场：https://images.unsplash.com/photo-1497366754035-f200968a6e72
+- 口语：https://images.unsplash.com/photo-1495474472287-4d71bcdd2085
+- 听力：https://images.unsplash.com/photo-1505740420928-5e560c06d30e
 
 ## 已知限制
 

@@ -66,6 +66,10 @@
         "message": "<Button> size must be one of 'sm' | 'md' | 'lg'."
       },
       {
+        "selector": "JSXOpeningElement[name.name='CategoryCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|description|courseCount|coverUrl|colorA|colorB|className|key|ref|style|children)$/]",
+        "message": "<CategoryCard> doesn't accept that prop. Declared props: title, description, courseCount, coverUrl, colorA, colorB, className."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='Checkbox'] > JSXAttribute > JSXIdentifier[name!=/^(?:id|children|key|ref|className|style)$/]",
         "message": "<Checkbox> doesn't accept that prop. Declared props: id, children."
       },
@@ -162,6 +166,9 @@
         "replaces": []
       },
       "Button": {
+        "replaces": []
+      },
+      "CategoryCard": {
         "replaces": []
       },
       "Checkbox": {

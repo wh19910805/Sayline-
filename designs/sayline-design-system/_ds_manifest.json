@@ -271,6 +271,40 @@
       ]
     },
     {
+      "name": "CategoryCard",
+      "sourcePath": "components/learning/CategoryCard.jsx",
+      "props": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
+        },
+        {
+          "name": "courseCount",
+          "type": "number"
+        },
+        {
+          "name": "coverUrl",
+          "type": "string"
+        },
+        {
+          "name": "colorA",
+          "type": "string"
+        },
+        {
+          "name": "colorB",
+          "type": "string"
+        },
+        {
+          "name": "className",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "CourseCard",
       "sourcePath": "components/learning/CourseCard.jsx",
       "props": [
@@ -530,6 +564,15 @@
       "section": "Feedback",
       "subtitle": "Short status message with optional action",
       "viewport": "700x240"
+    },
+    {
+      "name": "CategoryCard",
+      "path": "components/learning/CategoryCard.jsx",
+      "previewPath": "components/learning/learning.card.html",
+      "kind": "component",
+      "section": "Learning",
+      "subtitle": "Square category image tile for the waterfall feed",
+      "viewport": "700x380"
     },
     {
       "name": "CourseCard",

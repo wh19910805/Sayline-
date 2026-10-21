@@ -3,6 +3,7 @@ const {
   Badge,
   BottomNav,
   Button,
+  CategoryCard,
   Checkbox,
   CourseCard,
   Icon,
@@ -124,6 +125,7 @@ function HomeScreen({
     ...categories.map((item) => ({ value: item.value, label: item.label })),
     { value: "favorite", label: "我喜欢" },
   ];
+  const currentCategory = categories.find((item) => item.value === category);
 
   return (
     <div className="app-screen home-screen">
@@ -161,6 +163,16 @@ function HomeScreen({
 
           {categoryCourses.length > 0 ? (
             <div className="course-feed">
+              {currentCategory && (
+                <CategoryCard
+                  colorA={currentCategory.colorA}
+                  colorB={currentCategory.colorB}
+                  courseCount={categoryCourses.length}
+                  coverUrl={currentCategory.coverUrl}
+                  description={currentCategory.description}
+                  title={currentCategory.fullLabel}
+                />
+              )}
               {categoryCourses.map((course) => (
                 <CourseCard
                   colorA={course.colorA}
