@@ -125,10 +125,6 @@ function HomeScreen({
     <div className="app-screen home-screen">
       <header className="home-header">
         <span className="home-header__label">课程</span>
-        <button aria-label="打开我的学习" className="profile-button" onClick={() => onNavigate("me")} type="button">
-          <span>禾</span>
-          <i></i>
-        </button>
       </header>
 
       <Tabs
@@ -160,18 +156,20 @@ function HomeScreen({
           </div>
 
           {categoryCourses.length > 0 ? (
-            <div className="course-list">
+            <div className="course-feed">
               {categoryCourses.map((course) => (
                 <CourseCard
                   colorA={course.colorA}
                   colorB={course.colorB}
+                  duration={course.duration}
                   favorite={course.favorite}
                   key={course.id}
-                  meta={`${course.categoryLabel} · ${course.duration}`}
+                  meta={course.categoryLabel}
                   onOpen={() => onOpenCourse(course)}
                   onToggleFavorite={() => onToggleFavorite(course.id)}
                   progress={course.progress || undefined}
                   title={course.title}
+                  variant="feed"
                 />
               ))}
             </div>

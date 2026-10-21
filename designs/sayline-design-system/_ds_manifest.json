@@ -303,6 +303,17 @@
           "type": "number"
         },
         {
+          "name": "duration",
+          "type": "string"
+        },
+        {
+          "name": "variant",
+          "values": [
+            "row",
+            "feed"
+          ]
+        },
+        {
           "name": "onOpen",
           "type": "() => void"
         },

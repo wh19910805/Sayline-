@@ -12,6 +12,8 @@ export function CourseCard({
   progress,
   onOpen,
   onToggleFavorite,
+  duration,
+  variant = "row",
   className = "",
 }) {
   const style = {
@@ -26,15 +28,59 @@ export function CourseCard({
     }
   }
 
+  const rootProps = {
+    "aria-label": `学习 ${title}`,
+    className: [
+      "sl-course-card",
+      variant === "feed" ? "sl-course-card--feed" : "",
+      className,
+    ]
+      .filter(Boolean)
+      .join(" "),
+    onClick: onOpen,
+    onKeyDown: handleKeyDown,
+    role: "button",
+    style,
+    tabIndex: 0,
+  };
+
+  if (variant === "feed") {
+    return (
+      <div {...rootProps}>
+        <div className="sl-course-card__feed-cover-wrap">
+          <div
+            aria-hidden="true"
+            className="sl-course-card__feed-cover"
+            style={coverUrl ? { backgroundImage: `url("${coverUrl}")` } : undefined}
+          />
+          {duration && <span className="sl-course-card__duration">{duration}</span>}
+          <button
+            aria-label={favorite ? "取消收藏" : "收藏课程"}
+            aria-pressed={favorite}
+            className="sl-course-card__favorite sl-course-card__favorite--feed"
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleFavorite?.();
+            }}
+            type="button"
+          >
+            <Icon name="heart" size={18} />
+          </button>
+        </div>
+        <div className="sl-course-card__feed-body">
+          <h3 className="sl-course-card__title">{title}</h3>
+          <p className="sl-course-card__meta">{meta}</p>
+          {typeof progress === "number" && (
+            <ProgressBar className="sl-course-card__progress" value={progress} />
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      aria-label={`学习 ${title}`}
-      className={["sl-course-card", className].filter(Boolean).join(" ")}
-      onClick={onOpen}
-      onKeyDown={handleKeyDown}
-      role="button"
-      style={style}
-      tabIndex={0}
+      {...rootProps}
     >
       <div
         aria-hidden="true"

@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"df07988965e4","components/core/Button.jsx":"d067a26f5668","components/core/Checkbox.jsx":"924cf6eea122","components/core/Icon.jsx":"5e325bd687ee","components/core/IconButton.jsx":"4073176eb45b","components/core/Input.jsx":"e56a2a397b08","components/core/Textarea.jsx":"e6146afd210a","components/feedback/Dialog.jsx":"ac9ac7c62fb5","components/feedback/Toast.jsx":"fd9d104376dc","components/learning/CourseCard.jsx":"607819545a00","components/learning/ModeSwitcher.jsx":"158e2c2dd771","components/learning/ProgressBar.jsx":"0306edbd57d3","components/learning/StatTile.jsx":"aa35253ae045","components/navigation/BottomNav.jsx":"f76d7e078b75","components/navigation/Tabs.jsx":"62c891438138","ui_kits/learner/app.jsx":"2381ca9f0416","ui_kits/learner/data.jsx":"2ffa81d75683","ui_kits/learner/player.jsx":"335977e39087","ui_kits/learner/screens.jsx":"e026fcb4284c","ui_kits/learner/shared.jsx":"fdd262dc65f4"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"5e325bd687ee","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CourseCard.jsx":"91495d6bfafe","components/learning/ModeSwitcher.jsx":"dbe4b187057d","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"d15dd1c2f905","ui_kits/learner/data.jsx":"8d233408c5ab","ui_kits/learner/player.jsx":"3d8d6170bc40","ui_kits/learner/screens.jsx":"f70b6e81e454","ui_kits/learner/shared.jsx":"abb48e7a2c01"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -382,6 +382,8 @@ function CourseCard({
   progress,
   onOpen,
   onToggleFavorite,
+  duration,
+  variant = "row",
   className = ""
 }) {
   const style = {
@@ -394,15 +396,50 @@ function CourseCard({
       onOpen?.();
     }
   }
-  return /*#__PURE__*/React.createElement("div", {
+  const rootProps = {
     "aria-label": `学习 ${title}`,
-    className: ["sl-course-card", className].filter(Boolean).join(" "),
+    className: ["sl-course-card", variant === "feed" ? "sl-course-card--feed" : "", className].filter(Boolean).join(" "),
     onClick: onOpen,
     onKeyDown: handleKeyDown,
     role: "button",
-    style: style,
+    style,
     tabIndex: 0
-  }, /*#__PURE__*/React.createElement("div", {
+  };
+  if (variant === "feed") {
+    return /*#__PURE__*/React.createElement("div", rootProps, /*#__PURE__*/React.createElement("div", {
+      className: "sl-course-card__feed-cover-wrap"
+    }, /*#__PURE__*/React.createElement("div", {
+      "aria-hidden": "true",
+      className: "sl-course-card__feed-cover",
+      style: coverUrl ? {
+        backgroundImage: `url("${coverUrl}")`
+      } : undefined
+    }), duration && /*#__PURE__*/React.createElement("span", {
+      className: "sl-course-card__duration"
+    }, duration), /*#__PURE__*/React.createElement("button", {
+      "aria-label": favorite ? "取消收藏" : "收藏课程",
+      "aria-pressed": favorite,
+      className: "sl-course-card__favorite sl-course-card__favorite--feed",
+      onClick: event => {
+        event.stopPropagation();
+        onToggleFavorite?.();
+      },
+      type: "button"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "heart",
+      size: 18
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "sl-course-card__feed-body"
+    }, /*#__PURE__*/React.createElement("h3", {
+      className: "sl-course-card__title"
+    }, title), /*#__PURE__*/React.createElement("p", {
+      className: "sl-course-card__meta"
+    }, meta), typeof progress === "number" && /*#__PURE__*/React.createElement(ProgressBar, {
+      className: "sl-course-card__progress",
+      value: progress
+    })));
+  }
+  return /*#__PURE__*/React.createElement("div", rootProps, /*#__PURE__*/React.createElement("div", {
     "aria-hidden": "true",
     className: "sl-course-card__cover",
     style: coverUrl ? {
@@ -1716,18 +1753,9 @@ function HomeScreen({
     className: "app-screen home-screen"
   }, /*#__PURE__*/React.createElement("header", {
     className: "home-header"
-  }, /*#__PURE__*/React.createElement(SaylineWordmark, {
-    compact: true
-  }), /*#__PURE__*/React.createElement("button", {
-    "aria-label": "\u6253\u5F00\u6211\u7684\u5B66\u4E60",
-    className: "profile-button",
-    onClick: () => onNavigate("me"),
-    type: "button"
-  }, /*#__PURE__*/React.createElement("span", null, "\u79BE"), /*#__PURE__*/React.createElement("i", null))), /*#__PURE__*/React.createElement("div", {
-    className: "home-greeting"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "eyebrow"
-  }, "WEDNESDAY \xB7 21 OCT"), /*#__PURE__*/React.createElement("h1", null, "\u4ECA\u5929\uFF0C\u7EC3\u70B9\u82F1\u8BED\u3002"), /*#__PURE__*/React.createElement("p", null, "\u4FDD\u6301\u81EA\u5DF1\u7684\u8282\u594F\uFF0C\u4E00\u53E5\u4E5F\u7B97\u8FDB\u6B65\u3002")), /*#__PURE__*/React.createElement(Tabs, {
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "home-header__label"
+  }, "\u8BFE\u7A0B")), /*#__PURE__*/React.createElement(Tabs, {
     ariaLabel: "\u8BFE\u7A0B\u5206\u7C7B",
     className: "home-tabs",
     items: window.SaylineData.categories,
@@ -1757,17 +1785,19 @@ function HomeScreen({
   }, category === "favorite" ? "YOUR SAVED LINES" : "COURSE SHELF"), /*#__PURE__*/React.createElement("h2", null, category === "favorite" ? "我喜欢" : "为你准备")), /*#__PURE__*/React.createElement("span", {
     className: "section-count"
   }, categoryCourses.length, " \u95E8")), categoryCourses.length > 0 ? /*#__PURE__*/React.createElement("div", {
-    className: "course-list"
+    className: "course-feed"
   }, categoryCourses.map(course => /*#__PURE__*/React.createElement(CourseCard, {
     colorA: course.colorA,
     colorB: course.colorB,
+    duration: course.duration,
     favorite: course.favorite,
     key: course.id,
-    meta: `${course.categoryLabel} · ${course.duration}`,
+    meta: course.categoryLabel,
     onOpen: () => onOpenCourse(course),
     onToggleFavorite: () => onToggleFavorite(course.id),
     progress: course.progress || undefined,
-    title: course.title
+    title: course.title,
+    variant: "feed"
   }))) : /*#__PURE__*/React.createElement("div", {
     className: "favorite-empty"
   }, /*#__PURE__*/React.createElement("span", {

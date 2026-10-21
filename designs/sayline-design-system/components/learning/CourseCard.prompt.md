@@ -5,3 +5,9 @@ Use in category and favorite lists; clicking the body opens the player immediate
 ```
 
 Do not add a separate course-detail link.
+
+Use `variant="feed"` in discovery and favorite lists where covers should lead the information hierarchy.
+
+```jsx
+<CourseCard variant="feed" duration="4:28" title="Meeting a New Colleague" meta="职场英语" />
+```

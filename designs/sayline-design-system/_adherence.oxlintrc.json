@@ -70,8 +70,12 @@
         "message": "<Checkbox> doesn't accept that prop. Declared props: id, children."
       },
       {
-        "selector": "JSXOpeningElement[name.name='CourseCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|meta|coverUrl|colorA|colorB|favorite|progress|onOpen|onToggleFavorite|className|key|ref|style|children)$/]",
-        "message": "<CourseCard> doesn't accept that prop. Declared props: title, meta, coverUrl, colorA, colorB, favorite, progress, onOpen, onToggleFavorite, className."
+        "selector": "JSXOpeningElement[name.name='CourseCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|meta|coverUrl|colorA|colorB|favorite|progress|duration|variant|onOpen|onToggleFavorite|className|key|ref|style|children)$/]",
+        "message": "<CourseCard> doesn't accept that prop. Declared props: title, meta, coverUrl, colorA, colorB, favorite, progress, duration, variant, onOpen, onToggleFavorite, className."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CourseCard'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:row|feed)$/]",
+        "message": "<CourseCard> variant must be one of 'row' | 'feed'."
       },
       {
         "selector": "JSXOpeningElement[name.name='Dialog'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|eyebrow|title|description|children|actions|onClose|key|ref|className|style)$/]",

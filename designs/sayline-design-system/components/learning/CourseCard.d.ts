@@ -10,6 +10,8 @@ export interface CourseCardProps {
   colorB?: string;
   favorite?: boolean;
   progress?: number;
+  duration?: string;
+  variant?: "row" | "feed";
   onOpen?: () => void;
   onToggleFavorite?: () => void;
   className?: string;
