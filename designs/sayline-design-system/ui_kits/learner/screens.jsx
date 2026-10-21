@@ -124,18 +124,12 @@ function HomeScreen({
   return (
     <div className="app-screen home-screen">
       <header className="home-header">
-        <SaylineWordmark compact />
+        <span className="home-header__label">课程</span>
         <button aria-label="打开我的学习" className="profile-button" onClick={() => onNavigate("me")} type="button">
           <span>禾</span>
           <i></i>
         </button>
       </header>
-
-      <div className="home-greeting">
-        <p className="eyebrow">WEDNESDAY · 21 OCT</p>
-        <h1>今天，练点英语。</h1>
-        <p>保持自己的节奏，一句也算进步。</p>
-      </div>
 
       <Tabs
         ariaLabel="课程分类"
