@@ -147,8 +147,9 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 - 写模式以可滚动完整字幕流提供上下文，当前句嵌入按单词长度生成的填空线；字母逐字显示红绿反馈，离开输入区后自动提交
 - 听/读模式进入后显示控制区，6 秒后连同模式图标自动隐藏；点击画面恢复。写/说模式保持控制区常显
 - 上下滑动/方向键切换课程
-- 个人信息与周/月学习统计
-- 设置页：头像、昵称、手机号、字幕字号、字幕颜色，以及四种模式的中文翻译开关
+- 个人中心与周/月学习统计
+- 个人资料页：头像、昵称、手机号
+- 学习设置页：字幕字号、字幕颜色，以及四种模式的中文翻译开关
 - 学习偏好：添加/移除兴趣、排序、设置默认 Tab
 
 可用 URL 参数快速定位：
@@ -158,6 +159,8 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 - `?screen=interests`
 - `?screen=player&mode=listen|read|write|speak`
 - `?screen=me&period=week|month`
+- `?screen=profile-settings`
+- `?screen=learning-settings`
 - `?screen=preferences`
 - `?screen=home&category=favorite`
 

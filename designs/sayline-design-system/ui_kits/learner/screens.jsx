@@ -146,8 +146,28 @@ function HomeScreen({
 
   return (
     <div className="app-screen home-screen">
-      <header className="home-header">
-        <span className="home-header__label">课程</span>
+      <div className="home-top-row">
+        {searchOpen ? (
+          <label className="course-search">
+            <Icon name="search" size={19} />
+            <input
+              autoFocus
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="搜索课程或分类"
+              type="search"
+              value={searchTerm}
+            />
+            <span>{normalizedQuery ? `${searchResults.length} 个结果` : "输入关键词"}</span>
+          </label>
+        ) : (
+          <Tabs
+            ariaLabel="课程分类"
+            className="home-tabs"
+            items={tabItems}
+            onChange={onCategory}
+            value={category}
+          />
+        )}
         <IconButton
           aria-expanded={searchOpen}
           label={searchOpen ? "关闭搜索" : "搜索课程"}
@@ -158,29 +178,7 @@ function HomeScreen({
         >
           <Icon name={searchOpen ? "x" : "search"} size={21} />
         </IconButton>
-      </header>
-
-      {searchOpen ? (
-        <label className="course-search">
-          <Icon name="search" size={19} />
-          <input
-            autoFocus
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="搜索课程或分类"
-            type="search"
-            value={searchTerm}
-          />
-          <span>{normalizedQuery ? `${searchResults.length} 个结果` : "输入关键词"}</span>
-        </label>
-      ) : (
-        <Tabs
-          ariaLabel="课程分类"
-          className="home-tabs"
-          items={tabItems}
-          onChange={onCategory}
-          value={category}
-        />
-      )}
+      </div>
 
       <div className="home-scroll">
         {!searchOpen && category !== "favorite" && (
@@ -260,7 +258,8 @@ function MyScreen({
   setPeriod,
   onNavigate,
   onOpenPreferences,
-  onOpenSettings,
+  onOpenProfile,
+  onOpenLearningSettings,
   profile,
   learningSettings,
   interests,
@@ -276,16 +275,12 @@ function MyScreen({
     <div className="app-screen me-screen">
       <header className="me-header">
         <div>
-          <p className="eyebrow">MY SPACE</p>
           <h1>我的</h1>
         </div>
-        <IconButton label="打开设置" onClick={onOpenSettings} variant="outline">
-          <Icon name="settings-2" size={20} />
-        </IconButton>
       </header>
 
       <div className="me-scroll">
-        <button className="profile-card" onClick={onOpenSettings} type="button">
+        <button className="profile-card" onClick={onOpenProfile} type="button">
           <span className="profile-card__avatar">
             {profile.avatarUrl
               ? <img alt="" src={profile.avatarUrl} />
@@ -303,7 +298,15 @@ function MyScreen({
         </button>
 
         <section className="settings-shortcuts">
-          <button onClick={onOpenSettings} type="button">
+          <button onClick={onOpenProfile} type="button">
+            <span className="settings-shortcuts__icon"><Icon name="user-round" size={18} /></span>
+            <span>
+              <strong>个人资料</strong>
+              <small>头像、昵称和手机号</small>
+            </span>
+            <Icon name="chevron-right" size={18} />
+          </button>
+          <button onClick={onOpenLearningSettings} type="button">
             <span className="settings-shortcuts__icon"><Icon name="captions" size={18} /></span>
             <span>
               <strong>学习设置</strong>
@@ -322,12 +325,9 @@ function MyScreen({
           </button>
         </section>
 
-        <div className="report-title">
-          <div>
-            <p className="eyebrow">LEARNING REPORT</p>
-            <h2>学习统计</h2>
-          </div>
-          <span>{report.studiedDays} 天有学习</span>
+        <div className="study-summary-line">
+          <span>学习统计</span>
+          <em>{report.studiedDays} 天有学习</em>
         </div>
 
         <div className="period-switch">
@@ -483,49 +483,32 @@ function InterestOnboardingScreen({ onComplete }) {
   );
 }
 
-function SettingsScreen({
+function ProfileSettingsScreen({
   profile,
-  learningSettings,
   onBack,
   onSave,
-  onOpenPreferences,
 }) {
   const [draftProfile, setDraftProfile] = React.useState(profile);
-  const [draftSettings, setDraftSettings] = React.useState(learningSettings);
   const fileInputRef = React.useRef(null);
-  const captionColors = window.SaylineData.captionColors;
-  const captionSizes = window.SaylineData.captionSizes;
-  const translationModes = window.SaylineData.translationModes;
-  const activeColor = captionColors.find((item) => item.value === draftSettings.captionColor) || captionColors[0];
-
-  function updateTranslation(mode, checked) {
-    setDraftSettings((current) => ({
-      ...current,
-      translations: {
-        ...current.translations,
-        [mode]: checked,
-      },
-    }));
-  }
 
   return (
-    <div className="app-screen settings-screen">
+    <div className="app-screen settings-screen profile-settings-screen">
       <header className="settings-header">
         <IconButton label="返回我的" onClick={onBack}>
           <Icon name="chevron-left" size={23} />
         </IconButton>
         <div>
-          <p className="eyebrow">SETTINGS</p>
-          <h1>设置</h1>
+          <p className="eyebrow">ACCOUNT</p>
+          <h1>个人资料</h1>
         </div>
-        <span>PERSONAL</span>
+        <span>PROFILE</span>
       </header>
 
       <div className="settings-scroll">
         <section className="settings-section">
           <div className="settings-section__head">
-            <h2>个人信息</h2>
-            <span>PERSONAL PROFILE</span>
+            <h2>基本信息</h2>
+            <span>PERSONAL INFO</span>
           </div>
 
           <div className="settings-profile">
@@ -577,12 +560,60 @@ function SettingsScreen({
             />
           </div>
           <p className="settings-note">更换手机号后需要重新验证，验证流程将在正式开发中接入。</p>
+          <div className="settings-info-row">
+            <span>加入时间</span>
+            <strong>{draftProfile.joinedAt}</strong>
+          </div>
         </section>
+      </div>
 
+      <div className="settings-footer">
+        <Button fullWidth onClick={() => onSave(draftProfile)} size="lg">保存资料</Button>
+      </div>
+    </div>
+  );
+}
+
+function LearningSettingsScreen({
+  learningSettings,
+  onBack,
+  onSave,
+  onOpenPreferences,
+}) {
+  const [draftSettings, setDraftSettings] = React.useState(learningSettings);
+  const captionColors = window.SaylineData.captionColors;
+  const captionSizes = window.SaylineData.captionSizes;
+  const translationModes = window.SaylineData.translationModes;
+  const activeColor = captionColors.find((item) => item.value === draftSettings.captionColor) || captionColors[0];
+
+  function updateTranslation(mode, checked) {
+    setDraftSettings((current) => ({
+      ...current,
+      translations: {
+        ...current.translations,
+        [mode]: checked,
+      },
+    }));
+  }
+
+  return (
+    <div className="app-screen settings-screen learning-settings-screen">
+      <header className="settings-header">
+        <IconButton label="返回我的" onClick={onBack}>
+          <Icon name="chevron-left" size={23} />
+        </IconButton>
+        <div>
+          <p className="eyebrow">PLAYER</p>
+          <h1>学习设置</h1>
+        </div>
+        <span>READING</span>
+      </header>
+
+      <div className="settings-scroll">
         <section className="settings-section">
           <div className="settings-section__head">
-            <h2>学习设置</h2>
-            <span>PLAYER DISPLAY</span>
+            <h2>字幕显示</h2>
+            <span>CAPTION STYLE</span>
           </div>
 
           <div className="settings-control-group">
@@ -636,39 +667,39 @@ function SettingsScreen({
             <strong>Every sentence has its own rhythm.</strong>
             <small>每一句话都有自己的节奏。</small>
           </div>
+        </section>
 
-          <div className="settings-control-group settings-control-group--switches">
-            <div className="settings-control-group__label">
-              <strong>中文翻译</strong>
-              <span>分别控制四个学习模式</span>
-            </div>
-            <div className="translation-grid">
-              {translationModes.map((mode) => (
-                <Switch
-                  checked={draftSettings.translations[mode.value]}
-                  id={`translation-${mode.value}`}
-                  key={mode.value}
-                  onChange={(checked) => updateTranslation(mode.value, checked)}
-                >
-                  {mode.label}
-                </Switch>
-              ))}
-            </div>
+        <section className="settings-section">
+          <div className="settings-section__head">
+            <h2>中文翻译</h2>
+            <span>PER MODE</span>
+          </div>
+          <div className="translation-grid">
+            {translationModes.map((mode) => (
+              <Switch
+                checked={draftSettings.translations[mode.value]}
+                id={`translation-${mode.value}`}
+                key={mode.value}
+                onChange={(checked) => updateTranslation(mode.value, checked)}
+              >
+                {mode.label}
+              </Switch>
+            ))}
           </div>
         </section>
 
         <button className="settings-link-row" onClick={onOpenPreferences} type="button">
           <span><Icon name="settings-2" size={18} /></span>
           <div>
-            <strong>首页分类与默认 Tab</strong>
-            <small>调整兴趣、顺序和登录后的默认页面</small>
+            <strong>学习偏好</strong>
+            <small>管理兴趣分类、顺序和默认 Tab</small>
           </div>
           <Icon name="chevron-right" size={18} />
         </button>
       </div>
 
       <div className="settings-footer">
-        <Button fullWidth onClick={() => onSave(draftProfile, draftSettings)} size="lg">保存设置</Button>
+        <Button fullWidth onClick={() => onSave(draftSettings)} size="lg">保存学习设置</Button>
       </div>
     </div>
   );
@@ -836,7 +867,8 @@ Object.assign(window, {
   HomeScreen,
   MyScreen,
   InterestOnboardingScreen,
-  SettingsScreen,
+  ProfileSettingsScreen,
+  LearningSettingsScreen,
   PreferencesScreen,
   ContinueCard,
 });

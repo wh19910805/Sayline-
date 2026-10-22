@@ -4,7 +4,8 @@ const {
   HomeScreen,
   MyScreen,
   InterestOnboardingScreen,
-  SettingsScreen,
+  ProfileSettingsScreen,
+  LearningSettingsScreen,
   PreferencesScreen,
 } = window;
 const { PlayerScreen } = window.SaylinePlayer;
@@ -13,7 +14,7 @@ const { Toast } = window.SaylineDesignSystem_1a4fd3;
 function App() {
   const initialParams = new URLSearchParams(window.location.search);
   const requestedScreen = initialParams.get("screen");
-  const initialScreen = ["login", "interests", "home", "me", "player", "settings", "preferences"].includes(requestedScreen)
+  const initialScreen = ["login", "interests", "home", "me", "player", "profile-settings", "learning-settings", "preferences"].includes(requestedScreen)
     ? requestedScreen
     : "home";
   const initialInterests = window.SaylineData.defaultInterests;
@@ -121,10 +122,12 @@ function App() {
                   ? "account entry"
                   : screen === "interests"
                     ? "interest setup"
-                    : screen === "settings"
-                      ? "profile and learning settings"
-                    : screen === "preferences"
-                      ? "learning preferences"
+                    : screen === "profile-settings"
+                      ? "personal profile"
+                      : screen === "learning-settings"
+                        ? "learning display settings"
+                        : screen === "preferences"
+                          ? "learning preferences"
                       : "course discovery"}
           </span>
           <span>390 × 844</span>
@@ -162,33 +165,44 @@ function App() {
                 setPreferencesReturnTo("me");
                 setScreen("preferences");
               }}
-              onOpenSettings={() => setScreen("settings")}
+              onOpenLearningSettings={() => setScreen("learning-settings")}
+              onOpenProfile={() => setScreen("profile-settings")}
               period={period}
               profile={profile}
               setPeriod={setPeriod}
             />
           )}
-          {screen === "settings" && (
-            <SettingsScreen
-              learningSettings={learningSettings}
+          {screen === "profile-settings" && (
+            <ProfileSettingsScreen
               onBack={() => setScreen("me")}
-              onOpenPreferences={() => {
-                setPreferencesReturnTo("settings");
-                setScreen("preferences");
-              }}
-              onSave={(nextProfile, nextSettings) => {
+              onSave={(nextProfile) => {
                 setProfile({
                   ...nextProfile,
                   phoneMasked: nextProfile.phone.length > 7
                     ? `${nextProfile.phone.slice(0, 3)}****${nextProfile.phone.slice(-4)}`
                     : nextProfile.phone,
                 });
-                setLearningSettings(nextSettings);
                 setScreen("me");
-                setToast("设置已保存");
+                setToast("个人资料已保存");
                 window.setTimeout(() => setToast(""), 2200);
               }}
               profile={profile}
+            />
+          )}
+          {screen === "learning-settings" && (
+            <LearningSettingsScreen
+              learningSettings={learningSettings}
+              onBack={() => setScreen("me")}
+              onOpenPreferences={() => {
+                setPreferencesReturnTo("learning-settings");
+                setScreen("preferences");
+              }}
+              onSave={(nextSettings) => {
+                setLearningSettings(nextSettings);
+                setScreen("me");
+                setToast("学习设置已保存");
+                window.setTimeout(() => setToast(""), 2200);
+              }}
             />
           )}
           {screen === "preferences" && (

@@ -83,9 +83,10 @@ const ReviewRail = ({ screen, onNavigate }) => {
     ["interests", "02 / 兴趣选择"],
     ["home", "03 / 首页"],
     ["player", "04 / 播放器"],
-    ["me", "05 / 我的学习"],
-    ["settings", "06 / 设置"],
-    ["preferences", "07 / 学习偏好"],
+    ["me", "05 / 我的"],
+    ["profile-settings", "06 / 个人资料"],
+    ["learning-settings", "07 / 学习设置"],
+    ["preferences", "08 / 学习偏好"],
   ];
 
   return (
