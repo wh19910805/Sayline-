@@ -117,7 +117,7 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 
 - Core：`Icon`、`Button`、`IconButton`、`Input`、`Textarea`、`Checkbox`、`Badge`
 - Navigation：`Tabs`、`BottomNav`
-- Learning：`CategoryCard`、`ProgressBar`、`ModeSwitcher`、`CourseCard`、`StatTile`
+- Learning：`CategoryCard`、`ProgressBar`、`ModeSwitcher`、`CourseCard`、`StatTile`、`WordInput`
 - Feedback：`Dialog`、`Toast`
 
 所有组件都包含 `.d.ts` props 契约与 `.prompt.md` 使用说明。
@@ -133,6 +133,7 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 - 首页仅展示已选兴趣与“我喜欢”，支持课程搜索
 - 每个兴趣分类的瀑布流第一张为正方形分类图片，后续课程卡片使用不同高度形成错位
 - 播放器听、读、写、说四种模式
+- 写模式包含上一句/当前句/下一句、可切换中文翻译和按单词长度生成的下划线
 - 听/读模式进入后显示控制区，6 秒后连同模式图标自动隐藏；点击画面恢复。写/说模式保持控制区常显
 - 上下滑动/方向键切换课程
 - 个人信息与周/月学习统计

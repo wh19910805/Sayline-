@@ -372,6 +372,55 @@ textarea.sl-field__control {
   background: var(--player-text);
 }
 
+.sl-word-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 10px;
+  row-gap: 18px;
+}
+
+.sl-word-input__word {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  color: var(--color-text);
+  font-family: var(--font-ui);
+}
+
+.sl-word-input__word input {
+  width: calc(var(--letters) * 11px + 18px);
+  max-width: 100%;
+  min-width: 34px;
+  padding: 3px 2px 7px;
+  border: 0;
+  border-bottom: 1.5px solid var(--color-border-strong);
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: currentColor;
+  font-size: 16px;
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  text-align: center;
+  caret-color: var(--color-action);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.sl-word-input__word input:focus {
+  border-bottom-color: var(--color-action);
+}
+
+.sl-word-input__word input:disabled {
+  opacity: .45;
+}
+
+.sl-word-input__word > span {
+  padding-bottom: 7px;
+  color: var(--color-text-tertiary);
+  font-size: 16px;
+}
+
 .sl-mode-switch {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

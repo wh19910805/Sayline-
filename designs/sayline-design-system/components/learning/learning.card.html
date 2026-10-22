@@ -25,7 +25,7 @@
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
   <script src="../../_ds_bundle.js"></script>
   <script type="text/babel">
-    const { CategoryCard, CourseCard, ProgressBar, ModeSwitcher, StatTile } = window.SaylineDesignSystem_1a4fd3;
+    const { CategoryCard, CourseCard, ProgressBar, ModeSwitcher, StatTile, WordInput } = window.SaylineDesignSystem_1a4fd3;
 
     ReactDOM.createRoot(document.getElementById("cards")).render(
       <div style={{ display: "grid", gap: 10 }}>
@@ -39,6 +39,9 @@
         </div>
         <CourseCard title="Meeting a New Colleague" meta="职场英语 · 4 分 28 秒" favorite />
         <CourseCard title="Coffee Chat Basics" meta="日常口语 · 3 分 12 秒" colorA="#3a6485" colorB="#1b3346" progress={46} />
+        <div style={{ padding: "16px", borderRadius: 14, background: "#22281f", color: "#f4f0e8" }}>
+          <WordInput words={["Could", "we", "move", "the", "meeting", "to", "Friday?"]} />
+        </div>
       </div>,
     );
     ReactDOM.createRoot(document.getElementById("modes")).render(

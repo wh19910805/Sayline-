@@ -6,7 +6,7 @@ const {
   IconButton,
   ModeSwitcher,
   ProgressBar,
-  Textarea,
+  WordInput,
 } = window.SaylineDesignSystem_1a4fd3;
 
 const modeCopy = {
@@ -20,11 +20,6 @@ function formatAudioTime(seconds) {
   const safe = Math.max(0, Math.round(seconds));
   const minutes = Math.floor(safe / 60);
   return `${minutes}:${String(safe % 60).padStart(2, "0")}`;
-}
-
-function cueSeconds(cue) {
-  const [minutes, seconds] = cue.start.split(":").map(Number);
-  return minutes * 60 + seconds + (Number(cue.id) - 1) * 0.2;
 }
 
 function ListenMode({ course, activeCue, setActiveCue, showTranslation, setShowTranslation }) {
@@ -113,14 +108,20 @@ function WriteMode({
   course,
   activeCue,
   setActiveCue,
-  answer,
-  setAnswer,
+  wordAnswers,
+  setWordAnswers,
+  setFeedback,
+  showTranslation,
+  onToggleTranslation,
   feedback,
   onSubmit,
   onReplay,
   playing,
 }) {
   const cue = course.cues[activeCue];
+  const previousCue = course.cues[activeCue - 1];
+  const nextCue = course.cues[activeCue + 1];
+
   return (
     <div className="write-mode">
       <div className="mode-copy">
@@ -131,28 +132,58 @@ function WriteMode({
         <Badge>第 {activeCue + 1} / {course.cues.length} 句</Badge>
       </div>
 
-      <button className="cue-player" onClick={onReplay} type="button">
-        <span className="cue-player__icon"><Icon name={playing ? "pause" : "play"} size={19} /></span>
-        <span>
-          <strong>重听当前句</strong>
-          <small>{cue.start} — {cue.end}</small>
-        </span>
-        <span className="cue-player__mini-bars" aria-hidden="true">
-          <i></i><i></i><i></i><i></i>
-        </span>
-      </button>
+      <div className="write-context">
+        <div className="write-neighbor">
+          <span>上一句</span>
+          <p>{previousCue ? previousCue.en : "这是本课的第一句"}</p>
+          {showTranslation && previousCue && <small>{previousCue.zh}</small>}
+        </div>
 
-      <Textarea
-        aside={`${answer.length}/120`}
-        className="dictation-field"
-        id="dictation-answer"
-        label="写下你听到的英文"
-        maxLength={120}
-        onChange={(event) => setAnswer(event.target.value)}
-        placeholder="Type what you hear…"
-        rows={4}
-        value={answer}
-      />
+        <div className="write-current">
+          <div className="write-current__head">
+            <span className="write-current__label">当前句</span>
+            <div className="write-current__actions">
+              <button aria-label={playing ? "暂停当前句" : "播放当前句"} onClick={onReplay} type="button">
+                <Icon name={playing ? "pause" : "play"} size={17} />
+                <span>{playing ? "暂停" : "听原句"}</span>
+              </button>
+              <button
+                aria-pressed={showTranslation}
+                className={showTranslation ? "is-active" : ""}
+                onClick={onToggleTranslation}
+                type="button"
+              >
+                <Icon name="captions" size={17} />
+                <span>中文</span>
+              </button>
+            </div>
+          </div>
+          <p className={"write-current__translation " + (showTranslation ? "" : "is-hidden")}>
+            {showTranslation ? cue.zh : "中文翻译已隐藏"}
+          </p>
+        </div>
+
+        <div className="write-neighbor">
+          <span>下一句</span>
+          <p>{nextCue ? nextCue.en : "这是本课的最后一句"}</p>
+          {showTranslation && nextCue && <small>{nextCue.zh}</small>}
+        </div>
+      </div>
+
+      <div className="word-input-card">
+        <div className="word-input-card__head">
+          <span>逐词填写</span>
+          <small>按空格跳到下一个词</small>
+        </div>
+        <WordInput
+          onChange={(value) => {
+            setWordAnswers(value);
+            if (feedback) setFeedback("");
+          }}
+          value={wordAnswers}
+          words={cue.en.split(/\s+/)}
+        />
+      </div>
 
       {feedback === "wrong" && (
         <div className="dictation-feedback is-wrong">
@@ -171,7 +202,7 @@ function WriteMode({
         <Button fullWidth onClick={onSubmit} variant={feedback === "correct" ? "secondary" : "accent"}>
           {feedback === "correct" ? "下一句" : "提交答案"}
         </Button>
-        <button className="skip-link" onClick={() => { setAnswer(""); setActiveCue((value) => Math.min(course.cues.length - 1, value + 1)); }} type="button">
+        <button className="skip-link" onClick={() => { setWordAnswers([]); setActiveCue((value) => Math.min(course.cues.length - 1, value + 1)); }} type="button">
           暂时跳过这一句
         </button>
       </div>
@@ -281,7 +312,7 @@ function PlayerScreen({
   const [showTranslation, setShowTranslation] = React.useState(true);
   const [playing, setPlaying] = React.useState(false);
   const [speed, setSpeed] = React.useState(1);
-  const [answer, setAnswer] = React.useState("");
+  const [wordAnswers, setWordAnswers] = React.useState([]);
   const [feedback, setFeedback] = React.useState("");
   const [recording, setRecording] = React.useState(false);
   const [recorded, setRecorded] = React.useState(false);
@@ -312,6 +343,11 @@ function PlayerScreen({
     const timer = window.setInterval(() => setRecordSeconds((value) => value + 0.1), 100);
     return () => window.clearInterval(timer);
   }, [recording]);
+
+  React.useEffect(() => {
+    setWordAnswers([]);
+    setFeedback("");
+  }, [activeCue, course.id]);
 
   React.useEffect(() => {
     function handleKeyDown(event) {
@@ -346,7 +382,7 @@ function PlayerScreen({
 
   function submitDictation() {
     const normalize = (text) => text.toLowerCase().replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
-    const correct = normalize(answer) === normalize(current.en);
+    const correct = normalize(wordAnswers.join(" ")) === normalize(current.en);
     setFeedback(correct ? "correct" : "wrong");
     if (correct) {
       setModeProgress((value) => ({ ...value, write: Math.min(100, value.write + 20) }));
@@ -488,25 +524,25 @@ function PlayerScreen({
         {mode === "write" && (
           <WriteMode
             activeCue={activeCue}
-            answer={answer}
             course={course}
             feedback={feedback}
             onReplay={() => setPlaying((value) => !value)}
             onSubmit={() => {
               if (feedback === "correct") {
                 setFeedback("");
-                setAnswer("");
+                setWordAnswers([]);
                 setActiveCue((value) => Math.min(course.cues.length - 1, value + 1));
               } else {
                 submitDictation();
               }
             }}
+            onToggleTranslation={() => setShowTranslation((value) => !value)}
             playing={playing}
+            setFeedback={setFeedback}
             setActiveCue={setActiveCue}
-            setAnswer={(value) => {
-              setAnswer(value);
-              if (feedback) setFeedback("");
-            }}
+            setWordAnswers={setWordAnswers}
+            showTranslation={showTranslation}
+            wordAnswers={wordAnswers}
           />
         )}
         {mode === "speak" && (

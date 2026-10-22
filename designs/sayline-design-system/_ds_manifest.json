@@ -439,6 +439,36 @@
       ]
     },
     {
+      "name": "WordInput",
+      "sourcePath": "components/learning/WordInput.jsx",
+      "props": [
+        {
+          "name": "words",
+          "type": "string[]"
+        },
+        {
+          "name": "value",
+          "type": "string[]"
+        },
+        {
+          "name": "onChange",
+          "type": "(value: string[]) => void"
+        },
+        {
+          "name": "disabled",
+          "type": "boolean"
+        },
+        {
+          "name": "label",
+          "type": "string"
+        },
+        {
+          "name": "className",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "BottomNav",
       "sourcePath": "components/navigation/BottomNav.jsx",
       "props": [
@@ -615,6 +645,15 @@
       "section": "Learning",
       "subtitle": "Responsive learning metric tile",
       "viewport": "700x240"
+    },
+    {
+      "name": "WordInput",
+      "path": "components/learning/WordInput.jsx",
+      "previewPath": "components/learning/learning.card.html",
+      "kind": "component",
+      "section": "Learning",
+      "subtitle": "Word-length dictation blanks",
+      "viewport": "700x360"
     },
     {
       "name": "BottomNav",

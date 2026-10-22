@@ -1989,87 +1989,137 @@ button {
   color: rgba(255,250,240,.64);
 }
 
-.cue-player {
-  min-height: 61px;
+.write-context {
+  display: grid;
+  gap: 6px;
+}
+
+.write-neighbor,
+.write-current {
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 11px;
+  background: rgba(16,21,15,.2);
+}
+
+.write-neighbor {
+  padding: 8px 10px;
+  opacity: .52;
+}
+
+.write-neighbor > span,
+.write-current__label {
+  color: rgba(255,250,240,.36);
+  font-size: 7px;
+  letter-spacing: .08em;
+}
+
+.write-neighbor p {
+  margin: 4px 0 0;
+  color: rgba(255,250,240,.78);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.write-neighbor small {
+  display: block;
+  margin-top: 3px;
+  color: rgba(255,250,240,.38);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.write-current {
+  padding: 10px 11px;
+  border-color: rgba(217,181,110,.3);
+  background: rgba(255,250,240,.08);
+}
+
+.write-current__head {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 10px 12px;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.write-current__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.write-current__actions button {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
   border: 1px solid rgba(255,255,255,.12);
-  border-radius: var(--radius-md);
-  background: rgba(255,255,255,.06);
-  color: var(--player-text);
-  text-align: left;
+  border-radius: var(--radius-pill);
+  background: rgba(255,255,255,.05);
+  color: rgba(255,250,240,.62);
+  font-size: 8px;
   cursor: pointer;
 }
 
-.cue-player__icon {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: rgba(255,250,240,.9);
-  color: var(--color-ink-900);
+.write-current__actions button.is-active {
+  border-color: rgba(217,181,110,.38);
+  color: var(--color-oat-200);
+  background: rgba(217,181,110,.1);
 }
 
-.cue-player > span:nth-child(2) {
-  display: grid;
-  gap: 3px;
+.write-current__translation {
+  margin: 9px 0 0;
+  color: rgba(255,250,240,.74);
+  font-size: 12px;
+  line-height: 1.55;
 }
 
-.cue-player strong {
-  font-size: 10px;
+.write-current__translation.is-hidden {
+  color: rgba(255,250,240,.3);
+  font-size: 9px;
+  font-style: italic;
+}
+
+.word-input-card {
+  display: grid;
+  gap: 13px;
+  padding: 13px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: var(--radius-md);
+  background: rgba(9,13,9,.2);
+}
+
+.word-input-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.word-input-card__head span {
+  color: rgba(255,250,240,.72);
+  font-size: 9px;
   font-weight: var(--weight-semibold);
 }
 
-.cue-player small {
-  color: rgba(255,250,240,.4);
-  font-size: 8px;
+.word-input-card__head small {
+  color: rgba(255,250,240,.3);
+  font-size: 7px;
 }
 
-.cue-player__mini-bars {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.cue-player__mini-bars i {
-  width: 2px;
-  height: 12px;
-  border-radius: 4px;
-  background: var(--color-oat-500);
-}
-
-.cue-player__mini-bars i:nth-child(2) { height: 22px; }
-.cue-player__mini-bars i:nth-child(3) { height: 16px; }
-.cue-player__mini-bars i:nth-child(4) { height: 9px; }
-
-.player-screen .sl-field {
+.player-screen .sl-word-input__word {
   color: var(--player-text);
 }
 
-.player-screen .sl-field__label {
-  color: rgba(255,250,240,.68);
-  font-size: 10px;
+.player-screen .sl-word-input__word input {
+  border-bottom-color: rgba(255,250,240,.4);
 }
 
-.player-screen .sl-field__aside,
-.player-screen .sl-field__hint {
-  color: rgba(255,250,240,.36);
+.player-screen .sl-word-input__word input:focus {
+  border-bottom-color: var(--color-oat-500);
 }
 
-.player-screen .sl-field__control {
-  min-height: 95px;
-  border-color: rgba(255,255,255,.13);
-  background: rgba(14,18,13,.2);
-  color: var(--player-text);
-}
-
-.player-screen .sl-field__control::placeholder {
-  color: rgba(255,250,240,.28);
+.player-screen .sl-word-input__word > span {
+  color: rgba(255,250,240,.42);
 }
 
 .dictation-feedback {
