@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CategoryCard","sourcePath":"components/learning/CategoryCard.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"WordInput","sourcePath":"components/learning/WordInput.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"ecb82d2b8de5","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CategoryCard.jsx":"d7c5f606f862","components/learning/CourseCard.jsx":"91495d6bfafe","components/learning/ModeSwitcher.jsx":"1e910a80ba0f","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/learning/WordInput.jsx":"31783497cfd3","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"ae8a0f5b6241","ui_kits/learner/data.jsx":"c3d748fb0e55","ui_kits/learner/player.jsx":"eafcf36eb7d0","ui_kits/learner/screens.jsx":"f0b8d405ce16","ui_kits/learner/shared.jsx":"a20116a63ff4"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CategoryCard","sourcePath":"components/learning/CategoryCard.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"WordInput","sourcePath":"components/learning/WordInput.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"ecb82d2b8de5","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CategoryCard.jsx":"d7c5f606f862","components/learning/CourseCard.jsx":"91495d6bfafe","components/learning/ModeSwitcher.jsx":"1e910a80ba0f","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/learning/WordInput.jsx":"8fb78c2b1d9c","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"ae8a0f5b6241","ui_kits/learner/data.jsx":"c3d748fb0e55","ui_kits/learner/player.jsx":"773660f515cb","ui_kits/learner/screens.jsx":"f0b8d405ce16","ui_kits/learner/shared.jsx":"a20116a63ff4"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -596,6 +596,7 @@ function WordInput({
   onChange,
   disabled = false,
   label = "逐词填写",
+  onComplete,
   className = ""
 }) {
   const inputsRef = React.useRef([]);
@@ -615,35 +616,57 @@ function WordInput({
       event.preventDefault();
       inputsRef.current[index - 1]?.focus();
     }
+    if (event.key === "Enter") {
+      event.currentTarget.blur();
+    }
   }
   return /*#__PURE__*/React.createElement("div", {
     "aria-label": label,
     className: ["sl-word-input", className].filter(Boolean).join(" "),
+    onBlur: event => {
+      const group = event.currentTarget;
+      window.setTimeout(() => {
+        if (!group.contains(document.activeElement)) onComplete?.();
+      }, 0);
+    },
     role: "group"
   }, words.map((word, index) => {
     const punctuation = trailingPunctuation(word);
     const letterCount = Math.max(1, countLetters(word));
+    const typed = currentValues[index] || "";
+    const expectedLetters = word.replace(/[^A-Za-z']/g, "");
     return /*#__PURE__*/React.createElement("label", {
       className: "sl-word-input__word",
       key: `${word}-${index}`
-    }, /*#__PURE__*/React.createElement("input", {
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "sl-word-input__cell",
+      style: {
+        "--letters": letterCount
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      "aria-hidden": "true",
+      className: "sl-word-input__mirror"
+    }, Array.from(typed).map((letter, letterIndex) => /*#__PURE__*/React.createElement("span", {
+      className: letter.toLowerCase() === expectedLetters[letterIndex]?.toLowerCase() ? "is-correct" : "is-wrong",
+      key: letterIndex
+    }, letter))), /*#__PURE__*/React.createElement("input", {
       "aria-label": `第 ${index + 1} 个单词，共 ${words.length} 个`,
       autoCapitalize: "none",
       autoComplete: "off",
+      autoCorrect: "off",
       disabled: disabled,
+      maxLength: letterCount,
       onChange: event => updateWord(index, event.target.value),
       onKeyDown: event => handleKeyDown(event, index),
       ref: element => {
         inputsRef.current[index] = element;
       },
       spellCheck: "false",
-      style: {
-        "--letters": letterCount
-      },
       type: "text",
-      value: currentValues[index] || ""
-    }), punctuation && /*#__PURE__*/React.createElement("span", {
-      "aria-hidden": "true"
+      value: typed
+    })), punctuation && /*#__PURE__*/React.createElement("span", {
+      "aria-hidden": "true",
+      className: "sl-word-input__punctuation"
     }, punctuation));
   }));
 }
@@ -1562,13 +1585,20 @@ function WriteMode({
   showTranslation,
   onToggleTranslation,
   feedback,
-  onSubmit,
+  onAutoSubmit,
+  onNext,
   onReplay,
   playing
 }) {
   const cue = course.cues[activeCue];
-  const previousCue = course.cues[activeCue - 1];
-  const nextCue = course.cues[activeCue + 1];
+  const transcriptRef = React.useRef(null);
+  const currentRef = React.useRef(null);
+  React.useEffect(() => {
+    const container = transcriptRef.current;
+    const currentBlock = currentRef.current;
+    if (!container || !currentBlock) return;
+    container.scrollTop = Math.max(0, currentBlock.offsetTop - container.clientHeight * 0.16);
+  }, [activeCue, course.id, showTranslation]);
   return /*#__PURE__*/React.createElement("div", {
     className: "write-mode"
   }, /*#__PURE__*/React.createElement("div", {
@@ -1576,71 +1606,86 @@ function WriteMode({
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "eyebrow"
   }, "DICTATION \xB7 ", activeCue + 1, "/", course.cues.length), /*#__PURE__*/React.createElement("h2", null, modeCopy.write.title)), /*#__PURE__*/React.createElement(Badge, null, "\u7B2C ", activeCue + 1, " / ", course.cues.length, " \u53E5")), /*#__PURE__*/React.createElement("div", {
-    className: "write-context"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "write-neighbor"
-  }, /*#__PURE__*/React.createElement("span", null, "\u4E0A\u4E00\u53E5"), /*#__PURE__*/React.createElement("p", null, previousCue ? previousCue.en : "这是本课的第一句"), showTranslation && previousCue && /*#__PURE__*/React.createElement("small", null, previousCue.zh)), /*#__PURE__*/React.createElement("div", {
-    className: "write-current"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "write-current__head"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "write-current__label"
-  }, "\u5F53\u524D\u53E5"), /*#__PURE__*/React.createElement("div", {
-    className: "write-current__actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    "aria-label": playing ? "暂停当前句" : "播放当前句",
-    onClick: onReplay,
-    type: "button"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: playing ? "pause" : "play",
-    size: 17
-  }), /*#__PURE__*/React.createElement("span", null, playing ? "暂停" : "听原句")), /*#__PURE__*/React.createElement("button", {
-    "aria-pressed": showTranslation,
-    className: showTranslation ? "is-active" : "",
-    onClick: onToggleTranslation,
-    type: "button"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "captions",
-    size: 17
-  }), /*#__PURE__*/React.createElement("span", null, "\u4E2D\u6587")))), /*#__PURE__*/React.createElement("p", {
-    className: "write-current__translation " + (showTranslation ? "" : "is-hidden")
-  }, showTranslation ? cue.zh : "中文翻译已隐藏")), /*#__PURE__*/React.createElement("div", {
-    className: "write-neighbor"
-  }, /*#__PURE__*/React.createElement("span", null, "\u4E0B\u4E00\u53E5"), /*#__PURE__*/React.createElement("p", null, nextCue ? nextCue.en : "这是本课的最后一句"), showTranslation && nextCue && /*#__PURE__*/React.createElement("small", null, nextCue.zh))), /*#__PURE__*/React.createElement("div", {
-    className: "word-input-card"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "word-input-card__head"
-  }, /*#__PURE__*/React.createElement("span", null, "\u9010\u8BCD\u586B\u5199"), /*#__PURE__*/React.createElement("small", null, "\u6309\u7A7A\u683C\u8DF3\u5230\u4E0B\u4E00\u4E2A\u8BCD")), /*#__PURE__*/React.createElement(WordInput, {
-    onChange: value => {
-      setWordAnswers(value);
-      if (feedback) setFeedback("");
-    },
-    value: wordAnswers,
-    words: cue.en.split(/\s+/)
-  })), feedback === "wrong" && /*#__PURE__*/React.createElement("div", {
-    className: "dictation-feedback is-wrong"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Icon, {
-    name: "x",
-    size: 16
-  }), /*#__PURE__*/React.createElement("strong", null, "\u8FD8\u5DEE\u4E00\u70B9")), /*#__PURE__*/React.createElement("p", null, "\u518D\u542C\u4E00\u6B21\uFF0C\u6CE8\u610F \u201Cmeeting\u201D \u548C \u201CFriday\u201D\u3002")), feedback === "correct" && /*#__PURE__*/React.createElement("div", {
-    className: "dictation-feedback is-correct"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Icon, {
-    name: "circle-check",
-    size: 16
-  }), /*#__PURE__*/React.createElement("strong", null, "\u5199\u5BF9\u4E86")), /*#__PURE__*/React.createElement("p", null, cue.en)), /*#__PURE__*/React.createElement("div", {
-    className: "mode-actions"
-  }, /*#__PURE__*/React.createElement(Button, {
-    fullWidth: true,
-    onClick: onSubmit,
-    variant: feedback === "correct" ? "secondary" : "accent"
-  }, feedback === "correct" ? "下一句" : "提交答案"), /*#__PURE__*/React.createElement("button", {
-    className: "skip-link",
-    onClick: () => {
-      setWordAnswers([]);
-      setActiveCue(value => Math.min(course.cues.length - 1, value + 1));
-    },
-    type: "button"
-  }, "\u6682\u65F6\u8DF3\u8FC7\u8FD9\u4E00\u53E5")));
+    className: "write-transcript",
+    ref: transcriptRef
+  }, course.cues.map((item, index) => {
+    if (index !== activeCue) {
+      return /*#__PURE__*/React.createElement("div", {
+        className: "write-context-row " + (index < activeCue ? "is-before" : "is-after"),
+        key: item.id
+      }, /*#__PURE__*/React.createElement("span", null, String(index + 1).padStart(2, "0")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+        lang: "en"
+      }, item.en), showTranslation && /*#__PURE__*/React.createElement("small", {
+        lang: "zh"
+      }, item.zh)));
+    }
+    return /*#__PURE__*/React.createElement("section", {
+      className: "write-current",
+      key: item.id,
+      ref: currentRef
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "write-current__head"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "write-current__label"
+    }, "\u5F53\u524D\u53E5 \xB7 ", String(index + 1).padStart(2, "0")), /*#__PURE__*/React.createElement("div", {
+      className: "write-current__actions"
+    }, /*#__PURE__*/React.createElement("button", {
+      "aria-label": playing ? "暂停当前句" : "播放当前句",
+      onClick: onReplay,
+      type: "button"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: playing ? "pause" : "play",
+      size: 17
+    }), /*#__PURE__*/React.createElement("span", null, playing ? "暂停" : "听原句")), /*#__PURE__*/React.createElement("button", {
+      "aria-pressed": showTranslation,
+      className: showTranslation ? "is-active" : "",
+      onClick: onToggleTranslation,
+      type: "button"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "captions",
+      size: 17
+    }), /*#__PURE__*/React.createElement("span", null, "\u4E2D\u6587")))), /*#__PURE__*/React.createElement("p", {
+      className: "write-current__translation " + (showTranslation ? "" : "is-hidden")
+    }, showTranslation ? cue.zh : "中文翻译已隐藏"), /*#__PURE__*/React.createElement("div", {
+      className: "word-input-card"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "word-input-card__head"
+    }, /*#__PURE__*/React.createElement("span", null, "\u9010\u8BCD\u586B\u5199"), /*#__PURE__*/React.createElement("small", null, "\u79BB\u5F00\u8F93\u5165\u533A\u81EA\u52A8\u63D0\u4EA4")), /*#__PURE__*/React.createElement(WordInput, {
+      onChange: value => {
+        setWordAnswers(value);
+        if (feedback) setFeedback("");
+      },
+      onComplete: onAutoSubmit,
+      value: wordAnswers,
+      words: cue.en.split(/\s+/)
+    })), feedback === "wrong" && /*#__PURE__*/React.createElement("div", {
+      className: "dictation-feedback is-wrong"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Icon, {
+      name: "x",
+      size: 16
+    }), /*#__PURE__*/React.createElement("strong", null, "\u8FD8\u5DEE\u4E00\u70B9")), /*#__PURE__*/React.createElement("p", null, "\u518D\u542C\u4E00\u6B21\uFF0C\u6CE8\u610F \u201Cmeeting\u201D \u548C \u201CFriday\u201D\u3002")), feedback === "correct" && /*#__PURE__*/React.createElement("div", {
+      className: "dictation-feedback is-correct"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Icon, {
+      name: "circle-check",
+      size: 16
+    }), /*#__PURE__*/React.createElement("strong", null, "\u5199\u5BF9\u4E86")), /*#__PURE__*/React.createElement("p", null, cue.en)), /*#__PURE__*/React.createElement("div", {
+      className: "mode-actions write-current__actions-bottom"
+    }, feedback === "correct" && /*#__PURE__*/React.createElement("button", {
+      className: "next-sentence-link",
+      onClick: onNext,
+      type: "button"
+    }, "\u7EE7\u7EED\u4E0B\u4E00\u53E5 ", /*#__PURE__*/React.createElement(Icon, {
+      name: "chevron-right",
+      size: 17
+    })), /*#__PURE__*/React.createElement("button", {
+      className: "skip-link",
+      onClick: () => {
+        setWordAnswers([]);
+        setActiveCue(value => Math.min(course.cues.length - 1, value + 1));
+      },
+      type: "button"
+    }, "\u6682\u65F6\u8DF3\u8FC7\u8FD9\u4E00\u53E5")));
+  })));
 }
 function SpeakMode({
   course,
@@ -1892,7 +1937,7 @@ function PlayerScreen({
     setRecording(true);
   }
   function handlePointerDown(event) {
-    if (event.target.closest("input, textarea, .audio-deck, .sl-mode-switch, .player-header, .player-identity, .player-complete-row, .mode-actions, .record-button")) return;
+    if (event.target.closest("input, textarea, .audio-deck, .sl-mode-switch, .player-header, .player-identity, .player-complete-row, .mode-actions, .record-button, .write-transcript")) return;
     swipeStart.current = {
       x: event.clientX,
       y: event.clientY
@@ -1997,16 +2042,13 @@ function PlayerScreen({
     activeCue: activeCue,
     course: course,
     feedback: feedback,
-    onReplay: () => setPlaying(value => !value),
-    onSubmit: () => {
-      if (feedback === "correct") {
-        setFeedback("");
-        setWordAnswers([]);
-        setActiveCue(value => Math.min(course.cues.length - 1, value + 1));
-      } else {
-        submitDictation();
-      }
+    onAutoSubmit: submitDictation,
+    onNext: () => {
+      setFeedback("");
+      setWordAnswers([]);
+      setActiveCue(value => Math.min(course.cues.length - 1, value + 1));
     },
+    onReplay: () => setPlaying(value => !value),
     onToggleTranslation: () => setShowTranslation(value => !value),
     playing: playing,
     setFeedback: setFeedback,

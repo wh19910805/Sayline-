@@ -146,8 +146,8 @@
         "message": "<Toast> tone must be one of 'neutral' | 'success' | 'danger'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='WordInput'] > JSXAttribute > JSXIdentifier[name!=/^(?:words|value|onChange|disabled|label|className|key|ref|style|children)$/]",
-        "message": "<WordInput> doesn't accept that prop. Declared props: words, value, onChange, disabled, label, className."
+        "selector": "JSXOpeningElement[name.name='WordInput'] > JSXAttribute > JSXIdentifier[name!=/^(?:words|value|onChange|disabled|label|onComplete|className|key|ref|style|children)$/]",
+        "message": "<WordInput> doesn't accept that prop. Declared props: words, value, onChange, disabled, label, onComplete, className."
       }
     ]
   },

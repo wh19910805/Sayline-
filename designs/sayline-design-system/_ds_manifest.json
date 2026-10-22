@@ -463,6 +463,10 @@
           "type": "string"
         },
         {
+          "name": "onComplete",
+          "type": "() => void"
+        },
+        {
           "name": "className",
           "type": "string"
         }

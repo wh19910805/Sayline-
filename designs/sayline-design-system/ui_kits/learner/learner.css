@@ -2113,6 +2113,21 @@ button {
   margin-top: 10px;
 }
 
+.next-sentence-link {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: var(--radius-pill);
+  background: rgba(255,250,240,.9);
+  color: var(--color-ink-900);
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
 .word-input-card {
   display: grid;
   gap: 13px;
@@ -2144,16 +2159,24 @@ button {
   color: var(--player-text);
 }
 
-.player-screen .sl-word-input__word input {
+.player-screen .sl-word-input__cell {
   border-bottom-color: rgba(255,250,240,.4);
 }
 
-.player-screen .sl-word-input__word input:focus {
+.player-screen .sl-word-input__cell:focus-within {
   border-bottom-color: var(--color-oat-500);
 }
 
-.player-screen .sl-word-input__word > span {
+.player-screen .sl-word-input__punctuation {
   color: rgba(255,250,240,.42);
+}
+
+.player-screen .sl-word-input__mirror .is-correct {
+  color: #8fd49c;
+}
+
+.player-screen .sl-word-input__mirror .is-wrong {
+  color: #ff9b91;
 }
 
 .dictation-feedback {

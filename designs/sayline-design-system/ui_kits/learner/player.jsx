@@ -114,7 +114,8 @@ function WriteMode({
   showTranslation,
   onToggleTranslation,
   feedback,
-  onSubmit,
+  onAutoSubmit,
+  onNext,
   onReplay,
   playing,
 }) {
@@ -186,13 +187,14 @@ function WriteMode({
               <div className="word-input-card">
                 <div className="word-input-card__head">
                   <span>逐词填写</span>
-                  <small>按空格跳到下一个词</small>
+                  <small>离开输入区自动提交</small>
                 </div>
                 <WordInput
                   onChange={(value) => {
                     setWordAnswers(value);
                     if (feedback) setFeedback("");
                   }}
+                  onComplete={onAutoSubmit}
                   value={wordAnswers}
                   words={cue.en.split(/\s+/)}
                 />
@@ -212,9 +214,11 @@ function WriteMode({
               )}
 
               <div className="mode-actions write-current__actions-bottom">
-                <Button fullWidth onClick={onSubmit} variant={feedback === "correct" ? "secondary" : "accent"}>
-                  {feedback === "correct" ? "下一句" : "提交答案"}
-                </Button>
+                {feedback === "correct" && (
+                  <button className="next-sentence-link" onClick={onNext} type="button">
+                    继续下一句 <Icon name="chevron-right" size={17} />
+                  </button>
+                )}
                 <button className="skip-link" onClick={() => { setWordAnswers([]); setActiveCue((value) => Math.min(course.cues.length - 1, value + 1)); }} type="button">
                   暂时跳过这一句
                 </button>
@@ -543,16 +547,13 @@ function PlayerScreen({
             activeCue={activeCue}
             course={course}
             feedback={feedback}
-            onReplay={() => setPlaying((value) => !value)}
-            onSubmit={() => {
-              if (feedback === "correct") {
-                setFeedback("");
-                setWordAnswers([]);
-                setActiveCue((value) => Math.min(course.cues.length - 1, value + 1));
-              } else {
-                submitDictation();
-              }
+            onAutoSubmit={submitDictation}
+            onNext={() => {
+              setFeedback("");
+              setWordAnswers([]);
+              setActiveCue((value) => Math.min(course.cues.length - 1, value + 1));
             }}
+            onReplay={() => setPlaying((value) => !value)}
             onToggleTranslation={() => setShowTranslation((value) => !value)}
             playing={playing}
             setFeedback={setFeedback}

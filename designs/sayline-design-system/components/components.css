@@ -388,34 +388,67 @@ textarea.sl-field__control {
   font-family: var(--font-ui);
 }
 
-.sl-word-input__word input {
+.sl-word-input__cell {
+  position: relative;
+  display: inline-block;
   width: calc(var(--letters) * 11px + 18px);
+  min-width: 34px;
+  border-bottom: 1.5px solid var(--color-border-strong);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.sl-word-input__cell:focus-within {
+  border-bottom-color: var(--color-action);
+}
+
+.sl-word-input__mirror {
+  position: absolute;
+  inset: 0 0 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: currentColor;
+  font-size: 16px;
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.sl-word-input__mirror .is-correct {
+  color: var(--color-success);
+}
+
+.sl-word-input__mirror .is-wrong {
+  color: var(--color-danger);
+}
+
+.sl-word-input__word input {
+  position: relative;
+  z-index: 1;
+  width: 100%;
   max-width: 100%;
   min-width: 34px;
   padding: 3px 2px 7px;
   border: 0;
-  border-bottom: 1.5px solid var(--color-border-strong);
   border-radius: 0;
   outline: none;
   background: transparent;
-  color: currentColor;
+  color: transparent;
   font-size: 16px;
   font-weight: var(--weight-semibold);
   line-height: 1.2;
   text-align: center;
   caret-color: var(--color-action);
-  transition: border-color var(--duration-fast) var(--ease-out);
-}
-
-.sl-word-input__word input:focus {
-  border-bottom-color: var(--color-action);
+  -webkit-text-fill-color: transparent;
 }
 
 .sl-word-input__word input:disabled {
   opacity: .45;
 }
 
-.sl-word-input__word > span {
+.sl-word-input__punctuation {
   padding-bottom: 7px;
   color: var(--color-text-tertiary);
   font-size: 16px;

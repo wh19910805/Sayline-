@@ -8,6 +8,7 @@ export interface WordInputProps {
   onChange?: (value: string[]) => void;
   disabled?: boolean;
   label?: string;
+  onComplete?: () => void;
   className?: string;
 }
 
