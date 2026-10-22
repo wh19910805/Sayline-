@@ -40,6 +40,10 @@ management:
 
 app:
   frontend-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  jwt-secret: ${JWT_SECRET:dev-only-sayline-secret-change-before-production}
+  access-token-minutes: 15
+  refresh-token-days: 30
+  cookie-secure: ${COOKIE_SECURE:false}
 
 logging:
   pattern:
