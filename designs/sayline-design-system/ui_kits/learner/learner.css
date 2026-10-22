@@ -2240,8 +2240,31 @@ button {
 }
 
 .audio-deck {
-  flex: 0 0 auto;
-  padding: 4px 18px 0;
+  padding: 7px 9px 4px;
+}
+
+.player-control-layer {
+  position: absolute;
+  z-index: 3;
+  left: 13px;
+  right: 13px;
+  bottom: calc(102px + var(--safe-bottom));
+  padding: 2px 4px 4px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(15,19,14,.08), rgba(12,16,11,.4));
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+
+.player-control-layer.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .audio-deck__times {
@@ -2269,8 +2292,8 @@ button {
 
 .audio-deck__track {
   position: relative;
-  height: 3px;
-  margin: 5px 0 4px;
+  height: 4px;
+  margin: 7px 0 6px;
   border-radius: 99px;
   background: rgba(255,255,255,.18);
 }
@@ -2296,17 +2319,46 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 4px;
+  gap: 5px;
+  padding: 2px 3px 0;
 }
 
 .audio-deck__controls .sl-icon-button {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
+}
+
+.transport-round {
+  position: relative;
+  border: 1px solid rgba(255,250,240,.38) !important;
+}
+
+.transport-round > span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: block;
+  color: currentColor;
+  font-size: 7px;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.transport-skip {
+  color: rgba(255,250,240,.92) !important;
+}
+
+.transport-skip .sl-icon,
+.audio-play .sl-icon {
+  fill: currentColor;
+  stroke: currentColor;
 }
 
 .audio-play {
-  width: 50px;
-  height: 50px;
+  width: 54px;
+  height: 54px;
   display: grid;
   place-items: center;
   border: 0;

@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CategoryCard","sourcePath":"components/learning/CategoryCard.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"5e325bd687ee","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CategoryCard.jsx":"d7c5f606f862","components/learning/CourseCard.jsx":"91495d6bfafe","components/learning/ModeSwitcher.jsx":"1e910a80ba0f","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"ae8a0f5b6241","ui_kits/learner/data.jsx":"29b25ef755b8","ui_kits/learner/player.jsx":"8fc6ee3d566a","ui_kits/learner/screens.jsx":"f0b8d405ce16","ui_kits/learner/shared.jsx":"a20116a63ff4"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CategoryCard","sourcePath":"components/learning/CategoryCard.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"ecb82d2b8de5","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CategoryCard.jsx":"d7c5f606f862","components/learning/CourseCard.jsx":"91495d6bfafe","components/learning/ModeSwitcher.jsx":"1e910a80ba0f","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"ae8a0f5b6241","ui_kits/learner/data.jsx":"29b25ef755b8","ui_kits/learner/player.jsx":"3798f34a5fa5","ui_kits/learner/screens.jsx":"f0b8d405ce16","ui_kits/learner/shared.jsx":"a20116a63ff4"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -107,6 +107,8 @@ const iconMarkup = {
   "rotate-cw": "<path d=\"M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8\" /> <path d=\"M21 3v5h-5\" />",
   "search": "<path d=\"m21 21-4.34-4.34\" /> <circle cx=\"11\" cy=\"11\" r=\"8\" />",
   "settings-2": "<path d=\"M14 17H5\" /> <path d=\"M19 7h-9\" /> <circle cx=\"17\" cy=\"17\" r=\"3\" /> <circle cx=\"7\" cy=\"7\" r=\"3\" />",
+  "skip-back": "<path d=\"M17.971 4.285A2 2 0 0 1 21 6v12a2 2 0 0 1-3.029 1.715l-9.997-5.998a2 2 0 0 1-.003-3.432z\" /> <path d=\"M3 20V4\" />",
+  "skip-forward": "<path d=\"M21 4v16\" /> <path d=\"M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z\" />",
   "sparkles": "<path d=\"M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z\" /> <path d=\"M20 2v4\" /> <path d=\"M22 4h-4\" /> <circle cx=\"4\" cy=\"20\" r=\"2\" />",
   "square": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />",
   "trash-2": "<path d=\"M10 11v6\" /> <path d=\"M14 11v6\" /> <path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\" /> <path d=\"M3 6h18\" /> <path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\" />",
@@ -1417,16 +1419,21 @@ function AudioDeck({
   })), /*#__PURE__*/React.createElement("div", {
     className: "audio-deck__controls"
   }, /*#__PURE__*/React.createElement(IconButton, {
+    className: "transport-round",
     label: "\u540E\u9000 15 \u79D2",
     onClick: onReplay
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "rotate-ccw"
-  })), /*#__PURE__*/React.createElement(IconButton, {
+    name: "rotate-ccw",
+    size: 28,
+    strokeWidth: 2.2
+  }), /*#__PURE__*/React.createElement("span", null, "15")), /*#__PURE__*/React.createElement(IconButton, {
+    className: "transport-skip",
     label: "\u4E0A\u4E00\u53E5",
     onClick: () => onReplay(-1)
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "chevron-left",
-    size: 22
+    name: "skip-back",
+    size: 27,
+    strokeWidth: 2
   })), /*#__PURE__*/React.createElement("button", {
     "aria-label": playing ? "暂停" : "播放",
     className: "audio-play",
@@ -1434,19 +1441,25 @@ function AudioDeck({
     type: "button"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: playing ? "pause" : "play",
-    size: 25
+    size: 28,
+    strokeWidth: 1.5
   })), /*#__PURE__*/React.createElement(IconButton, {
+    className: "transport-skip",
     label: "\u4E0B\u4E00\u53E5",
     onClick: () => onForward(1)
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "chevron-right",
-    size: 22
+    name: "skip-forward",
+    size: 27,
+    strokeWidth: 2
   })), /*#__PURE__*/React.createElement(IconButton, {
+    className: "transport-round",
     label: "\u524D\u8FDB 15 \u79D2",
     onClick: () => onForward()
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "rotate-cw"
-  }))));
+    name: "rotate-cw",
+    size: 28,
+    strokeWidth: 2.2
+  }), /*#__PURE__*/React.createElement("span", null, "15"))));
 }
 function PlayerScreen({
   course,
@@ -1456,7 +1469,9 @@ function PlayerScreen({
   onMoveCourse
 }) {
   const validInitialMode = ["listen", "read", "write", "speak"].includes(initialMode) ? initialMode : "listen";
+  const initialParams = new URLSearchParams(window.location.search);
   const [mode, setMode] = React.useState(validInitialMode);
+  const [controlsVisible, setControlsVisible] = React.useState(initialParams.get("controls") === "1");
   const [activeCue, setActiveCue] = React.useState(2);
   const [showTranslation, setShowTranslation] = React.useState(true);
   const [playing, setPlaying] = React.useState(false);
@@ -1561,6 +1576,15 @@ function PlayerScreen({
     swipeWasTriggered.current = true;
     onMoveCourse(deltaY > 0 ? 1 : -1);
   }
+  function handlePlayerClick(event) {
+    if (!["listen", "read"].includes(mode)) return;
+    if (event.target.closest("input, textarea, .audio-deck, .sl-mode-switch, .player-header, .player-identity, .player-complete-row, .translation-toggle")) return;
+    if (event.target.closest(".lyric-line, .transcript-row")) {
+      setControlsVisible(true);
+      return;
+    }
+    setControlsVisible(visible => !visible);
+  }
   return /*#__PURE__*/React.createElement("div", {
     className: "app-screen player-screen",
     onClickCapture: event => {
@@ -1571,6 +1595,7 @@ function PlayerScreen({
     },
     onPointerDown: handlePointerDown,
     onPointerUp: handlePointerUp,
+    onClick: handlePlayerClick,
     style: {
       "--course-a": course.colorA,
       "--course-b": course.colorB
@@ -1668,7 +1693,9 @@ function PlayerScreen({
       setRecorded(false);
       setRecordSeconds(0);
     }
-  })), (mode === "listen" || mode === "read") && /*#__PURE__*/React.createElement(AudioDeck, {
+  })), (mode === "listen" || mode === "read") && /*#__PURE__*/React.createElement("div", {
+    className: "player-control-layer " + (controlsVisible ? "is-visible" : "")
+  }, /*#__PURE__*/React.createElement(AudioDeck, {
     onForward: (steps = 1) => setActiveCue(value => Math.min(course.cues.length - 1, value + steps)),
     onPlay: () => setPlaying(value => !value),
     onReplay: (steps = 0) => setActiveCue(value => Math.max(0, value - Math.abs(steps || 1))),
@@ -1676,7 +1703,7 @@ function PlayerScreen({
     playing: playing,
     progress: playbackProgress,
     speed: speed
-  }), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "player-complete-row"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, modeCopy[mode].label, "\u73AF\u8282"), /*#__PURE__*/React.createElement("small", null, Math.round(modeProgress[mode]), "%")), /*#__PURE__*/React.createElement(Button, {
     disabled: !canConfirm,
@@ -1693,7 +1720,10 @@ function PlayerScreen({
     className: "player-mode-dock"
   }, /*#__PURE__*/React.createElement(ModeSwitcher, {
     iconOnly: true,
-    onChange: setMode,
+    onChange: nextMode => {
+      setMode(nextMode);
+      setControlsVisible(false);
+    },
     value: mode
   })), /*#__PURE__*/React.createElement("div", {
     className: "swipe-guide",

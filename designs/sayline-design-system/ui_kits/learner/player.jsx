@@ -225,13 +225,23 @@ function AudioDeck({ playing, onPlay, onReplay, onForward, speed, onSpeed, progr
         <i style={{ left: `${progress}%` }}></i>
       </div>
       <div className="audio-deck__controls">
-        <IconButton label="后退 15 秒" onClick={onReplay}><Icon name="rotate-ccw" /></IconButton>
-        <IconButton label="上一句" onClick={() => onReplay(-1)}><Icon name="chevron-left" size={22} /></IconButton>
+        <IconButton className="transport-round" label="后退 15 秒" onClick={onReplay}>
+          <Icon name="rotate-ccw" size={28} strokeWidth={2.2} />
+          <span>15</span>
+        </IconButton>
+        <IconButton className="transport-skip" label="上一句" onClick={() => onReplay(-1)}>
+          <Icon name="skip-back" size={27} strokeWidth={2} />
+        </IconButton>
         <button aria-label={playing ? "暂停" : "播放"} className="audio-play" onClick={onPlay} type="button">
-          <Icon name={playing ? "pause" : "play"} size={25} />
+          <Icon name={playing ? "pause" : "play"} size={28} strokeWidth={1.5} />
         </button>
-        <IconButton label="下一句" onClick={() => onForward(1)}><Icon name="chevron-right" size={22} /></IconButton>
-        <IconButton label="前进 15 秒" onClick={() => onForward()}><Icon name="rotate-cw" /></IconButton>
+        <IconButton className="transport-skip" label="下一句" onClick={() => onForward(1)}>
+          <Icon name="skip-forward" size={27} strokeWidth={2} />
+        </IconButton>
+        <IconButton className="transport-round" label="前进 15 秒" onClick={() => onForward()}>
+          <Icon name="rotate-cw" size={28} strokeWidth={2.2} />
+          <span>15</span>
+        </IconButton>
       </div>
     </div>
   );
@@ -247,7 +257,9 @@ function PlayerScreen({
   const validInitialMode = ["listen", "read", "write", "speak"].includes(initialMode)
     ? initialMode
     : "listen";
+  const initialParams = new URLSearchParams(window.location.search);
   const [mode, setMode] = React.useState(validInitialMode);
+  const [controlsVisible, setControlsVisible] = React.useState(initialParams.get("controls") === "1");
   const [activeCue, setActiveCue] = React.useState(2);
   const [showTranslation, setShowTranslation] = React.useState(true);
   const [playing, setPlaying] = React.useState(false);
@@ -350,6 +362,22 @@ function PlayerScreen({
     onMoveCourse(deltaY > 0 ? 1 : -1);
   }
 
+  function handlePlayerClick(event) {
+    if (!["listen", "read"].includes(mode)) return;
+    if (
+      event.target.closest(
+        "input, textarea, .audio-deck, .sl-mode-switch, .player-header, .player-identity, .player-complete-row, .translation-toggle",
+      )
+    ) return;
+
+    if (event.target.closest(".lyric-line, .transcript-row")) {
+      setControlsVisible(true);
+      return;
+    }
+
+    setControlsVisible((visible) => !visible);
+  }
+
   return (
     <div
       className="app-screen player-screen"
@@ -361,6 +389,7 @@ function PlayerScreen({
       }}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
+      onClick={handlePlayerClick}
       style={{
         "--course-a": course.colorA,
         "--course-b": course.colorB,
@@ -474,15 +503,17 @@ function PlayerScreen({
       </main>
 
       {(mode === "listen" || mode === "read") && (
-        <AudioDeck
-          onForward={(steps = 1) => setActiveCue((value) => Math.min(course.cues.length - 1, value + steps))}
-          onPlay={() => setPlaying((value) => !value)}
-          onReplay={(steps = 0) => setActiveCue((value) => Math.max(0, value - Math.abs(steps || 1)))}
-          onSpeed={cycleSpeed}
-          playing={playing}
-          progress={playbackProgress}
-          speed={speed}
-        />
+        <div className={"player-control-layer " + (controlsVisible ? "is-visible" : "")}>
+          <AudioDeck
+            onForward={(steps = 1) => setActiveCue((value) => Math.min(course.cues.length - 1, value + steps))}
+            onPlay={() => setPlaying((value) => !value)}
+            onReplay={(steps = 0) => setActiveCue((value) => Math.max(0, value - Math.abs(steps || 1)))}
+            onSpeed={cycleSpeed}
+            playing={playing}
+            progress={playbackProgress}
+            speed={speed}
+          />
+        </div>
       )}
 
       <div className="player-complete-row">
@@ -501,7 +532,14 @@ function PlayerScreen({
       </div>
 
       <div className="player-mode-dock">
-        <ModeSwitcher iconOnly onChange={setMode} value={mode} />
+        <ModeSwitcher
+          iconOnly
+          onChange={(nextMode) => {
+            setMode(nextMode);
+            setControlsVisible(false);
+          }}
+          value={mode}
+        />
       </div>
 
       <div className="swipe-guide" aria-hidden="true">

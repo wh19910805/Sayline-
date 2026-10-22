@@ -39,6 +39,8 @@ export interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {
     | "rotate-cw"
     | "search"
     | "settings-2"
+    | "skip-back"
+    | "skip-forward"
     | "sparkles"
     | "square"
     | "trash-2"
