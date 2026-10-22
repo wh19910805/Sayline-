@@ -47,10 +47,10 @@ public class UserSettings extends AuditableEntity {
     private boolean showChineseRead = true;
 
     @Column(name = "show_chinese_write", nullable = false)
-    private boolean showChineseWrite = false;
+    private boolean showChineseWrite = true;
 
     @Column(name = "show_chinese_speak", nullable = false)
-    private boolean showChineseSpeak = false;
+    private boolean showChineseSpeak = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_category_id")

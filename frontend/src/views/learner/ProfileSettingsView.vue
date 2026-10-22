@@ -74,7 +74,7 @@ async function uploadAvatar(event: Event) {
       <span />
     </header>
     <div class="settings-scroll">
-      <form class="settings-form" @submit.prevent="save">
+      <form class="settings-form settings-form--profile" @submit.prevent="save">
         <div class="profile-identity">
           <span class="profile-identity__avatar">
             <img v-if="avatarObjectKey" :src="avatarObjectKey" alt="" />
@@ -88,20 +88,70 @@ async function uploadAvatar(event: Event) {
           </label>
         </div>
         <section class="settings-section">
+          <span class="eyebrow settings-section__eyebrow">PERSONAL PROFILE</span>
+          <h2>个人信息</h2>
           <label class="sl-field">
             <span class="sl-field__label">昵称</span>
             <input v-model="nickname" class="sl-field__control" maxlength="50" />
           </label>
           <label class="sl-field">
-            <span class="sl-field__label">头像资源</span>
-            <input v-model="avatarObjectKey" class="sl-field__control" placeholder="上传后自动填写" />
+            <span class="sl-field__label">手机号</span>
+            <input class="sl-field__control" :value="profile?.phone || ''" readonly />
           </label>
           <p>手机号用于登录，首版暂不支持修改。</p>
         </section>
         <p v-if="error" class="inline-error">{{ error }}</p>
         <p v-if="saved" class="inline-success">个人资料已保存</p>
-        <button class="sl-button sl-button--accent sl-button--lg sl-button--full" type="submit">保存资料</button>
+        <button class="sl-button sl-button--lg sl-button--full profile-save" type="submit">保存资料</button>
       </form>
     </div>
   </main>
 </template>
+
+<style scoped>
+.settings-screen {
+  background:
+    radial-gradient(circle at 88% 5%, rgba(217, 181, 110, .14), transparent 27%),
+    var(--color-bg);
+}
+
+.settings-form--profile {
+  gap: 0;
+  padding-top: 10px;
+}
+
+.settings-form--profile .profile-identity {
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.settings-form--profile .settings-section {
+  padding: 25px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.settings-section__eyebrow {
+  margin-bottom: -4px;
+}
+
+.settings-form--profile .settings-section h2 {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: var(--weight-regular);
+  line-height: 1.05;
+  letter-spacing: -.025em;
+}
+
+.profile-save {
+  position: sticky;
+  bottom: 12px;
+  margin-top: 22px;
+  background: var(--color-ink-900);
+  color: var(--color-paper-50);
+  box-shadow: var(--shadow-float);
+}
+</style>

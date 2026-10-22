@@ -73,9 +73,10 @@ async function save() {
       <span />
     </header>
     <div class="settings-scroll">
-      <div class="settings-form">
+      <div class="settings-form settings-form--preferences">
         <section class="settings-section">
-          <h2>已选兴趣</h2>
+          <span class="eyebrow settings-section__eyebrow">YOUR FEEDS</span>
+          <h2>首页分类</h2>
           <p>排序决定首页 Tab 顺序，第一项是默认 Tab。</p>
           <div class="interest-order-list">
             <article v-for="(category, index) in selectedCategories" :key="category.id" class="interest-order-row">
@@ -90,6 +91,7 @@ async function save() {
         </section>
 
         <section class="settings-section">
+          <span class="eyebrow settings-section__eyebrow">EXPLORE</span>
           <h2>继续添加</h2>
           <div class="interest-pool">
             <button v-for="category in available" :key="category.id" type="button" @click="add(category.id)">
@@ -102,10 +104,50 @@ async function save() {
 
         <p v-if="error" class="inline-error">{{ error }}</p>
         <p v-if="saved" class="inline-success">学习偏好已保存</p>
-        <button class="sl-button sl-button--accent sl-button--lg sl-button--full" type="button" :disabled="!selectedIds.length" @click="save">
+        <button class="sl-button sl-button--lg sl-button--full preferences-save" type="button" :disabled="!selectedIds.length" @click="save">
           保存偏好
         </button>
       </div>
     </div>
   </main>
 </template>
+
+<style scoped>
+.preferences-screen {
+  background:
+    radial-gradient(circle at 88% 5%, rgba(217, 181, 110, .14), transparent 27%),
+    var(--color-bg);
+}
+
+.settings-form--preferences {
+  gap: 0;
+  padding-top: 8px;
+}
+
+.settings-form--preferences .settings-section {
+  padding: 25px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.settings-section__eyebrow {
+  margin-bottom: -4px;
+}
+
+.settings-form--preferences .settings-section h2 {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: var(--weight-regular);
+  line-height: 1.05;
+  letter-spacing: -.025em;
+}
+
+.preferences-save {
+  margin-top: 24px;
+  background: var(--color-ink-900);
+  color: var(--color-paper-50);
+  box-shadow: var(--shadow-float);
+}
+</style>

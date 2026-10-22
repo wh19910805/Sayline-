@@ -149,7 +149,12 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
             <p class="eyebrow">{{ period === 'WEEK' ? 'THIS WEEK' : 'THIS MONTH' }}</p>
             <h2>{{ period === 'WEEK' ? '本周学习节奏' : '本月学习记录' }}</h2>
           </div>
-          <span class="sl-badge sl-badge--success">Asia / Shanghai</span>
+          <span
+            class="sl-badge"
+            :class="stats?.summary.studyDays ? 'sl-badge--success' : ''"
+          >
+            {{ stats?.summary.studyDays ? '有学习' : '待开始' }}
+          </span>
         </div>
         <div v-if="period === 'WEEK'" class="week-chart" aria-label="本周学习时长">
           <div v-for="day in weekDays" :key="day.date" class="week-day">
@@ -173,6 +178,9 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
           >
             {{ cell.empty ? '' : cell.day }}
           </span>
+        </div>
+        <div class="report-card__legend">
+          <span v-if="stats">{{ stats.rangeStart }} — {{ stats.rangeEnd }}</span>
         </div>
       </section>
 

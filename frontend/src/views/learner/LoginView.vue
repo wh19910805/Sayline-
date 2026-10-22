@@ -95,7 +95,12 @@ async function submit() {
         </button>
       </div>
       <p v-if="error" class="inline-error">{{ error }}</p>
-      <button class="sl-button sl-button--accent sl-button--lg sl-button--full" type="submit" :disabled="auth.loading">
+      <button
+        class="sl-button sl-button--lg sl-button--full"
+        :class="{ 'sl-button--accent': adminMode }"
+        type="submit"
+        :disabled="auth.loading"
+      >
         {{ auth.loading ? '请稍候…' : adminMode ? '进入管理端' : '进入 Sayline' }}
       </button>
       <button v-if="!adminMode" class="login-register" type="button" @click="registerMode = !registerMode">

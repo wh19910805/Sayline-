@@ -9,11 +9,10 @@ import {
   type ComponentPublicInstance,
 } from 'vue'
 import {
-  ArrowLeft,
   BookOpen,
   Captions,
   ChevronDown,
-  ChevronUp,
+  Ellipsis,
   Headphones,
   Heart,
   Mic,
@@ -22,6 +21,7 @@ import {
   Play,
   RotateCcw,
   RotateCw,
+  Square,
   Volume2,
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
@@ -34,11 +34,12 @@ import type {
   LearningMode,
   LearningSettings,
   LearningState,
+  ModeState,
 } from '@/api/types'
 import WordDictation from '@/components/player/WordDictation.vue'
 import { useControlVisibility } from '@/composables/useControlVisibility'
 import { useCatalogStore } from '@/stores/catalog'
-import { formatClock } from '@/utils/format'
+import { formatClock, formatDuration } from '@/utils/format'
 import { createVisibleCueTimers } from '@/utils/visibleCueTimers'
 
 const route = useRoute()
@@ -58,11 +59,19 @@ const error = ref('')
 const notice = ref('')
 const loading = ref(true)
 const modePanel = ref<HTMLElement | null>(null)
+const lyricsWindow = ref<HTMLElement | null>(null)
 const recording = ref(false)
 const recordSeconds = ref(0)
 const audioRecordingUrl = ref('')
+const recordingAudio = ref<HTMLAudioElement | null>(null)
 const writeSubmitted = ref(false)
 const countdown = ref<number | null>(null)
+const chineseOverrides = ref<Record<LearningMode, boolean | null>>({
+  LISTEN: null,
+  READ: null,
+  WRITE: null,
+  SPEAK: null,
+})
 let mediaRecorder: MediaRecorder | null = null
 let recordingStartedAt = 0
 let heartbeatTimer: ReturnType<typeof setInterval> | undefined
@@ -77,7 +86,7 @@ const readTimers = createVisibleCueTimers({
   onElapsed: (cueId) => markCue(cueId, 'READ'),
 })
 
-const autoHide = computed(() => mode.value === 'LISTEN' || mode.value === 'READ')
+const autoHide = ref(true)
 const visibility = useControlVisibility({ autoHide, delay: 6_000 })
 
 const courseId = computed(() => Number(route.params.courseId))
@@ -91,6 +100,8 @@ const currentCueProgress = computed(() => {
   return learning.value?.cues.find((cue) => cue.cueId === cueId)
 })
 const showChinese = computed(() => {
+  const override = chineseOverrides.value[mode.value]
+  if (override !== null) return override
   if (!settings.value) return true
   return {
     LISTEN: settings.value.showChineseListen,
@@ -103,6 +114,16 @@ const backgroundStyle = computed(() => ({
   '--player-course-a': course.value?.themeColorPrimary || '#53634e',
   '--player-course-b': course.value?.themeColorSecondary || '#1f2a22',
 }))
+const playerCoverStyle = computed(() => {
+  const primary = course.value?.themeColorPrimary || '#53634e'
+  const secondary = course.value?.themeColorSecondary || '#1f2a22'
+  const gradient = `linear-gradient(145deg, ${primary}, ${secondary})`
+  return {
+    backgroundImage: course.value?.coverUrl
+      ? `linear-gradient(145deg, rgba(255,255,255,.08), rgba(0,0,0,.24)), url("${course.value.coverUrl}")`
+      : gradient,
+  }
+})
 const modes = [
   { value: 'LISTEN' as const, label: '听', icon: Headphones },
   { value: 'READ' as const, label: '读', icon: BookOpen },
@@ -122,6 +143,7 @@ async function loadCourse(showLoader = true) {
     course.value = detail
     learning.value = state
     settings.value = userSettings
+    duration.value = detail.durationMs / 1_000
     mode.value = state.lastMode || 'LISTEN'
     const savedIndex = detail.cues.findIndex((cue) => cue.id === state.lastCueId)
     activeCueIndex.value = savedIndex >= 0 ? savedIndex : 0
@@ -154,6 +176,25 @@ function selectMode(next: LearningMode) {
       learning.value = state
     })
     .catch(() => undefined)
+}
+
+function toggleChinese() {
+  chineseOverrides.value[mode.value] = !showChinese.value
+}
+
+function modeState(value: LearningMode): ModeState {
+  const key = value.toLowerCase() as 'listen' | 'read' | 'write' | 'speak'
+  return learning.value?.modes[key] ?? { progress: 0, confirmed: false }
+}
+
+function moveCue(offset: number) {
+  if (!course.value) return
+  const target = Math.min(
+    course.value.cues.length - 1,
+    Math.max(0, activeCueIndex.value + offset),
+  )
+  const cue = course.value.cues[target]
+  if (cue) seekToCue(cue)
 }
 
 function togglePlayback() {
@@ -294,6 +335,10 @@ async function toggleRecording() {
   } catch {
     notice.value = '麦克风权限未开启，请在浏览器设置中允许访问'
   }
+}
+
+function playRecording() {
+  recordingAudio.value?.play().catch(() => undefined)
 }
 
 async function confirmMode() {
@@ -450,6 +495,15 @@ watch(mode, () => {
   }
 })
 
+watch(activeCueIndex, () => {
+  if (mode.value !== 'LISTEN') return
+  nextTick(() => {
+    lyricsWindow.value
+      ?.querySelector<HTMLElement>('.lyric-line.is-active')
+      ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  })
+})
+
 onMounted(async () => {
   await loadCourse()
   heartbeatTimer = setInterval(() => {
@@ -486,11 +540,11 @@ onBeforeUnmount(() => {
     <template v-else-if="course && learning && settings">
       <header class="player-header" @click.stop>
         <button class="sl-icon-button" type="button" aria-label="返回首页" @click="router.push('/')">
-          <ArrowLeft :size="21" />
+          <ChevronDown :size="22" />
         </button>
         <div class="player-header__title">
-          <strong>{{ course.title }}</strong>
-          <span>{{ course.categoryName }}</span>
+          <span>NOW LEARNING</span>
+          <strong>逐句播放</strong>
         </div>
         <button class="sl-icon-button" :class="{ 'sl-icon-button--active': course.favorite }" type="button" aria-label="收藏课程" @click.stop="toggleFavorite">
           <Heart :size="20" :fill="course.favorite ? 'currentColor' : 'none'" />
@@ -498,13 +552,24 @@ onBeforeUnmount(() => {
       </header>
 
       <section class="player-identity" @click.stop>
-        <div class="player-identity__cover" :style="{ backgroundImage: course.coverUrl ? `url('${course.coverUrl}')` : undefined }" />
-        <div>
-          <p class="eyebrow">{{ mode === 'LISTEN' ? 'LISTEN' : mode === 'READ' ? 'READ' : mode === 'WRITE' ? 'DICTATION' : 'SPEAK' }}</p>
+        <div class="player-identity__cover" :style="playerCoverStyle" />
+        <div class="player-identity__copy">
+          <p class="player-identity__meta">{{ course.categoryName }} · {{ formatDuration(course.durationMs) }}</p>
           <h1>{{ course.title }}</h1>
-          <span>{{ activeCueIndex + 1 }} / {{ course.cues.length }}</span>
+          <p>{{ course.description || '逐句听、读、写、说' }}</p>
         </div>
+        <button class="sl-icon-button" type="button" aria-label="更多课程信息"><Ellipsis :size="21" /></button>
       </section>
+
+      <div class="mode-progress-segments" @click.stop>
+        <span
+          v-for="item in modes"
+          :key="item.value"
+          :class="{ 'is-active': mode === item.value, 'is-complete': modeState(item.value).progress === 100 }"
+        >
+          <i :style="{ width: `${modeState(item.value).progress}%` }" />
+        </span>
+      </div>
 
       <section
         ref="modePanel"
@@ -513,7 +578,7 @@ onBeforeUnmount(() => {
         @touchend="touchEnd"
       >
         <div v-if="mode === 'LISTEN'" class="listen-mode">
-          <div class="lyrics-window">
+          <div ref="lyricsWindow" class="lyrics-window">
             <button
               v-for="(cue, index) in course.cues"
               :key="cue.id"
@@ -522,8 +587,8 @@ onBeforeUnmount(() => {
               type="button"
               @click.stop="seekToCue(cue)"
             >
-              <strong>{{ cue.englishText }}</strong>
-              <span v-if="showChinese">{{ cue.chineseText }}</span>
+              <strong class="lyric-line__en">{{ cue.englishText }}</strong>
+              <span v-if="showChinese" class="lyric-line__zh">{{ cue.chineseText }}</span>
             </button>
           </div>
         </div>
@@ -550,17 +615,29 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-else-if="mode === 'WRITE' && activeCue" class="write-mode" @click.stop>
-          <div class="write-current-line">
-            <button class="sl-icon-button" type="button" aria-label="播放当前句" @click="replayCue"><Volume2 :size="20" /></button>
-            <p v-if="showChinese">{{ activeCue.chineseText }}</p>
-            <span>{{ activeCueIndex + 1 }} / {{ course.cues.length }}</span>
+          <div class="write-mode__heading">
+            <p class="eyebrow">DICTATION · {{ activeCueIndex + 1 }} / {{ course.cues.length }}</p>
+            <h1>把听见的写下来</h1>
           </div>
-          <WordDictation
-            :key="activeCue.id"
-            :sentence="activeCue.englishText"
-            :submitted="writeSubmitted || Boolean(currentCueProgress?.written)"
-            @submit="submitWriting"
-          />
+          <div class="write-sentence-card">
+            <div class="write-sentence-card__head">
+              <span>当前句 · {{ String(activeCueIndex + 1).padStart(2, '0') }}</span>
+              <div>
+                <button type="button" @click="replayCue"><Volume2 :size="14" /> 听原句</button>
+                <button type="button" :aria-pressed="showChinese" @click="toggleChinese">
+                  <Captions :size="14" /> 中文
+                </button>
+              </div>
+            </div>
+            <p v-if="showChinese" class="write-sentence-card__translation">{{ activeCue.chineseText }}</p>
+            <WordDictation
+              :key="activeCue.id"
+              :sentence="activeCue.englishText"
+              :submitted="writeSubmitted || Boolean(currentCueProgress?.written)"
+              @submit="submitWriting"
+            />
+            <span class="write-sentence-card__hint">离开输入区自动提交</span>
+          </div>
           <div class="write-context">
             <button
               v-for="(cue, index) in course.cues"
@@ -576,43 +653,44 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-else-if="mode === 'SPEAK' && activeCue" class="speak-mode" @click.stop>
+          <div class="speak-mode__heading">
+            <div>
+              <p class="eyebrow">SHADOWING · {{ activeCueIndex + 1 }} / {{ course.cues.length }}</p>
+              <span class="record-state">{{ recording ? '录音中' : audioRecordingUrl ? '已录音' : '未录音' }}</span>
+            </div>
+            <h1>让这一句从你口中经过</h1>
+          </div>
           <div class="speak-current-line">
-            <p class="eyebrow">SHADOW THIS LINE</p>
             <h2>{{ activeCue.englishText }}</h2>
             <p v-if="showChinese">{{ activeCue.chineseText }}</p>
           </div>
+          <div class="record-wave" :class="{ 'is-live': recording }" aria-hidden="true">
+            <i v-for="index in 11" :key="index" :style="{ animationDelay: `${index * -70}ms` }" />
+          </div>
           <div class="record-controls">
             <button class="record-button" :class="{ 'is-recording': recording }" type="button" @click="toggleRecording">
-              <Mic :size="26" />
+              <Square v-if="recording" :size="22" fill="currentColor" />
+              <Mic v-else :size="26" />
             </button>
-            <strong>{{ recording ? `录音中 ${recordSeconds}s` : '点击开始跟读' }}</strong>
-            <span>录音只保留在当前浏览器内存中</span>
+            <strong>{{ recording ? `${recordSeconds}s · 点击结束` : '点击话筒开始跟读' }}</strong>
+            <span>录音仅保留在当前浏览器内存中</span>
           </div>
           <div class="speak-actions">
-            <button class="sl-button sl-button--secondary sl-button--sm" type="button" @click="replayCue"><Volume2 :size="16" /> 听原句</button>
-            <audio v-if="audioRecordingUrl" :src="audioRecordingUrl" controls />
+            <button type="button" @click="replayCue"><Play :size="14" /> 原句</button>
+            <audio v-if="audioRecordingUrl" ref="recordingAudio" :src="audioRecordingUrl" controls />
+            <button type="button" :disabled="!audioRecordingUrl" @click="playRecording">
+              <Play :size="14" /> 我的录音
+            </button>
+          </div>
+          <div class="speak-navigation">
+            <button type="button" :disabled="activeCueIndex === 0" @click="moveCue(-1)">上一句</button>
+            <button type="button" :disabled="activeCueIndex === course.cues.length - 1" @click="moveCue(1)">下一句</button>
           </div>
         </div>
       </section>
 
-      <div class="mode-progress-strip" @click.stop>
-        <span>{{ modeProgress.progress }}%</span>
-        <div class="sl-progress sl-progress--light">
-          <div class="sl-progress__track"><span class="sl-progress__value" :style="{ width: `${modeProgress.progress}%` }" /></div>
-        </div>
-        <button
-          v-if="modeProgress.progress === 100 && !modeProgress.confirmed"
-          class="sl-button sl-button--accent sl-button--sm"
-          type="button"
-          @click="confirmMode"
-        >
-          完成本环节
-        </button>
-        <span v-else-if="modeProgress.confirmed" class="sl-badge sl-badge--success">已确认</span>
-      </div>
-
       <div class="player-bottom-ui" :class="{ 'is-hidden': !visibility.visible.value }" @click.stop>
-        <div class="player-control-layer">
+        <div v-if="mode === 'LISTEN' || mode === 'READ'" class="player-control-layer">
           <div class="audio-deck">
             <div class="audio-deck__times">
               <span>{{ formatClock(currentTime * 1_000) }}</span>
@@ -646,6 +724,11 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
+        <div v-if="modeProgress.progress === 100 && !modeProgress.confirmed" class="player-mode-complete">
+          <button class="sl-button sl-button--accent sl-button--sm" type="button" @click="confirmMode">
+            完成本环节
+          </button>
+        </div>
         <div class="player-mode-dock">
           <div class="sl-mode-switch sl-mode-switch--icon-only">
             <button
@@ -698,8 +781,31 @@ onBeforeUnmount(() => {
 }
 
 .player-identity__cover {
+  position: relative;
+  overflow: hidden;
   background-position: center;
   background-size: cover;
+}
+
+.player-identity__cover::before {
+  content: "";
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  top: 9px;
+  left: 8px;
+  border: 1px solid rgba(255, 250, 240, .2);
+  border-radius: 50%;
+}
+
+.player-identity__cover::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 14px;
+  height: 1px;
+  background: rgba(255, 250, 240, .48);
 }
 
 .player-header__title {
@@ -708,8 +814,64 @@ onBeforeUnmount(() => {
 
 .player-header__title span {
   color: var(--player-text-muted);
-  font-size: 9px;
+  font-size: 8px;
   letter-spacing: .12em;
+}
+
+.player-header__title strong {
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+}
+
+.player-identity__copy {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.player-identity__copy h1 {
+  margin: 0;
+}
+
+.player-identity__copy > p:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mode-progress-segments {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 7px 20px 8px;
+}
+
+.mode-progress-segments > span {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 250, 240, .18);
+}
+
+.mode-progress-segments > span.is-active {
+  background: rgba(255, 250, 240, .42);
+}
+
+.mode-progress-segments > span i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: rgba(255, 250, 240, .72);
+  transition: width var(--duration-base) var(--ease-out);
+}
+
+.mode-progress-segments > span.is-active i {
+  background: var(--player-active);
+}
+
+.mode-progress-segments > span.is-complete i {
+  background: var(--color-oat-200);
 }
 
 .speed-select {
@@ -753,39 +915,132 @@ onBeforeUnmount(() => {
   color: var(--player-text);
 }
 
-.write-current-line {
+.write-mode {
+  gap: 16px;
+  padding: 5px 20px 0;
+  overflow-y: auto;
+}
+
+.write-mode__heading {
   display: grid;
-  grid-template-columns: 44px 1fr auto;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 30px;
+  gap: 5px;
+  padding: 4px 2px 2px;
 }
 
-.write-current-line p {
+.write-mode__heading h1 {
   margin: 0;
-  color: var(--player-text-muted);
-  font-size: var(--text-body-sm);
+  font-family: var(--font-display);
+  font-size: 31px;
+  font-weight: var(--weight-regular);
+  line-height: 1;
+  letter-spacing: -.025em;
 }
 
-.write-current-line > span {
-  color: var(--player-text-muted);
-  font-size: var(--text-caption);
+.write-sentence-card {
+  display: grid;
+  gap: 20px;
+  padding: 14px 15px 13px;
+  border: 1px solid rgba(255, 250, 240, .2);
+  border-radius: 14px;
+  background: rgba(28, 33, 26, .34);
+  box-shadow: 0 14px 36px rgba(5, 8, 4, .16);
+  backdrop-filter: blur(10px);
+}
+
+.write-sentence-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(255, 250, 240, .72);
+  font-size: 10px;
+}
+
+.write-sentence-card__head > div {
+  display: flex;
+  gap: 7px;
+}
+
+.write-sentence-card__head button {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 250, 240, .18);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 250, 240, .72);
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.write-sentence-card__head button[aria-pressed="true"] {
+  border-color: rgba(217, 181, 110, .55);
+  color: var(--color-oat-200);
+}
+
+.write-sentence-card__translation {
+  margin: -8px 0 0;
+  color: rgba(255, 250, 240, .72);
+  font-size: var(--text-body-sm);
+  line-height: 1.6;
+}
+
+.write-sentence-card__hint {
+  justify-self: end;
+  color: rgba(255, 250, 240, .34);
+  font-size: 9px;
 }
 
 .write-mode :deep(.sl-word-input) {
-  row-gap: 22px;
+  row-gap: 18px;
+}
+
+.speak-mode {
+  padding: 5px 20px 24px;
+}
+
+.speak-mode__heading {
+  display: grid;
+  gap: 6px;
+}
+
+.speak-mode__heading > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.speak-mode__heading h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 31px;
+  font-weight: var(--weight-regular);
+  line-height: 1.02;
+  letter-spacing: -.025em;
+}
+
+.record-state {
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 250, 240, .16);
+  border-radius: 99px;
+  color: rgba(255, 250, 240, .58);
+  font-size: 9px;
 }
 
 .speak-current-line {
   display: grid;
-  gap: 12px;
-  text-align: center;
+  gap: 8px;
+  margin-top: 16px;
+  text-align: left;
 }
 
 .speak-current-line h2 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(32px, 5vw, 56px);
+  font-size: clamp(27px, 5vw, 42px);
   font-weight: var(--weight-regular);
   line-height: 1.08;
 }
@@ -795,11 +1050,48 @@ onBeforeUnmount(() => {
   color: var(--player-text-muted);
 }
 
+.record-wave {
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.record-wave i {
+  width: 2px;
+  height: 18px;
+  border-radius: 99px;
+  background: rgba(255, 250, 240, .34);
+}
+
+.record-wave i:nth-child(2n) {
+  height: 30px;
+}
+
+.record-wave i:nth-child(3n) {
+  height: 42px;
+}
+
+.record-wave i:nth-child(5n) {
+  height: 52px;
+}
+
+.record-wave.is-live i {
+  background: var(--player-active);
+  animation: wave-live .8s ease-in-out infinite alternate;
+}
+
+@keyframes wave-live {
+  to { transform: scaleY(2.1); }
+}
+
 .record-controls {
   display: grid;
   justify-items: center;
   gap: 10px;
-  margin-top: 36px;
+  margin-top: 5px;
   color: var(--player-text);
 }
 
@@ -831,23 +1123,58 @@ onBeforeUnmount(() => {
 
 .speak-actions {
   display: grid;
-  justify-items: center;
-  gap: 14px;
-  margin-top: 28px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .speak-actions audio {
-  width: min(100%, 360px);
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 34px;
 }
 
-.mode-progress-strip {
-  display: grid;
-  grid-template-columns: auto minmax(80px, 1fr) auto;
+.speak-actions button,
+.speak-navigation button {
+  min-height: 40px;
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: 7px 20px;
-  color: var(--player-text-muted);
-  font-size: var(--text-caption);
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 250, 240, .17);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .04);
+  color: rgba(255, 250, 240, .72);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.speak-actions button:disabled,
+.speak-navigation button:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.speak-navigation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.speak-navigation button {
+  min-height: 46px;
+  border-radius: 99px;
+  font-size: 13px;
+}
+
+.player-mode-complete {
+  width: min(100%, 680px);
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 auto;
+  padding: 4px 22px 2px;
 }
 
 .player-notice {
@@ -873,7 +1200,7 @@ onBeforeUnmount(() => {
 }
 
 @media (min-width: 768px) {
-  .mode-progress-strip {
+  .mode-progress-segments {
     width: min(100%, 820px);
     margin-inline: auto;
   }

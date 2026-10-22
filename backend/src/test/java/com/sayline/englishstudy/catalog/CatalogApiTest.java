@@ -6,6 +6,9 @@ import com.sayline.englishstudy.user.User;
 import com.sayline.englishstudy.user.UserRepository;
 import com.sayline.englishstudy.user.UserRole;
 import com.sayline.englishstudy.user.UserStatus;
+import com.sayline.englishstudy.learning.LearningMode;
+import com.sayline.englishstudy.learning.LearningRecord;
+import com.sayline.englishstudy.learning.LearningRecordRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +52,9 @@ class CatalogApiTest {
 
     @Autowired
     private SubtitleCueRepository cueRepository;
+
+    @Autowired
+    private LearningRecordRepository learningRecordRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -135,6 +141,30 @@ class CatalogApiTest {
         mockMvc.perform(delete("/api/v1/courses/{id}/favorite", first.getId())
                 .header("Authorization", bearer(token)))
             .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void returnsLearnerProgressInCourseSummaries() throws Exception {
+        CourseCategory category = createCategory("Work", 1, true);
+        Course course = createCourse(category, "Progress Course", CourseStatus.PUBLISHED);
+        String token = createLearnerToken("13800138104");
+        User user = userRepository.findByPhone("13800138104").orElseThrow();
+
+        LearningRecord record = new LearningRecord();
+        record.setUser(user);
+        record.setCourse(course);
+        record.setLastMode(LearningMode.READ);
+        record.setListenProgress(100);
+        record.setReadProgress(50);
+        record.setWriteProgress(0);
+        record.setSpeakProgress(50);
+        learningRecordRepository.save(record);
+
+        mockMvc.perform(get("/api/v1/courses")
+                .param("categoryId", category.getId().toString())
+                .header("Authorization", bearer(token)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content[0].progress").value(50));
     }
 
     private void addFavorite(Course course, String token) throws Exception {

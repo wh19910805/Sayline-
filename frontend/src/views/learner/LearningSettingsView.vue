@@ -46,8 +46,9 @@ async function save() {
       <span />
     </header>
     <div v-if="settings" class="settings-scroll">
-      <form class="settings-form" @submit.prevent="save">
+      <form class="settings-form settings-form--editorial" @submit.prevent="save">
         <section class="settings-section">
+          <span class="eyebrow settings-section__eyebrow">TYPE SCALE</span>
           <h2>字幕字号</h2>
           <p>调整播放器里英文与中文的显示比例。</p>
           <div class="choice-row">
@@ -64,6 +65,7 @@ async function save() {
         </section>
 
         <section class="settings-section">
+          <span class="eyebrow settings-section__eyebrow">CAPTION COLOR</span>
           <h2>字幕颜色</h2>
           <p>课程背景会随封面变化，建议选择高对比度颜色。</p>
           <div class="color-row">
@@ -81,6 +83,7 @@ async function save() {
         </section>
 
         <section class="settings-section">
+          <span class="eyebrow settings-section__eyebrow">TRANSLATION</span>
           <h2>中文翻译</h2>
           <label class="sl-switch">
             <span class="sl-switch__label">听模式显示中文</span>
@@ -110,8 +113,121 @@ async function save() {
         </button>
         <p v-if="error" class="inline-error">{{ error }}</p>
         <p v-if="saved" class="inline-success">学习设置已保存</p>
-        <button class="sl-button sl-button--accent sl-button--lg sl-button--full" type="submit">保存设置</button>
       </form>
+    </div>
+    <div class="settings-save-dock">
+      <button class="sl-button sl-button--lg sl-button--full learning-settings-save" type="button" @click="save">
+        保存设置
+      </button>
     </div>
   </main>
 </template>
+
+<style scoped>
+.settings-screen {
+  background:
+    radial-gradient(circle at 88% 5%, rgba(217, 181, 110, .14), transparent 27%),
+    var(--color-bg);
+}
+
+.settings-form--editorial {
+  gap: 0;
+  padding: 8px 0 110px;
+}
+
+.settings-section {
+  gap: 11px;
+  padding: 25px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.settings-section__eyebrow {
+  margin-bottom: -4px;
+}
+
+.settings-section h2 {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: var(--weight-regular);
+  line-height: 1.05;
+  letter-spacing: -.025em;
+}
+
+.choice-row {
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.choice-row button {
+  border-color: transparent;
+  background: transparent;
+}
+
+.choice-row button[aria-pressed="true"] {
+  border-color: var(--color-border);
+  background: var(--color-bg-elevated);
+  box-shadow: 0 3px 10px rgba(30, 35, 27, .05);
+}
+
+.color-row {
+  gap: 18px;
+  padding: 3px 0;
+}
+
+.color-choice {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border-color: rgba(25, 30, 23, .18);
+}
+
+.settings-link-row {
+  width: 100%;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-link-row > span {
+  display: grid;
+  gap: 4px;
+}
+
+.settings-link-row strong {
+  font-size: var(--text-heading-md);
+}
+
+.settings-link-row small {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-caption);
+}
+
+.learning-settings-save {
+  background: var(--color-ink-900);
+  color: var(--color-paper-50);
+  box-shadow: var(--shadow-float);
+}
+
+.settings-save-dock {
+  position: absolute;
+  z-index: 8;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 18px 16px calc(12px + var(--safe-bottom));
+  background: linear-gradient(180deg, transparent, var(--color-bg) 42%);
+}
+</style>

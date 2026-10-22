@@ -38,6 +38,7 @@ const courses = [
     themeColorPrimary: '#65734f',
     themeColorSecondary: '#9f5e31',
     durationMs: 20_000,
+    progress: 58,
     favorite: false,
   },
   {
@@ -50,6 +51,7 @@ const courses = [
     themeColorPrimary: '#94633c',
     themeColorSecondary: '#3e2a1c',
     durationMs: 20_000,
+    progress: 81,
     favorite: true,
   },
   {
@@ -62,6 +64,7 @@ const courses = [
     themeColorPrimary: '#8b6651',
     themeColorSecondary: '#42271f',
     durationMs: 20_000,
+    progress: 24,
     favorite: false,
   },
 ]

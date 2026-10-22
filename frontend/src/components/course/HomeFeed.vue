@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Clock3, Heart, Play } from 'lucide-vue-next'
+import { Clock3, Heart } from 'lucide-vue-next'
 
 import type { Category, CourseSummary } from '@/api/types'
 
@@ -32,9 +32,18 @@ const visibleCourses = computed(() => {
   return props.courses.filter((course) => course.categoryId === props.selectedCategoryId)
 })
 
+const sectionTitle = computed(() => {
+  if (props.searchResults) return '搜索结果'
+  return props.selectedCategoryId === 'favorite' ? '我喜欢' : '为你准备'
+})
+
 function durationLabel(milliseconds: number) {
   const seconds = Math.max(0, Math.round(milliseconds / 1_000))
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+}
+
+function tabLabel(name: string) {
+  return name.replace(/日常|英语|训练/g, '') || name
 }
 
 function coverStyle(course: CourseSummary) {
@@ -68,7 +77,7 @@ function categoryStyle(category: Category) {
           :aria-selected="selectedCategoryId === category.id"
           @click="emit('select', category.id)"
         >
-          {{ category.name }}
+          {{ tabLabel(category.name) }}
         </button>
         <button
           class="sl-tab"
@@ -83,6 +92,13 @@ function categoryStyle(category: Category) {
         </button>
       </div>
       <slot name="action" />
+    </div>
+
+    <slot name="lead" />
+
+    <div class="section-heading">
+      <h2>{{ sectionTitle }}</h2>
+      <span class="section-count">{{ visibleCourses.length }} 门</span>
     </div>
 
     <div v-if="visibleCourses.length" class="course-feed">
@@ -132,10 +148,11 @@ function categoryStyle(category: Category) {
         <div class="sl-course-card__feed-body">
           <h3 class="sl-course-card__title">{{ course.title }}</h3>
           <p class="sl-course-card__meta">{{ course.categoryName }}</p>
-          <span class="feed-open">
-            <Play :size="13" fill="currentColor" />
-            逐句学习
-          </span>
+          <div class="sl-progress sl-course-card__progress">
+            <div class="sl-progress__track">
+              <span class="sl-progress__value" :style="{ width: `${course.progress}%` }" />
+            </div>
+          </div>
         </div>
       </article>
     </div>
@@ -179,7 +196,8 @@ function categoryStyle(category: Category) {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 0 20px;
+  margin: 0 -20px;
+  padding: 0 20px;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -194,19 +212,18 @@ function categoryStyle(category: Category) {
   background-size: cover;
 }
 
-.feed-open {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--color-action);
-  font-size: var(--text-caption);
-  font-weight: var(--weight-semibold);
+@media (min-width: 768px) {
+  .home-tabs-row {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
 }
 
 @media (min-width: 1200px) {
   .home-tabs-row {
     width: min(calc(100% - 96px), 1180px);
     margin-inline: auto;
+    padding-inline: 0;
   }
 }
 </style>

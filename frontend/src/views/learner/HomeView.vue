@@ -19,7 +19,9 @@ const searchResults = ref<CourseSummary[] | null>(null)
 const error = ref('')
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
-const startCourse = computed(() => catalog.courses[0] ?? null)
+const startCourse = computed(
+  () => catalog.courses.find((course) => course.progress > 0) ?? catalog.courses[0] ?? null,
+)
 
 onMounted(async () => {
   try {
@@ -71,7 +73,11 @@ function startStyle(course: CourseSummary) {
   return {
     '--card-a': course.themeColorPrimary || '#53634e',
     '--card-b': course.themeColorSecondary || '#263128',
+    '--cover-a': course.themeColorPrimary || '#53634e',
+    '--cover-b': course.themeColorSecondary || '#263128',
     backgroundImage: course.coverUrl ? `url("${course.coverUrl}")` : undefined,
+    backgroundPosition: 'center',
+    backgroundSize: 'cover',
   }
 }
 </script>
@@ -95,42 +101,41 @@ function startStyle(course: CourseSummary) {
             <Search v-else :size="20" />
           </button>
         </template>
+        <template #lead>
+          <label v-if="searchOpen" class="home-search-bar">
+            <Search :size="18" />
+            <input v-model="searchTerm" autofocus type="search" placeholder="搜索课程或分类" />
+            <span>{{ searchResults ? `${searchResults.length} 个结果` : '键入关键词' }}</span>
+          </label>
+
+          <p v-if="error" class="inline-error">{{ error }}</p>
+
+          <button
+            v-if="startCourse && !searchOpen && catalog.selectedCategoryId !== 'favorite'"
+            class="continue-card"
+            type="button"
+            @click="openCourse(startCourse)"
+          >
+            <span class="continue-card__cover cover-art" :style="startStyle(startCourse)" />
+            <span class="continue-card__body">
+              <span class="continue-card__head">
+                <span>{{ startCourse.progress > 0 ? '继续上次学习' : '开始第一课' }}</span>
+                <span>{{ formatDuration(startCourse.durationMs) }}</span>
+              </span>
+              <h2>{{ startCourse.title }}</h2>
+              <p>{{ startCourse.categoryName }} · {{ startCourse.description || '逐句听、读、写、说' }}</p>
+              <span class="sl-progress sl-progress--light continue-card__progress">
+                <span class="sl-progress__track">
+                  <span class="sl-progress__value" :style="{ width: `${startCourse.progress}%` }" />
+                </span>
+              </span>
+              <span class="continue-card__play"><Play :size="17" fill="currentColor" /></span>
+            </span>
+          </button>
+        </template>
       </HomeFeed>
-
-      <label v-if="searchOpen" class="home-search-bar">
-        <Search :size="18" />
-        <input v-model="searchTerm" autofocus type="search" placeholder="搜索课程或分类" />
-        <span>{{ searchResults ? `${searchResults.length} 个结果` : '键入关键词' }}</span>
-      </label>
-
-      <p v-if="error" class="inline-error">{{ error }}</p>
-
-      <button
-        v-if="startCourse && !searchOpen"
-        class="home-start-card"
-        type="button"
-        @click="openCourse(startCourse)"
-      >
-        <span class="home-start-card__art" :style="startStyle(startCourse)" />
-        <span class="home-start-card__body">
-          <small>{{ startCourse.categoryName }} · {{ formatDuration(startCourse.durationMs) }}</small>
-          <h2>{{ startCourse.title }}</h2>
-          <p>{{ startCourse.description || '听一句，读一句，再把它写下来。' }}</p>
-          <span class="home-start-card__play"><Play :size="17" fill="currentColor" /></span>
-        </span>
-      </button>
     </div>
 
     <AppBottomNav value="home" @navigate="(value) => router.push(value === 'home' ? '/' : '/me')" />
   </main>
 </template>
-
-<style scoped>
-.home-search-bar {
-  margin-top: 16px;
-}
-
-.home-start-card {
-  order: -1;
-}
-</style>

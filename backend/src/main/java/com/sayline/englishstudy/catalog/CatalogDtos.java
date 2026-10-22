@@ -27,6 +27,7 @@ public final class CatalogDtos {
         String themeColorPrimary,
         String themeColorSecondary,
         long durationMs,
+        int progress,
         boolean favorite
     ) {
     }

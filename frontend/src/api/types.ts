@@ -36,6 +36,7 @@ export interface CourseSummary {
   themeColorPrimary?: string | null
   themeColorSecondary?: string | null
   durationMs: number
+  progress: number
   favorite: boolean
 }
 

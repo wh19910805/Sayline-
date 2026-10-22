@@ -96,7 +96,9 @@ class UserProfileApiTest {
         mockMvc.perform(get("/api/v1/me/settings").header("Authorization", bearer()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.fontScale").value(1.0))
-            .andExpect(jsonPath("$.showChineseListen").value(true));
+            .andExpect(jsonPath("$.showChineseListen").value(true))
+            .andExpect(jsonPath("$.showChineseWrite").value(true))
+            .andExpect(jsonPath("$.showChineseSpeak").value(true));
 
         mockMvc.perform(patch("/api/v1/me/settings")
                 .header("Authorization", bearer())

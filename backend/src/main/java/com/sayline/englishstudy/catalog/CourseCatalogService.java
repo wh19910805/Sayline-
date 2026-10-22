@@ -1,7 +1,9 @@
 package com.sayline.englishstudy.catalog;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.sayline.englishstudy.auth.AuthenticatedUser;
 import com.sayline.englishstudy.catalog.CatalogDtos.CategoryView;
@@ -12,6 +14,7 @@ import com.sayline.englishstudy.common.ApiException;
 import com.sayline.englishstudy.common.PageResponse;
 import com.sayline.englishstudy.learning.CourseFavorite;
 import com.sayline.englishstudy.learning.CourseFavoriteRepository;
+import com.sayline.englishstudy.learning.LearningRecordRepository;
 import com.sayline.englishstudy.storage.StorageService;
 import com.sayline.englishstudy.user.UserRepository;
 import org.springframework.data.domain.Page;
@@ -30,6 +33,7 @@ public class CourseCatalogService {
     private final CourseFavoriteRepository favoriteRepository;
     private final UserRepository userRepository;
     private final StorageService storageService;
+    private final LearningRecordRepository learningRecordRepository;
 
     public CourseCatalogService(
         CourseCategoryRepository categoryRepository,
@@ -37,7 +41,8 @@ public class CourseCatalogService {
         SubtitleCueRepository cueRepository,
         CourseFavoriteRepository favoriteRepository,
         UserRepository userRepository,
-        StorageService storageService
+        StorageService storageService,
+        LearningRecordRepository learningRecordRepository
     ) {
         this.categoryRepository = categoryRepository;
         this.courseRepository = courseRepository;
@@ -45,6 +50,7 @@ public class CourseCatalogService {
         this.favoriteRepository = favoriteRepository;
         this.userRepository = userRepository;
         this.storageService = storageService;
+        this.learningRecordRepository = learningRecordRepository;
     }
 
     @Transactional(readOnly = true)
@@ -69,15 +75,25 @@ public class CourseCatalogService {
             CourseStatus.PUBLISHED,
             pageRequest(page, size));
         Set<Long> favoriteIds = favoriteIds(userId, courses.getContent());
-        return PageResponse.from(courses.map(course -> toSummary(course, favoriteIds.contains(course.getId()))));
+        Map<Long, Integer> progress = progressByCourse(userId, courses.getContent());
+        return PageResponse.from(courses.map(course -> toSummary(
+            course,
+            progress.getOrDefault(course.getId(), 0),
+            favoriteIds.contains(course.getId()))));
     }
 
     @Transactional(readOnly = true)
     public PageResponse<CourseSummary> favorites(Long userId, int page, int size) {
         PageRequest pageRequest = pageRequest(page, size)
             .withSort(Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
-        return PageResponse.from(favoriteRepository.findPublishedFavorites(userId, pageRequest)
-            .map(favorite -> toSummary(favorite.getCourse(), true)));
+        Page<CourseFavorite> favorites = favoriteRepository.findPublishedFavorites(userId, pageRequest);
+        Map<Long, Integer> progress = progressByCourse(
+            userId,
+            favorites.getContent().stream().map(CourseFavorite::getCourse).toList());
+        return PageResponse.from(favorites.map(favorite -> toSummary(
+            favorite.getCourse(),
+            progress.getOrDefault(favorite.getCourse().getId(), 0),
+            true)));
     }
 
     @Transactional(readOnly = true)
@@ -128,6 +144,21 @@ public class CourseCatalogService {
             userId, courses.stream().map(Course::getId).toList()));
     }
 
+    private Map<Long, Integer> progressByCourse(Long userId, List<Course> courses) {
+        if (courses.isEmpty()) {
+            return Map.of();
+        }
+        return learningRecordRepository.findByUserIdAndCourseIds(
+                userId,
+                courses.stream().map(Course::getId).toList())
+            .stream()
+            .collect(Collectors.toMap(
+                record -> record.getCourse().getId(),
+                record -> Math.round(
+                    (record.getListenProgress() + record.getReadProgress()
+                        + record.getWriteProgress() + record.getSpeakProgress()) / 4.0f)));
+    }
+
     private PageRequest pageRequest(int page, int size) {
         return PageRequest.of(
             Math.max(0, page),
@@ -145,7 +176,7 @@ public class CourseCatalogService {
             category.getThemeColorSecondary());
     }
 
-    private CourseSummary toSummary(Course course, boolean favorite) {
+    private CourseSummary toSummary(Course course, int progress, boolean favorite) {
         return new CourseSummary(
             course.getId(),
             course.getTitle(),
@@ -156,6 +187,7 @@ public class CourseCatalogService {
             course.getThemeColorPrimary(),
             course.getThemeColorSecondary(),
             course.getDurationMs(),
+            progress,
             favorite);
     }
 

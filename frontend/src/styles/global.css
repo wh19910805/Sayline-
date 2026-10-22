@@ -130,69 +130,6 @@ a {
   font-size: var(--text-caption);
 }
 
-.home-start-card {
-  position: relative;
-  min-height: 174px;
-  display: flex;
-  align-items: stretch;
-  overflow: hidden;
-  margin: 4px 0 24px;
-  border-radius: var(--radius-lg);
-  background: #242a22;
-  color: var(--player-text);
-  box-shadow: var(--shadow-float);
-}
-
-.home-start-card__art {
-  width: 38%;
-  min-width: 118px;
-  background:
-    linear-gradient(145deg, rgba(255,255,255,.12), transparent 55%),
-    linear-gradient(145deg, var(--card-a), var(--card-b));
-  background-position: center;
-  background-size: cover;
-}
-
-.home-start-card__body {
-  flex: 1;
-  display: grid;
-  align-content: center;
-  gap: 10px;
-  padding: 22px;
-}
-
-.home-start-card__body small {
-  color: rgba(255,250,240,.56);
-  font-size: 9px;
-  letter-spacing: .14em;
-}
-
-.home-start-card__body h2 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(25px, 4vw, 36px);
-  font-weight: var(--weight-regular);
-  line-height: 1.02;
-}
-
-.home-start-card__body p {
-  margin: 0;
-  color: rgba(255,250,240,.66);
-  font-size: var(--text-caption);
-}
-
-.home-start-card__play {
-  display: inline-flex;
-  width: 40px;
-  height: 40px;
-  align-items: center;
-  justify-content: center;
-  margin-top: 3px;
-  border-radius: 50%;
-  background: var(--color-oat-500);
-  color: #1b2119;
-}
-
 .settings-screen,
 .preferences-screen {
   background: var(--color-bg);

@@ -10,8 +10,11 @@ test('learner browses, favorites and opens a course', async ({ page }) => {
   await page.goto('/')
 
   await expect(page.locator('[data-test="category-tab"]')).toHaveCount(4)
+  await expect(page.locator('.continue-card')).toBeVisible()
+  await expect(page.getByRole('heading', { name: '为你准备' })).toBeVisible()
   await expect(page.locator('[data-test="category-card"]')).toBeVisible()
   await expect(page.locator('[data-test="course-card"]')).toHaveCount(2)
+  await expect(page.locator('.feed-open')).toHaveCount(0)
 
   const favorite = page.locator('[data-test="favorite-button"]').first()
   await expect(favorite).toHaveAttribute('aria-pressed', 'false')
@@ -28,6 +31,8 @@ test('learner writes a sentence and controls auto-hide', async ({ page }) => {
   await expect(page.locator('.player-screen')).toBeVisible()
 
   await page.locator('[aria-label="写"]').click()
+  await expect(page.locator('.write-mode__heading')).toBeVisible()
+  await expect(page.locator('.write-sentence-card')).toBeVisible()
   await expect(page.locator('.sl-word-input input')).toHaveCount(10)
   await page.locator('.sl-word-input input').first().fill('Nice')
   await expect(page.locator('.sl-word-input__mirror .is-correct')).not.toHaveCount(0)
