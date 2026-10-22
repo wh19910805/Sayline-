@@ -273,12 +273,6 @@ function MyScreen({
 
   return (
     <div className="app-screen me-screen">
-      <header className="me-header">
-        <div>
-          <h1>我的</h1>
-        </div>
-      </header>
-
       <div className="me-scroll">
         <button className="profile-card" onClick={onOpenProfile} type="button">
           <span className="profile-card__avatar">
