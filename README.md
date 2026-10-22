@@ -134,6 +134,15 @@ node scripts/visual-check.mjs
 
 生成文件位于 `frontend/artifacts/visual/`。
 
+真实前后端都已运行时，可执行完整浏览器冒烟流程：
+
+```powershell
+cd frontend
+node scripts/real-flow-check.mjs
+```
+
+该脚本会注册一个临时学习者，验证兴趣选择、首页、收藏、播放器，并使用管理员账号验证看板。
+
 ## API 认证
 
 - Access Token 有效期 15 分钟，仅保存在前端内存。
