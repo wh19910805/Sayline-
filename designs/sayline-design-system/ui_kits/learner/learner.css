@@ -2004,7 +2004,9 @@ button {
   align-content: start;
   gap: 8px;
   padding: 1px 1px 14px;
+  overscroll-behavior: contain;
   scrollbar-width: none;
+  touch-action: pan-y;
 }
 
 .write-transcript::-webkit-scrollbar {

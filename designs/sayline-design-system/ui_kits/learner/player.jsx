@@ -422,7 +422,7 @@ function PlayerScreen({
 
   function handlePointerDown(event) {
     if (
-      event.target.closest("input, textarea, .audio-deck, .sl-mode-switch, .player-header, .player-identity, .player-complete-row, .mode-actions, .record-button")
+      event.target.closest("input, textarea, .audio-deck, .sl-mode-switch, .player-header, .player-identity, .player-complete-row, .mode-actions, .record-button, .write-transcript")
     ) return;
     swipeStart.current = { x: event.clientX, y: event.clientY };
     swipeWasTriggered.current = false;
