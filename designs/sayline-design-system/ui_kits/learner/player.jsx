@@ -501,7 +501,7 @@ function PlayerScreen({
       </div>
 
       <div className="player-mode-dock">
-        <ModeSwitcher onChange={setMode} value={mode} />
+        <ModeSwitcher iconOnly onChange={setMode} value={mode} />
       </div>
 
       <div className="swipe-guide" aria-hidden="true">

@@ -5,6 +5,7 @@
 export interface ModeSwitcherProps {
   value?: "listen" | "read" | "write" | "speak";
   onChange?: (value: "listen" | "read" | "write" | "speak") => void;
+  iconOnly?: boolean;
 }
 
 export function ModeSwitcher(props: ModeSwitcherProps): React.ReactElement;

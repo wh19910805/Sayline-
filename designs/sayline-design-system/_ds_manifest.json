@@ -377,6 +377,10 @@
         {
           "name": "onChange",
           "type": "(value: \"listen\" | \"read\" | \"write\" | \"speak\") => void"
+        },
+        {
+          "name": "iconOnly",
+          "type": "boolean"
         }
       ]
     },

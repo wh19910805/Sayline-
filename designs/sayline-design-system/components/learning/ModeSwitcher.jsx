@@ -8,11 +8,16 @@ const modes = [
   { value: "speak", label: "说", icon: "mic" },
 ];
 
-export function ModeSwitcher({ value = "listen", onChange }) {
+export function ModeSwitcher({ value = "listen", onChange, iconOnly = false }) {
   return (
-    <div aria-label="学习模式" className="sl-mode-switch" role="tablist">
+    <div
+      aria-label="学习模式"
+      className={"sl-mode-switch " + (iconOnly ? "sl-mode-switch--icon-only" : "")}
+      role="tablist"
+    >
       {modes.map((mode) => (
         <button
+          aria-label={iconOnly ? mode.label : undefined}
           aria-selected={value === mode.value}
           className="sl-mode"
           key={mode.value}
@@ -21,7 +26,7 @@ export function ModeSwitcher({ value = "listen", onChange }) {
           type="button"
         >
           <Icon name={mode.icon} size={19} />
-          <span>{mode.label}</span>
+          {!iconOnly && <span>{mode.label}</span>}
         </button>
       ))}
     </div>

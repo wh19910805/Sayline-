@@ -106,8 +106,8 @@
         "message": "<Input> doesn't accept that prop. Declared props: id, label, hint, error, aside."
       },
       {
-        "selector": "JSXOpeningElement[name.name='ModeSwitcher'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|key|ref|className|style|children)$/]",
-        "message": "<ModeSwitcher> doesn't accept that prop. Declared props: value, onChange."
+        "selector": "JSXOpeningElement[name.name='ModeSwitcher'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|iconOnly|key|ref|className|style|children)$/]",
+        "message": "<ModeSwitcher> doesn't accept that prop. Declared props: value, onChange, iconOnly."
       },
       {
         "selector": "JSXOpeningElement[name.name='ModeSwitcher'] > JSXAttribute[name.name='value'] > Literal[value!=/^(?:listen|read|write|speak)$/]",

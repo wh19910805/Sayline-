@@ -411,6 +411,43 @@ textarea.sl-field__control {
   color: var(--player-text);
 }
 
+.sl-mode-switch--icon-only {
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.sl-mode-switch--icon-only .sl-mode {
+  position: relative;
+  min-height: 48px;
+  gap: 0;
+  border-radius: 0;
+  color: var(--player-text-muted);
+}
+
+.sl-mode-switch--icon-only .sl-mode:hover {
+  background: transparent;
+  color: var(--player-text);
+}
+
+.sl-mode-switch--icon-only .sl-mode[aria-selected="true"] {
+  background: transparent;
+  color: var(--player-active);
+}
+
+.sl-mode-switch--icon-only .sl-mode[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: 1px;
+  width: 14px;
+  height: 2px;
+  border-radius: 99px;
+  background: currentColor;
+}
+
 .sl-course-card {
   position: relative;
   display: flex;

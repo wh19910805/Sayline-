@@ -2356,7 +2356,18 @@ button {
 
 .player-mode-dock {
   flex: 0 0 auto;
-  padding: 4px 14px calc(9px + var(--safe-bottom));
+  padding: 3px 22px calc(10px + var(--safe-bottom));
+}
+
+.player-mode-dock .sl-mode-switch {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.player-mode-dock .sl-icon {
+  width: 22px;
+  height: 22px;
 }
 
 .swipe-guide {
