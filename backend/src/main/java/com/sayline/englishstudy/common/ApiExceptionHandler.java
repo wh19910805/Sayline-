@@ -3,6 +3,7 @@ package com.sayline.englishstudy.common;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -22,6 +23,11 @@ public class ApiExceptionHandler {
             .map(error -> error.getField() + ": " + error.getDefaultMessage())
             .orElse("请求参数不正确");
         return error(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", message, request);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    ResponseEntity<ApiError> handleNotFound(NoResourceFoundException exception, HttpServletRequest request) {
+        return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "请求的资源不存在", request);
     }
 
     @ExceptionHandler(Exception.class)
