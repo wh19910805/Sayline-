@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:8.4
+    image: mysql:8.0
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-sayline}
       MYSQL_USER: ${MYSQL_USER:-sayline}
@@ -11,7 +11,7 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_0900_ai_ci
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3307}:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -32,7 +32,7 @@ services:
     volumes:
       - minio-data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -48,6 +48,46 @@ services:
       mc mb --ignore-existing local/${STORAGE_BUCKET:-sayline-media};
       mc anonymous set none local/${STORAGE_BUCKET:-sayline-media};
       "
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-sayline}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      DB_USERNAME: ${MYSQL_USER:-sayline}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-sayline_dev_password}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-sayline-secret-change-before-production}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8088}
+      STORAGE_ENDPOINT: http://minio:9000
+      STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:9000}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-sayline}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-sayline_dev_password}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-sayline-media}
+      ADMIN_PHONE: ${ADMIN_PHONE:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      APP_SEED_DEMO: ${APP_SEED_DEMO:-false}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8088:80"
 
 volumes:
   mysql-data:

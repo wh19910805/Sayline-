@@ -52,8 +52,14 @@ class UploadApiTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.update("delete from refresh_sessions");
-        jdbcTemplate.update("delete from users");
+        for (String table : new String[] {
+            "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
+            "study_sessions", "learning_records", "course_favorites", "refresh_sessions",
+            "subtitle_cues", "courses", "user_settings", "user_interests",
+            "course_categories", "users"
+        }) {
+            jdbcTemplate.update("delete from " + table);
+        }
         when(storageService.presignUpload(any(), anyString(), anyLong()))
             .thenReturn("http://localhost:9000/sayline-media/test-upload");
     }
@@ -117,6 +123,20 @@ class UploadApiTest {
                     """))
             .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.code").value("UPLOAD_TOO_LARGE"));
+    }
+
+    @Test
+    void allowsLearnerToPresignAnAvatarCover() throws Exception {
+        String token = createUserAndLogin("13800138403", UserRole.USER);
+
+        mockMvc.perform(post("/api/v1/uploads/avatar/presign")
+                .header("Authorization", bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"kind":"COVER","fileName":"avatar.png","contentType":"image/png","sizeBytes":2048}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.objectKey").value(org.hamcrest.Matchers.startsWith("covers/")));
     }
 
     private String createUserAndLogin(String phone, UserRole role) throws Exception {

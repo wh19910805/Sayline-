@@ -86,7 +86,7 @@
 1. 用户使用手机号和密码注册。
 2. 手机号必须唯一，密码使用 BCrypt 哈希保存。
 3. 首版不接短信验证码，因此不将手机号标记为已验证。
-4. 登录成功后写入 HttpOnly 会话 Cookie。
+4. 登录成功后返回短期 Access JWT，并通过 HttpOnly Cookie 写入可撤销 Refresh Token。
 5. 被禁用用户无法登录或获取媒体地址。
 
 ### 4.2 首页与课程切换
@@ -412,7 +412,7 @@
 
 - Java 21 + Spring Boot。
 - REST API，按功能模块组织：认证、用户、分类、课程、学习、统计、文件、管理端。
-- Spring Security 负责会话鉴权和角色权限。
+- Spring Security 负责 JWT 鉴权、刷新会话校验和角色权限。
 - 密码使用 BCrypt。
 - 使用 Flyway 管理 MySQL 表结构。
 - 使用固定结构的统一错误响应和请求 ID。
@@ -437,7 +437,7 @@
 
 - 学习端和管理端共用认证服务，通过角色限制管理端 API。
 - 所有权限校验必须在后端执行，不能依赖前端隐藏按钮。
-- 会话 Cookie 设置 HttpOnly、Secure 和 SameSite。
+- Refresh Token Cookie 设置 HttpOnly、Secure 和 SameSite；原生客户端可通过 JSON 刷新接口接收刷新令牌。
 - 修改数据的请求启用 CSRF 防护。
 - 登录接口限制失败频率，避免暴力尝试。
 - 音频、封面和字幕通过短时效签名地址访问。

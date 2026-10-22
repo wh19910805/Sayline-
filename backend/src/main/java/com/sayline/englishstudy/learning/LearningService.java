@@ -87,7 +87,7 @@ public class LearningService {
 
         switch (request.mode()) {
             case LISTEN -> progress.setHeard(progress.isHeard() || request.durationMs() >= 1_000);
-            case READ -> progress.setRead(progress.isRead() || request.durationMs() >= 1_000);
+            case READ -> progress.setReadCompleted(progress.isReadCompleted() || request.durationMs() >= 1_000);
             case SPEAK -> progress.setSpoken(progress.isSpoken() || request.durationMs() >= 1_000);
             case WRITE -> {
                 String answer = request.answer() == null ? "" : request.answer().trim();
@@ -182,7 +182,7 @@ public class LearningService {
                 return new CueState(
                     cue.getId(),
                     progress != null && progress.isHeard(),
-                    progress != null && progress.isRead(),
+                    progress != null && progress.isReadCompleted(),
                     progress != null && progress.isWritten(),
                     progress != null && progress.isSpoken());
             })
@@ -241,7 +241,7 @@ public class LearningService {
         record.setListenProgress(percent(
             cueProgressRepository.countByUserIdAndCourseIdAndHeardTrue(userId, course.getId()), total));
         record.setReadProgress(percent(
-            cueProgressRepository.countByUserIdAndCourseIdAndReadTrue(userId, course.getId()), total));
+            cueProgressRepository.countByUserIdAndCourseIdAndReadCompletedTrue(userId, course.getId()), total));
         record.setWriteProgress(percent(
             cueProgressRepository.countByUserIdAndCourseIdAndWrittenTrue(userId, course.getId()), total));
         record.setSpeakProgress(percent(

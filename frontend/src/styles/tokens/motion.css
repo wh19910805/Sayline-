@@ -1,0 +1,15 @@
+:root {
+  --duration-fast: 140ms; /* @kind other */
+  --duration-base: 220ms; /* @kind other */
+  --duration-slow: 320ms; /* @kind other */
+  --ease-out: cubic-bezier(.2, .8, .2, 1); /* @kind other */
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1); /* @kind other */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms; /* @kind other */
+    --duration-base: 0ms; /* @kind other */
+    --duration-slow: 0ms; /* @kind other */
+  }
+}

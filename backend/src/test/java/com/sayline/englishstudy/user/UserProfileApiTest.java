@@ -88,7 +88,7 @@ class UserProfileApiTest {
                     """))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.nickname").value("Morning Reader"))
-            .andExpect(jsonPath("$.avatarUrl").value("avatars/lin.jpg"));
+            .andExpect(jsonPath("$.avatarUrl").value(org.hamcrest.Matchers.startsWith("http")));
     }
 
     @Test

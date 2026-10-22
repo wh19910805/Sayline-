@@ -9,6 +9,7 @@ import com.sayline.englishstudy.catalog.CourseCategory;
 import com.sayline.englishstudy.catalog.CourseCategoryRepository;
 import com.sayline.englishstudy.catalog.CatalogDtos.CategoryView;
 import com.sayline.englishstudy.common.ApiException;
+import com.sayline.englishstudy.storage.StorageService;
 import com.sayline.englishstudy.user.UserProfileDtos.InterestsUpdate;
 import com.sayline.englishstudy.user.UserProfileDtos.ProfileUpdate;
 import com.sayline.englishstudy.user.UserProfileDtos.ProfileView;
@@ -25,17 +26,20 @@ public class UserProfileService {
     private final UserSettingsRepository settingsRepository;
     private final UserInterestRepository interestRepository;
     private final CourseCategoryRepository categoryRepository;
+    private final StorageService storageService;
 
     public UserProfileService(
         UserRepository userRepository,
         UserSettingsRepository settingsRepository,
         UserInterestRepository interestRepository,
-        CourseCategoryRepository categoryRepository
+        CourseCategoryRepository categoryRepository,
+        StorageService storageService
     ) {
         this.userRepository = userRepository;
         this.settingsRepository = settingsRepository;
         this.interestRepository = interestRepository;
         this.categoryRepository = categoryRepository;
+        this.storageService = storageService;
     }
 
     @Transactional(readOnly = true)
@@ -115,12 +119,8 @@ public class UserProfileService {
             interestRepository.save(interest);
         }
 
-        if (!categoryIds.isEmpty()) {
-            UserSettings settings = settingsFor(principal.id());
-            if (settings.getDefaultCategory() == null) {
-                settings.setDefaultCategory(requiredCategory(categoryIds.getFirst()));
-            }
-        }
+        UserSettings settings = settingsFor(principal.id());
+        settings.setDefaultCategory(categoryIds.isEmpty() ? null : requiredCategory(categoryIds.getFirst()));
         return categoryIds.stream().map(this::requiredCategory).map(this::toView).toList();
     }
 
@@ -145,7 +145,11 @@ public class UserProfileService {
     }
 
     private ProfileView toView(User user) {
-        return new ProfileView(user.getId(), user.getPhone(), user.getNickname(), user.getAvatarObjectKey());
+        return new ProfileView(
+            user.getId(),
+            user.getPhone(),
+            user.getNickname(),
+            mediaUrl(user.getAvatarObjectKey()));
     }
 
     private SettingsView toView(UserSettings settings) {
@@ -171,5 +175,15 @@ public class UserProfileService {
 
     private String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String mediaUrl(String objectKey) {
+        if (objectKey == null || objectKey.isBlank()) {
+            return null;
+        }
+        if (objectKey.startsWith("http://") || objectKey.startsWith("https://") || objectKey.startsWith("/")) {
+            return objectKey;
+        }
+        return storageService.presignDownload(objectKey);
     }
 }

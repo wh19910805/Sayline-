@@ -26,6 +26,7 @@ public class S3StorageService implements StorageService {
 
     public S3StorageService(
         @Value("${app.storage.endpoint}") String endpoint,
+        @Value("${app.storage.public-endpoint}") String publicEndpoint,
         @Value("${app.storage.access-key}") String accessKey,
         @Value("${app.storage.secret-key}") String secretKey,
         @Value("${app.storage.bucket}") String bucket,
@@ -41,7 +42,7 @@ public class S3StorageService implements StorageService {
             .serviceConfiguration(configuration)
             .build();
         this.presigner = S3Presigner.builder()
-            .endpointOverride(URI.create(endpoint))
+            .endpointOverride(URI.create(publicEndpoint))
             .region(Region.of(region))
             .credentialsProvider(credentials)
             .serviceConfiguration(configuration)

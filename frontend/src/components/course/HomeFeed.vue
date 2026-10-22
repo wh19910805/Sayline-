@@ -1,0 +1,212 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { Clock3, Heart, Play } from 'lucide-vue-next'
+
+import type { Category, CourseSummary } from '@/api/types'
+
+const props = defineProps<{
+  categories: Category[]
+  courses: CourseSummary[]
+  selectedCategoryId: number | 'favorite'
+  favoriteCount?: number
+  searchResults?: CourseSummary[] | null
+}>()
+
+const emit = defineEmits<{
+  select: [value: number | 'favorite']
+  openCourse: [course: CourseSummary]
+  toggleFavorite: [courseId: number]
+}>()
+
+const currentCategory = computed(() =>
+  props.categories.find((category) => category.id === props.selectedCategoryId),
+)
+
+const visibleCourses = computed(() => {
+  if (props.searchResults) {
+    return props.searchResults
+  }
+  if (props.selectedCategoryId === 'favorite') {
+    return props.courses.filter((course) => course.favorite)
+  }
+  return props.courses.filter((course) => course.categoryId === props.selectedCategoryId)
+})
+
+function durationLabel(milliseconds: number) {
+  const seconds = Math.max(0, Math.round(milliseconds / 1_000))
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+}
+
+function coverStyle(course: CourseSummary) {
+  return {
+    '--card-color-a': course.themeColorPrimary || '#53634e',
+    '--card-color-b': course.themeColorSecondary || '#263128',
+    backgroundImage: course.coverUrl ? `url("${course.coverUrl}")` : undefined,
+  }
+}
+
+function categoryStyle(category: Category) {
+  return {
+    '--category-card-a': category.themeColorPrimary || '#53634e',
+    '--category-card-b': category.themeColorSecondary || '#263128',
+    backgroundImage: category.coverUrl ? `url("${category.coverUrl}")` : undefined,
+  }
+}
+</script>
+
+<template>
+  <section class="home-feed">
+    <div class="home-tabs-row">
+      <div class="sl-tabs home-tabs" role="tablist" aria-label="课程分类">
+        <button
+          v-for="category in categories"
+          :key="category.id"
+          class="sl-tab"
+          type="button"
+          role="tab"
+          data-test="category-tab"
+          :aria-selected="selectedCategoryId === category.id"
+          @click="emit('select', category.id)"
+        >
+          {{ category.name }}
+        </button>
+        <button
+          class="sl-tab"
+          type="button"
+          role="tab"
+          data-test="category-tab"
+          :aria-selected="selectedCategoryId === 'favorite'"
+          @click="emit('select', 'favorite')"
+        >
+          我喜欢
+          <span v-if="favoriteCount" class="home-tabs__count">{{ favoriteCount }}</span>
+        </button>
+      </div>
+      <slot name="action" />
+    </div>
+
+    <div v-if="visibleCourses.length" class="course-feed">
+      <article
+        v-if="currentCategory && !searchResults"
+        class="sl-category-card home-category-card"
+        data-test="category-card"
+        :style="categoryStyle(currentCategory)"
+      >
+        <div class="sl-category-card__shade" />
+        <div class="sl-category-card__top">
+          <span>{{ visibleCourses.length }} 门课程</span>
+        </div>
+        <div class="sl-category-card__copy">
+          <h2>{{ currentCategory.name }}</h2>
+          <span>{{ currentCategory.description || '一句一句，听得更清楚' }}</span>
+          <i />
+        </div>
+      </article>
+
+      <article
+        v-for="course in visibleCourses"
+        :key="course.id"
+        class="sl-course-card sl-course-card--feed"
+        data-test="course-card"
+        tabindex="0"
+        @click="emit('openCourse', course)"
+        @keydown.enter="emit('openCourse', course)"
+      >
+        <div class="sl-course-card__feed-cover-wrap">
+          <div class="sl-course-card__feed-cover" :style="coverStyle(course)" />
+          <span class="sl-course-card__duration">
+            <Clock3 :size="11" />
+            {{ durationLabel(course.durationMs) }}
+          </span>
+          <button
+            class="sl-course-card__favorite sl-course-card__favorite--feed"
+            type="button"
+            data-test="favorite-button"
+            :aria-label="course.favorite ? '取消收藏' : '收藏课程'"
+            :aria-pressed="course.favorite"
+            @click.stop="emit('toggleFavorite', course.id)"
+          >
+            <Heart :size="18" :fill="course.favorite ? 'currentColor' : 'none'" />
+          </button>
+        </div>
+        <div class="sl-course-card__feed-body">
+          <h3 class="sl-course-card__title">{{ course.title }}</h3>
+          <p class="sl-course-card__meta">{{ course.categoryName }}</p>
+          <span class="feed-open">
+            <Play :size="13" fill="currentColor" />
+            逐句学习
+          </span>
+        </div>
+      </article>
+    </div>
+
+    <div v-else class="favorite-empty">
+      <span class="favorite-empty__icon"><Heart :size="24" /></span>
+      <h3>
+        {{
+          searchResults
+            ? '没有找到相关课程'
+            : selectedCategoryId === 'favorite'
+              ? '还没有收藏课程'
+              : '这个分类还在准备中'
+        }}
+      </h3>
+      <p>
+        {{
+          searchResults
+            ? '换一个关键词试试，或关闭搜索返回分类。'
+            : selectedCategoryId === 'favorite'
+            ? '在课程列表点亮爱心，喜欢的内容会留在这里。'
+            : '管理员发布课程后会出现在这里。'
+        }}
+      </p>
+    </div>
+  </section>
+</template>
+
+<style scoped>
+.home-feed {
+  display: grid;
+  gap: 18px;
+}
+
+.home-tabs {
+  min-width: 0;
+  flex: 1;
+}
+
+.home-tabs-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.home-tabs__count {
+  margin-left: 5px;
+  color: var(--color-action);
+  font-size: 10px;
+}
+
+.home-category-card {
+  background-position: center;
+  background-size: cover;
+}
+
+.feed-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-action);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+}
+
+@media (min-width: 1200px) {
+  .home-tabs-row {
+    width: min(calc(100% - 96px), 1180px);
+    margin-inline: auto;
+  }
+}
+</style>

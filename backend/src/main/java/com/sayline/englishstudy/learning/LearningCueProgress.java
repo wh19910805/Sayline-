@@ -50,8 +50,8 @@ public class LearningCueProgress {
     @Column(nullable = false)
     private boolean heard;
 
-    @Column(nullable = false)
-    private boolean read;
+    @Column(name = "is_read", nullable = false)
+    private boolean readCompleted;
 
     @Column(nullable = false)
     private boolean written;

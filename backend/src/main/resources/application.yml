@@ -1,6 +1,10 @@
 spring:
   application:
     name: sayline-english-study
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/sayline?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
     username: ${DB_USERNAME:sayline}
@@ -46,10 +50,15 @@ app:
   cookie-secure: ${COOKIE_SECURE:false}
   storage:
     endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    public-endpoint: ${STORAGE_PUBLIC_ENDPOINT:${STORAGE_ENDPOINT:http://localhost:9000}}
     access-key: ${STORAGE_ACCESS_KEY:sayline}
     secret-key: ${STORAGE_SECRET_KEY:sayline_dev_password}
     bucket: ${STORAGE_BUCKET:sayline-media}
     region: ${STORAGE_REGION:us-east-1}
+  admin:
+    phone: ${ADMIN_PHONE:}
+    password: ${ADMIN_PASSWORD:}
+  seed-demo: ${APP_SEED_DEMO:false}
 
 logging:
   pattern:

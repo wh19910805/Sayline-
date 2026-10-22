@@ -12,6 +12,7 @@ import com.sayline.englishstudy.common.ApiException;
 import com.sayline.englishstudy.common.PageResponse;
 import com.sayline.englishstudy.learning.CourseFavorite;
 import com.sayline.englishstudy.learning.CourseFavoriteRepository;
+import com.sayline.englishstudy.storage.StorageService;
 import com.sayline.englishstudy.user.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,19 +29,22 @@ public class CourseCatalogService {
     private final SubtitleCueRepository cueRepository;
     private final CourseFavoriteRepository favoriteRepository;
     private final UserRepository userRepository;
+    private final StorageService storageService;
 
     public CourseCatalogService(
         CourseCategoryRepository categoryRepository,
         CourseRepository courseRepository,
         SubtitleCueRepository cueRepository,
         CourseFavoriteRepository favoriteRepository,
-        UserRepository userRepository
+        UserRepository userRepository,
+        StorageService storageService
     ) {
         this.categoryRepository = categoryRepository;
         this.courseRepository = courseRepository;
         this.cueRepository = cueRepository;
         this.favoriteRepository = favoriteRepository;
         this.userRepository = userRepository;
+        this.storageService = storageService;
     }
 
     @Transactional(readOnly = true)
@@ -89,8 +93,8 @@ public class CourseCatalogService {
             course.getDescription(),
             course.getCategory().getId(),
             course.getCategory().getName(),
-            course.getCoverObjectKey(),
-            course.getAudioObjectKey(),
+            mediaUrl(course.getCoverObjectKey()),
+            mediaUrl(course.getAudioObjectKey()),
             course.getThemeColorPrimary(),
             course.getThemeColorSecondary(),
             course.getDurationMs(),
@@ -136,7 +140,7 @@ public class CourseCatalogService {
             category.getId(),
             category.getName(),
             category.getDescription(),
-            category.getCoverObjectKey(),
+            mediaUrl(category.getCoverObjectKey()),
             category.getThemeColorPrimary(),
             category.getThemeColorSecondary());
     }
@@ -148,7 +152,7 @@ public class CourseCatalogService {
             course.getDescription(),
             course.getCategory().getId(),
             course.getCategory().getName(),
-            course.getCoverObjectKey(),
+            mediaUrl(course.getCoverObjectKey()),
             course.getThemeColorPrimary(),
             course.getThemeColorSecondary(),
             course.getDurationMs(),
@@ -163,5 +167,15 @@ public class CourseCatalogService {
             cue.getEndMs(),
             cue.getEnglishText(),
             cue.getChineseText());
+    }
+
+    private String mediaUrl(String objectKey) {
+        if (objectKey == null || objectKey.isBlank()) {
+            return null;
+        }
+        if (objectKey.startsWith("http://") || objectKey.startsWith("https://") || objectKey.startsWith("/")) {
+            return objectKey;
+        }
+        return storageService.presignDownload(objectKey);
     }
 }

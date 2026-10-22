@@ -13,7 +13,7 @@ public interface LearningCueProgressRepository extends JpaRepository<LearningCue
 
     long countByUserIdAndCourseIdAndHeardTrue(Long userId, Long courseId);
 
-    long countByUserIdAndCourseIdAndReadTrue(Long userId, Long courseId);
+    long countByUserIdAndCourseIdAndReadCompletedTrue(Long userId, Long courseId);
 
     long countByUserIdAndCourseIdAndWrittenTrue(Long userId, Long courseId);
 

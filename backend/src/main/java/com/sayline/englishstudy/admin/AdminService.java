@@ -150,14 +150,15 @@ public class AdminService {
     public CourseAdminView updateCourse(Long courseId, CourseRequest request) {
         Course course = requiredCourse(courseId);
         boolean subtitleChanged = !equalsNullable(course.getSubtitleObjectKey(), request.subtitleObjectKey());
+        boolean audioChanged = !equalsNullable(course.getAudioObjectKey(), request.audioObjectKey());
         List<LearningRecord> records = recordRepository.findByCourseId(courseId);
-        if (subtitleChanged && !records.isEmpty() && !request.resetLearning()) {
+        if ((subtitleChanged || audioChanged) && !records.isEmpty() && !request.resetLearning()) {
             throw new ApiException(
                 "LEARNING_RESET_REQUIRED",
                 HttpStatus.CONFLICT,
                 "替换音频或字幕后需要确认重置学习进度");
         }
-        if (subtitleChanged && request.resetLearning()) {
+        if ((subtitleChanged || audioChanged) && request.resetLearning()) {
             resetLearning(courseId, records);
         }
         apply(course, request, false);
