@@ -77,8 +77,23 @@
           "section": "Review"
         }
       ]
+    },
+    "Sayline Responsive Showcase": {
+      "versions": [
+        {
+          "path": "ui_kits/learner/responsive-showcase.html",
+          "createdAt": "2026-10-22T04:21:56.186Z",
+          "status": "needs-review",
+          "subtitle": "Adaptive learner layouts for mobile, tablet, and desktop",
+          "viewport": {
+            "width": 1440,
+            "height": 2400
+          },
+          "section": "Product"
+        }
+      ]
     }
   },
   "createdAt": "2026-10-21T08:57:54.734Z",
-  "updatedAt": "2026-10-22T03:11:20.293Z"
+  "updatedAt": "2026-10-22T04:21:56.187Z"
 }

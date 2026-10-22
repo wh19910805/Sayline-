@@ -14,6 +14,7 @@ const { Toast } = window.SaylineDesignSystem_1a4fd3;
 function App() {
   const initialParams = new URLSearchParams(window.location.search);
   const requestedScreen = initialParams.get("screen");
+  const standalone = initialParams.get("standalone") === "1";
   const initialScreen = ["login", "interests", "home", "me", "player", "profile-settings", "learning-settings", "preferences"].includes(requestedScreen)
     ? requestedScreen
     : "home";
@@ -98,6 +99,144 @@ function App() {
     setPlayerCourseId(playerListIds[nextIndex]);
   }
 
+  function renderActiveScreen() {
+    if (screen === "login") {
+      return <LoginScreen onLogin={() => setScreen("interests")} />;
+    }
+
+    if (screen === "interests") {
+      return (
+        <InterestOnboardingScreen
+          onComplete={(selected) => {
+            setInterests(selected);
+            setDefaultTab(selected[0]);
+            setCategory(selected[0]);
+            setScreen("home");
+          }}
+        />
+      );
+    }
+
+    if (screen === "home") {
+      return (
+        <HomeScreen
+          category={category}
+          categories={homeCategories}
+          courses={courses}
+          onCategory={setCategory}
+          onNavigate={navigate}
+          onOpenCourse={openCourse}
+          onToggleFavorite={toggleFavorite}
+        />
+      );
+    }
+
+    if (screen === "me") {
+      return (
+        <MyScreen
+          defaultTab={defaultTab}
+          interests={interests}
+          learningSettings={learningSettings}
+          onNavigate={navigate}
+          onOpenPreferences={() => {
+            setPreferencesReturnTo("me");
+            setScreen("preferences");
+          }}
+          onOpenLearningSettings={() => setScreen("learning-settings")}
+          onOpenProfile={() => setScreen("profile-settings")}
+          period={period}
+          profile={profile}
+          setPeriod={setPeriod}
+        />
+      );
+    }
+
+    if (screen === "profile-settings") {
+      return (
+        <ProfileSettingsScreen
+          onBack={() => setScreen("me")}
+          onSave={(nextProfile) => {
+            setProfile({
+              ...nextProfile,
+              phoneMasked: nextProfile.phone.length > 7
+                ? `${nextProfile.phone.slice(0, 3)}****${nextProfile.phone.slice(-4)}`
+                : nextProfile.phone,
+            });
+            setScreen("me");
+            setToast("个人资料已保存");
+            window.setTimeout(() => setToast(""), 2200);
+          }}
+          profile={profile}
+        />
+      );
+    }
+
+    if (screen === "learning-settings") {
+      return (
+        <LearningSettingsScreen
+          learningSettings={learningSettings}
+          onBack={() => setScreen("me")}
+          onOpenPreferences={() => {
+            setPreferencesReturnTo("learning-settings");
+            setScreen("preferences");
+          }}
+          onSave={(nextSettings) => {
+            setLearningSettings(nextSettings);
+            setScreen("me");
+            setToast("学习设置已保存");
+            window.setTimeout(() => setToast(""), 2200);
+          }}
+        />
+      );
+    }
+
+    if (screen === "preferences") {
+      return (
+        <PreferencesScreen
+          defaultTab={defaultTab}
+          interests={interests}
+          onBack={() => setScreen(preferencesReturnTo)}
+          onSave={(nextInterests, nextDefault) => {
+            setInterests(nextInterests);
+            setDefaultTab(nextDefault);
+            setCategory(nextDefault);
+            setScreen("home");
+            setToast("学习偏好已保存");
+            window.setTimeout(() => setToast(""), 2200);
+          }}
+        />
+      );
+    }
+
+    if (screen === "player" && playerCourse) {
+      return (
+        <PlayerScreen
+          course={playerCourse}
+          initialMode={initialParams.get("mode")}
+          learningSettings={learningSettings}
+          onClose={() => setScreen("home")}
+          onMoveCourse={moveCourse}
+          onToggleFavorite={() => toggleFavorite(playerCourse.id)}
+        />
+      );
+    }
+
+    return null;
+  }
+
+  if (standalone) {
+    return (
+      <div className="standalone-app" data-screen={screen}>
+        {renderActiveScreen()}
+        {toast && (
+          <div className="prototype-toast">
+            <Toast message={toast} tone={toast.includes("已") ? "success" : "neutral"} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="review-shell">
       <ReviewRail
@@ -133,103 +272,7 @@ function App() {
           <span>390 × 844</span>
         </div>
         <div className="phone-device">
-          {screen === "login" && <LoginScreen onLogin={() => setScreen("interests")} />}
-          {screen === "interests" && (
-            <InterestOnboardingScreen
-              onComplete={(selected) => {
-                setInterests(selected);
-                setDefaultTab(selected[0]);
-                setCategory(selected[0]);
-                setScreen("home");
-              }}
-            />
-          )}
-          {screen === "home" && (
-            <HomeScreen
-              category={category}
-              categories={homeCategories}
-              courses={courses}
-              onCategory={setCategory}
-              onNavigate={navigate}
-              onOpenCourse={openCourse}
-              onToggleFavorite={toggleFavorite}
-            />
-          )}
-          {screen === "me" && (
-            <MyScreen
-              defaultTab={defaultTab}
-              interests={interests}
-              learningSettings={learningSettings}
-              onNavigate={navigate}
-              onOpenPreferences={() => {
-                setPreferencesReturnTo("me");
-                setScreen("preferences");
-              }}
-              onOpenLearningSettings={() => setScreen("learning-settings")}
-              onOpenProfile={() => setScreen("profile-settings")}
-              period={period}
-              profile={profile}
-              setPeriod={setPeriod}
-            />
-          )}
-          {screen === "profile-settings" && (
-            <ProfileSettingsScreen
-              onBack={() => setScreen("me")}
-              onSave={(nextProfile) => {
-                setProfile({
-                  ...nextProfile,
-                  phoneMasked: nextProfile.phone.length > 7
-                    ? `${nextProfile.phone.slice(0, 3)}****${nextProfile.phone.slice(-4)}`
-                    : nextProfile.phone,
-                });
-                setScreen("me");
-                setToast("个人资料已保存");
-                window.setTimeout(() => setToast(""), 2200);
-              }}
-              profile={profile}
-            />
-          )}
-          {screen === "learning-settings" && (
-            <LearningSettingsScreen
-              learningSettings={learningSettings}
-              onBack={() => setScreen("me")}
-              onOpenPreferences={() => {
-                setPreferencesReturnTo("learning-settings");
-                setScreen("preferences");
-              }}
-              onSave={(nextSettings) => {
-                setLearningSettings(nextSettings);
-                setScreen("me");
-                setToast("学习设置已保存");
-                window.setTimeout(() => setToast(""), 2200);
-              }}
-            />
-          )}
-          {screen === "preferences" && (
-            <PreferencesScreen
-              defaultTab={defaultTab}
-              interests={interests}
-              onBack={() => setScreen(preferencesReturnTo)}
-              onSave={(nextInterests, nextDefault) => {
-                setInterests(nextInterests);
-                setDefaultTab(nextDefault);
-                setCategory(nextDefault);
-                setScreen("home");
-                setToast("学习偏好已保存");
-                window.setTimeout(() => setToast(""), 2200);
-              }}
-            />
-          )}
-          {screen === "player" && playerCourse && (
-            <PlayerScreen
-              course={playerCourse}
-              initialMode={initialParams.get("mode")}
-              learningSettings={learningSettings}
-              onClose={() => setScreen("home")}
-              onMoveCourse={moveCourse}
-              onToggleFavorite={() => toggleFavorite(playerCourse.id)}
-            />
-          )}
+          {renderActiveScreen()}
         </div>
         <div className="device-hint">
           <span><i></i> 可交互原型</span>

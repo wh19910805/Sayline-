@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sayline · Responsive Web</title>
+  <link rel="icon" href="../../assets/brand/sayline-app-icon.png">
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 44px 48px 58px;
+      color: var(--color-text);
+      background:
+        radial-gradient(circle at 6% 0%, rgba(255,255,255,.78), transparent 26%),
+        #dcd9d2;
+      font-family: var(--font-ui);
+    }
+    header { max-width: 1320px; margin: 0 auto 30px; display: flex; justify-content: space-between; align-items: flex-end; gap: 36px; }
+    .eyebrow { margin: 0 0 9px; color: var(--color-text-tertiary); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { margin: 0; font-family: var(--font-display); font-size: 56px; font-weight: 400; line-height: .96; letter-spacing: -.035em; }
+    header p:last-child { max-width: 450px; margin: 0; color: var(--color-text-secondary); font-size: 13px; line-height: 1.8; }
+    .breakpoint-rail { max-width: 1320px; margin: 0 auto 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .breakpoint-rail span { padding: 7px 11px; border: 1px solid var(--color-border); border-radius: 99px; background: rgba(255,253,250,.5); color: var(--color-text-secondary); font-size: 9px; }
+    .layout { max-width: 1320px; margin: 0 auto; display: grid; gap: 24px; }
+    .layout-row { display: grid; gap: 24px; }
+    .layout-row--mobile-tablet { grid-template-columns: 300px 1fr; }
+    .layout-row--double { grid-template-columns: 1fr 1fr; }
+    .panel { min-width: 0; overflow: hidden; border: 1px solid rgba(23,26,22,.1); border-radius: 22px; background: var(--color-paper-50); box-shadow: 0 14px 38px rgba(30,34,27,.07); }
+    .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 16px 19px 13px; border-bottom: 1px solid var(--color-border); }
+    .panel-head h2 { margin: 0; font-family: var(--font-display); font-size: 25px; font-weight: 400; }
+    .panel-head span { color: var(--color-text-tertiary); font-size: 8px; letter-spacing: .1em; text-transform: uppercase; }
+    .panel-body { padding: 18px; background: #eae7e0; }
+    .shot { overflow: hidden; border: 1px solid rgba(23,26,22,.14); border-radius: 18px; background: var(--color-paper-100); }
+    .shot img { display: block; width: 100%; height: auto; }
+    .shot--mobile { width: 250px; margin: 0 auto; border: 6px solid #1a1f19; border-radius: 30px; }
+    .shot--tablet { width: 100%; max-width: 760px; margin: 0 auto; border-width: 5px; }
+    .shot--wide { width: 100%; }
+    .notes { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 24px; }
+    .note { padding: 15px 16px; border: 1px solid var(--color-border); border-radius: 14px; background: rgba(255,253,250,.58); }
+    .note strong { display: block; margin-bottom: 5px; font-size: 11px; }
+    .note p { margin: 0; color: var(--color-text-secondary); font-size: 9px; line-height: 1.65; }
+    @media (max-width: 900px) {
+      body { padding: 24px 16px; }
+      header, .layout-row--mobile-tablet, .layout-row--double, .notes { display: grid; grid-template-columns: 1fr; }
+      header { display: block; }
+      header p:last-child { margin-top: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div><p class="eyebrow">Sayline / Responsive system</p><h1>同一套语言，<br>适配不同画布。</h1></div>
+    <p>移动端保持单手与沉浸体验，平板拓展到三列课程流，桌面使用四列内容和受控的阅读宽度，避免简单拉伸。</p>
+  </header>
+  <div class="breakpoint-rail">
+    <span>手机 &lt; 768 · 2 列</span><span>平板 ≥ 768 · 3 列</span><span>电脑 ≥ 1200 · 4 列</span><span>播放器正文最大 680px</span>
+  </div>
+  <main class="layout">
+    <div class="layout-row layout-row--mobile-tablet">
+      <section class="panel">
+        <div class="panel-head"><h2>手机</h2><span>390 px</span></div>
+        <div class="panel-body"><div class="shot shot--mobile"><img src="responsive-mobile.png" alt="手机首页"></div></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>平板</h2><span>768 px</span></div>
+        <div class="panel-body"><div class="shot shot--tablet"><img src="responsive-tablet.png" alt="平板首页"></div></div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head"><h2>电脑 · 首页</h2><span>1440 px</span></div>
+      <div class="panel-body"><div class="shot shot--wide"><img src="responsive-desktop.png" alt="桌面首页"></div></div>
+    </section>
+
+    <div class="layout-row layout-row--double">
+      <section class="panel">
+        <div class="panel-head"><h2>电脑 · 播放器</h2><span>Immersive</span></div>
+        <div class="panel-body"><div class="shot shot--wide"><img src="responsive-player-desktop.png" alt="桌面播放器"></div></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>电脑 · 我的</h2><span>Learning space</span></div>
+        <div class="panel-body"><div class="shot shot--wide"><img src="responsive-me-desktop.png" alt="桌面我的"></div></div>
+      </section>
+    </div>
+  </main>
+  <section class="notes">
+    <article class="note"><strong>布局不会横向溢出</strong><p>内容使用最大宽度、自然换行和受控列数，避免桌面端把手机布局无限拉宽。</p></article>
+    <article class="note"><strong>导航随屏幕变化</strong><p>手机占满宽度；平板和电脑变成底部居中的浮动导航，减少大面积空白。</p></article>
+    <article class="note"><strong>阅读宽度保持稳定</strong><p>桌面上字幕与设置内容限制在舒适阅读宽度，背景氛围继续铺满视口。</p></article>
+  </section>
+</body>
+</html>

@@ -124,6 +124,17 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 - 设置页改为连续纸面结构，翻译开关压缩为 2×2 控制矩阵
 - 精修前后对比：[`reviews/sayline-refinement-comparison.html`](reviews/sayline-refinement-comparison.html)
 
+## 响应式 Web
+
+- 手机 `< 768px`：全宽单屏布局，课程流 2 列，底部导航贴边
+- 平板 `768–1199px`：内容最大宽度 720px，课程流 3 列，底部导航居中浮动
+- 电脑 `≥ 1200px`：内容最大宽度 1180px，课程流 4 列，播放器正文最大宽度 900px
+- 播放器中的歌词与练习正文限制在舒适阅读宽度，动态背景仍然铺满整个视口
+- 设置页和个人中心在宽屏限制内容宽度，不把手机布局简单拉伸
+- 宽屏下不会出现横向滚动
+
+响应式设计稿：[`ui_kits/learner/responsive-showcase.html`](ui_kits/learner/responsive-showcase.html)
+
 ## COMPONENTS
 
 - Core：`Icon`、`Button`、`IconButton`、`Input`、`Textarea`、`Checkbox`、`Switch`、`Badge`
@@ -163,6 +174,12 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 - `?screen=learning-settings`
 - `?screen=preferences`
 - `?screen=home&category=favorite`
+
+如需查看真实全屏自适应页面，追加 `standalone=1`：
+
+- `?standalone=1&screen=home`
+- `?standalone=1&screen=player&mode=listen`
+- `?standalone=1&screen=me&period=week`
 
 ## FILE INDEX
 
