@@ -119,8 +119,18 @@ function WriteMode({
   playing,
 }) {
   const cue = course.cues[activeCue];
-  const previousCue = course.cues[activeCue - 1];
-  const nextCue = course.cues[activeCue + 1];
+  const transcriptRef = React.useRef(null);
+  const currentRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const container = transcriptRef.current;
+    const currentBlock = currentRef.current;
+    if (!container || !currentBlock) return;
+    container.scrollTop = Math.max(
+      0,
+      currentBlock.offsetTop - container.clientHeight * 0.16,
+    );
+  }, [activeCue, course.id, showTranslation]);
 
   return (
     <div className="write-mode">
@@ -132,79 +142,86 @@ function WriteMode({
         <Badge>第 {activeCue + 1} / {course.cues.length} 句</Badge>
       </div>
 
-      <div className="write-context">
-        <div className="write-neighbor">
-          <span>上一句</span>
-          <p>{previousCue ? previousCue.en : "这是本课的第一句"}</p>
-          {showTranslation && previousCue && <small>{previousCue.zh}</small>}
-        </div>
-
-        <div className="write-current">
-          <div className="write-current__head">
-            <span className="write-current__label">当前句</span>
-            <div className="write-current__actions">
-              <button aria-label={playing ? "暂停当前句" : "播放当前句"} onClick={onReplay} type="button">
-                <Icon name={playing ? "pause" : "play"} size={17} />
-                <span>{playing ? "暂停" : "听原句"}</span>
-              </button>
-              <button
-                aria-pressed={showTranslation}
-                className={showTranslation ? "is-active" : ""}
-                onClick={onToggleTranslation}
-                type="button"
+      <div className="write-transcript" ref={transcriptRef}>
+        {course.cues.map((item, index) => {
+          if (index !== activeCue) {
+            return (
+              <div
+                className={"write-context-row " + (index < activeCue ? "is-before" : "is-after")}
+                key={item.id}
               >
-                <Icon name="captions" size={17} />
-                <span>中文</span>
-              </button>
-            </div>
-          </div>
-          <p className={"write-current__translation " + (showTranslation ? "" : "is-hidden")}>
-            {showTranslation ? cue.zh : "中文翻译已隐藏"}
-          </p>
-        </div>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <p lang="en">{item.en}</p>
+                  {showTranslation && <small lang="zh">{item.zh}</small>}
+                </div>
+              </div>
+            );
+          }
 
-        <div className="write-neighbor">
-          <span>下一句</span>
-          <p>{nextCue ? nextCue.en : "这是本课的最后一句"}</p>
-          {showTranslation && nextCue && <small>{nextCue.zh}</small>}
-        </div>
-      </div>
+          return (
+            <section className="write-current" key={item.id} ref={currentRef}>
+              <div className="write-current__head">
+                <span className="write-current__label">当前句 · {String(index + 1).padStart(2, "0")}</span>
+                <div className="write-current__actions">
+                  <button aria-label={playing ? "暂停当前句" : "播放当前句"} onClick={onReplay} type="button">
+                    <Icon name={playing ? "pause" : "play"} size={17} />
+                    <span>{playing ? "暂停" : "听原句"}</span>
+                  </button>
+                  <button
+                    aria-pressed={showTranslation}
+                    className={showTranslation ? "is-active" : ""}
+                    onClick={onToggleTranslation}
+                    type="button"
+                  >
+                    <Icon name="captions" size={17} />
+                    <span>中文</span>
+                  </button>
+                </div>
+              </div>
+              <p className={"write-current__translation " + (showTranslation ? "" : "is-hidden")}>
+                {showTranslation ? cue.zh : "中文翻译已隐藏"}
+              </p>
 
-      <div className="word-input-card">
-        <div className="word-input-card__head">
-          <span>逐词填写</span>
-          <small>按空格跳到下一个词</small>
-        </div>
-        <WordInput
-          onChange={(value) => {
-            setWordAnswers(value);
-            if (feedback) setFeedback("");
-          }}
-          value={wordAnswers}
-          words={cue.en.split(/\s+/)}
-        />
-      </div>
+              <div className="word-input-card">
+                <div className="word-input-card__head">
+                  <span>逐词填写</span>
+                  <small>按空格跳到下一个词</small>
+                </div>
+                <WordInput
+                  onChange={(value) => {
+                    setWordAnswers(value);
+                    if (feedback) setFeedback("");
+                  }}
+                  value={wordAnswers}
+                  words={cue.en.split(/\s+/)}
+                />
+              </div>
 
-      {feedback === "wrong" && (
-        <div className="dictation-feedback is-wrong">
-          <div><Icon name="x" size={16} /><strong>还差一点</strong></div>
-          <p>再听一次，注意 “meeting” 和 “Friday”。</p>
-        </div>
-      )}
-      {feedback === "correct" && (
-        <div className="dictation-feedback is-correct">
-          <div><Icon name="circle-check" size={16} /><strong>写对了</strong></div>
-          <p>{cue.en}</p>
-        </div>
-      )}
+              {feedback === "wrong" && (
+                <div className="dictation-feedback is-wrong">
+                  <div><Icon name="x" size={16} /><strong>还差一点</strong></div>
+                  <p>再听一次，注意 “meeting” 和 “Friday”。</p>
+                </div>
+              )}
+              {feedback === "correct" && (
+                <div className="dictation-feedback is-correct">
+                  <div><Icon name="circle-check" size={16} /><strong>写对了</strong></div>
+                  <p>{cue.en}</p>
+                </div>
+              )}
 
-      <div className="mode-actions">
-        <Button fullWidth onClick={onSubmit} variant={feedback === "correct" ? "secondary" : "accent"}>
-          {feedback === "correct" ? "下一句" : "提交答案"}
-        </Button>
-        <button className="skip-link" onClick={() => { setWordAnswers([]); setActiveCue((value) => Math.min(course.cues.length - 1, value + 1)); }} type="button">
-          暂时跳过这一句
-        </button>
+              <div className="mode-actions write-current__actions-bottom">
+                <Button fullWidth onClick={onSubmit} variant={feedback === "correct" ? "secondary" : "accent"}>
+                  {feedback === "correct" ? "下一句" : "提交答案"}
+                </Button>
+                <button className="skip-link" onClick={() => { setWordAnswers([]); setActiveCue((value) => Math.min(course.cues.length - 1, value + 1)); }} type="button">
+                  暂时跳过这一句
+                </button>
+              </div>
+            </section>
+          );
+        })}
       </div>
     </div>
   );
