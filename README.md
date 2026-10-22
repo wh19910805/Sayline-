@@ -121,6 +121,7 @@ mvn test
 cd ..\frontend
 pnpm test
 pnpm build
+pnpm test:e2e
 ```
 
 视觉与响应式检查：

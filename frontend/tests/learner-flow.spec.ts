@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import HomeFeed from '../src/components/course/HomeFeed.vue'
 import { useControlVisibility } from '../src/composables/useControlVisibility'
 import { getLetterStates } from '../src/utils/dictation'
+import { createVisibleCueTimers } from '../src/utils/visibleCueTimers'
 
 const categories = [
   { id: 1, name: '职场', description: '真实职场表达' },
@@ -93,5 +94,34 @@ describe('auto hiding player controls', () => {
     vi.advanceTimersByTime(20_000)
     await nextTick()
     expect(visibility.visible.value).toBe(true)
+  })
+})
+
+describe('read visibility progress', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('counts a cue only after it stays visible for one second', () => {
+    const completed: number[] = []
+    const tracker = createVisibleCueTimers({ onElapsed: (cueId) => completed.push(cueId) })
+
+    tracker.enter(1)
+    vi.advanceTimersByTime(600)
+    tracker.leave(1)
+    vi.advanceTimersByTime(600)
+    expect(completed).toEqual([])
+
+    tracker.enter(2)
+    vi.advanceTimersByTime(1_000)
+    expect(completed).toEqual([2])
+
+    tracker.enter(2)
+    vi.advanceTimersByTime(1_000)
+    expect(completed).toEqual([2])
   })
 })

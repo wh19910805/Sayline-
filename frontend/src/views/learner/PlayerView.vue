@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  type ComponentPublicInstance,
+} from 'vue'
 import {
   ArrowLeft,
   BookOpen,
@@ -31,6 +39,7 @@ import WordDictation from '@/components/player/WordDictation.vue'
 import { useControlVisibility } from '@/composables/useControlVisibility'
 import { useCatalogStore } from '@/stores/catalog'
 import { formatClock } from '@/utils/format'
+import { createVisibleCueTimers } from '@/utils/visibleCueTimers'
 
 const route = useRoute()
 const router = useRouter()
@@ -62,6 +71,11 @@ let countdownTimer: ReturnType<typeof setInterval> | undefined
 let positionTimer: ReturnType<typeof setInterval> | undefined
 let activeSince = performance.now()
 const sentActions = new Set<string>()
+const transcriptElements = new Map<number, HTMLElement>()
+let readObserver: IntersectionObserver | null = null
+const readTimers = createVisibleCueTimers({
+  onElapsed: (cueId) => markCue(cueId, 'READ'),
+})
 
 const autoHide = computed(() => mode.value === 'LISTEN' || mode.value === 'READ')
 const visibility = useControlVisibility({ autoHide, delay: 6_000 })
@@ -112,6 +126,7 @@ async function loadCourse(showLoader = true) {
     const savedIndex = detail.cues.findIndex((cue) => cue.id === state.lastCueId)
     activeCueIndex.value = savedIndex >= 0 ? savedIndex : 0
     await nextTick()
+    if (mode.value === 'READ') startReadObservation()
     if (audio.value) {
       audio.value.currentTime = Math.max(0, state.lastPositionMs / 1_000)
       audio.value.playbackRate = playbackRate.value
@@ -201,6 +216,12 @@ function onTimeUpdate() {
 
 function markCurrentCue(actionMode: LearningMode, answer?: string) {
   const cue = activeCue.value
+  if (!cue) return
+  markCue(cue.id, actionMode, answer)
+}
+
+function markCue(cueId: number, actionMode: LearningMode, answer?: string) {
+  const cue = course.value?.cues.find((item) => item.id === cueId)
   if (!cue) return
   const key = `${cue.id}-${actionMode}-${answer ?? ''}`
   if (sentActions.has(key)) return
@@ -339,7 +360,12 @@ async function toggleFavorite() {
 function tickLearning() {
   if (!course.value) return
   const elapsed = performance.now() - activeSince
-  if (mode.value === 'READ' && elapsed >= 1_000 && document.visibilityState === 'visible') {
+  if (
+    mode.value === 'READ' &&
+    !readObserver &&
+    elapsed >= 1_000 &&
+    document.visibilityState === 'visible'
+  ) {
     markCurrentCue('READ')
   }
   if (
@@ -351,6 +377,51 @@ function tickLearning() {
     markCurrentCue('LISTEN')
   }
   if (recording.value) recordSeconds.value = Math.floor((performance.now() - recordingStartedAt) / 1_000)
+}
+
+function setTranscriptElement(
+  cueId: number,
+  element: Element | ComponentPublicInstance | null,
+) {
+  if (element instanceof HTMLElement) {
+    transcriptElements.set(cueId, element)
+  } else {
+    transcriptElements.delete(cueId)
+  }
+}
+
+function stopReadObservation() {
+  readObserver?.disconnect()
+  readObserver = null
+  readTimers.reset()
+}
+
+function startReadObservation() {
+  stopReadObservation()
+  if (mode.value !== 'READ' || typeof IntersectionObserver === 'undefined') return
+
+  readObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        const element = entry.target as HTMLElement
+        const cueId = Number(element.dataset.cueId)
+        if (
+          entry.isIntersecting &&
+          entry.intersectionRatio >= 0.55 &&
+          document.visibilityState === 'visible'
+        ) {
+          readTimers.enter(cueId)
+        } else {
+          readTimers.leave(cueId)
+        }
+      }
+    },
+    { threshold: [0.55] },
+  )
+
+  nextTick(() => {
+    transcriptElements.forEach((element) => readObserver?.observe(element))
+  })
 }
 
 let touchStartY = 0
@@ -372,6 +443,11 @@ watch(
 watch(mode, () => {
   activeSince = performance.now()
   writeSubmitted.value = false
+  if (mode.value === 'READ') {
+    startReadObservation()
+  } else {
+    stopReadObservation()
+  }
 })
 
 onMounted(async () => {
@@ -390,6 +466,7 @@ onBeforeUnmount(() => {
   clearInterval(progressTimer)
   clearInterval(positionTimer)
   clearInterval(countdownTimer)
+  stopReadObservation()
   mediaRecorder?.stream?.getTracks().forEach((track) => track.stop())
   if (audioRecordingUrl.value) URL.revokeObjectURL(audioRecordingUrl.value)
 })
@@ -456,6 +533,8 @@ onBeforeUnmount(() => {
             <button
               v-for="(cue, index) in course.cues"
               :key="cue.id"
+              :ref="(element) => setTranscriptElement(cue.id, element)"
+              :data-cue-id="cue.id"
               class="transcript-line"
               :class="{ 'is-active': index === activeCueIndex }"
               type="button"

@@ -5,6 +5,8 @@
 node_modules/
 target/
 dist/
+playwright-report/
+test-results/
 .idea/
 .vscode/
 *.log
