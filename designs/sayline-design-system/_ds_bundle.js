@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Switch","sourcePath":"components/core/Switch.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CategoryCard","sourcePath":"components/learning/CategoryCard.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"WordInput","sourcePath":"components/learning/WordInput.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"ecb82d2b8de5","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Switch.jsx":"b3b88523155c","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CategoryCard.jsx":"d7c5f606f862","components/learning/CourseCard.jsx":"91495d6bfafe","components/learning/ModeSwitcher.jsx":"1e910a80ba0f","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/learning/WordInput.jsx":"8fb78c2b1d9c","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"5e843b18a550","ui_kits/learner/data.jsx":"2cd232190380","ui_kits/learner/player.jsx":"6bd094420499","ui_kits/learner/screens.jsx":"67a30cc667f5","ui_kits/learner/shared.jsx":"eef8541b52bc"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Switch","sourcePath":"components/core/Switch.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CategoryCard","sourcePath":"components/learning/CategoryCard.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"WordInput","sourcePath":"components/learning/WordInput.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"ecb82d2b8de5","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Switch.jsx":"ab5e398431ae","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CategoryCard.jsx":"128dec5ddb45","components/learning/CourseCard.jsx":"90a089af0cb2","components/learning/ModeSwitcher.jsx":"1e910a80ba0f","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/learning/WordInput.jsx":"8fb78c2b1d9c","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"5e843b18a550","ui_kits/learner/data.jsx":"2cd232190380","ui_kits/learner/player.jsx":"e193bec1f6a6","ui_kits/learner/screens.jsx":"86d1e0f7e2f7","ui_kits/learner/shared.jsx":"eef8541b52bc"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -394,9 +394,9 @@ function CategoryCard({
     "aria-hidden": "true"
   }), /*#__PURE__*/React.createElement("div", {
     className: "sl-category-card__top"
-  }, /*#__PURE__*/React.createElement("span", null, "Course collection"), /*#__PURE__*/React.createElement("span", null, courseCount, " \u95E8\u8BFE\u7A0B")), /*#__PURE__*/React.createElement("figcaption", {
+  }, /*#__PURE__*/React.createElement("span", null, courseCount, " \u95E8\u8BFE\u7A0B")), /*#__PURE__*/React.createElement("figcaption", {
     className: "sl-category-card__copy"
-  }, /*#__PURE__*/React.createElement("span", null, description), /*#__PURE__*/React.createElement("h2", null, title), /*#__PURE__*/React.createElement("i", {
+  }, /*#__PURE__*/React.createElement("h2", null, title), /*#__PURE__*/React.createElement("span", null, description), /*#__PURE__*/React.createElement("i", {
     "aria-hidden": "true"
   })));
 }
@@ -538,6 +538,7 @@ function CourseCard({
     className: "sl-course-card__meta"
   }, meta), typeof progress === "number" && /*#__PURE__*/React.createElement(ProgressBar, {
     className: "sl-course-card__progress",
+    tone: "moss",
     value: progress
   })));
 }
@@ -1721,7 +1722,7 @@ function WriteMode({
     className: "mode-copy"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "eyebrow"
-  }, "DICTATION \xB7 ", activeCue + 1, "/", course.cues.length), /*#__PURE__*/React.createElement("h2", null, modeCopy.write.title)), /*#__PURE__*/React.createElement(Badge, null, "\u7B2C ", activeCue + 1, " / ", course.cues.length, " \u53E5")), /*#__PURE__*/React.createElement("div", {
+  }, "DICTATION \xB7 ", activeCue + 1, "/", course.cues.length), /*#__PURE__*/React.createElement("h2", null, modeCopy.write.title))), /*#__PURE__*/React.createElement("div", {
     className: "write-transcript",
     ref: transcriptRef
   }, course.cues.map((item, index) => {
@@ -2084,7 +2085,7 @@ function PlayerScreen({
     setControlsVisible(visible => !visible);
   }
   return /*#__PURE__*/React.createElement("div", {
-    className: `app-screen player-screen player-mode-${mode}`,
+    className: `app-screen player-screen player-mode-${mode} ${controlsVisible ? "controls-visible" : ""}`,
     onClickCapture: event => {
       if (!swipeWasTriggered.current) return;
       event.preventDefault();
@@ -2206,7 +2207,7 @@ function PlayerScreen({
     speed: speed
   })), /*#__PURE__*/React.createElement("div", {
     className: "player-complete-row"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, modeCopy[mode].label, "\u73AF\u8282"), /*#__PURE__*/React.createElement("small", null, Math.round(modeProgress[mode]), "%")), /*#__PURE__*/React.createElement(Button, {
+  }, /*#__PURE__*/React.createElement(Button, {
     disabled: !canConfirm,
     onClick: () => setConfirmed(value => ({
       ...value,
@@ -2428,25 +2429,15 @@ function HomeScreen({
   }), /*#__PURE__*/React.createElement("div", {
     className: "home-scroll"
   }, !searchOpen && category !== "favorite" && /*#__PURE__*/React.createElement("section", {
-    className: "home-section"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "section-heading"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "eyebrow"
-  }, "PICK UP WHERE YOU LEFT OFF"), /*#__PURE__*/React.createElement("button", {
-    className: "text-link",
-    onClick: () => onOpenCourse(continueCourse),
-    type: "button"
-  }, "\u67E5\u770B\u64AD\u653E\u5668")), /*#__PURE__*/React.createElement(ContinueCard, {
+    className: "home-section home-section--continue"
+  }, /*#__PURE__*/React.createElement(ContinueCard, {
     course: continueCourse,
     onOpen: () => onOpenCourse(continueCourse)
   })), /*#__PURE__*/React.createElement("section", {
     className: "home-section home-section--courses"
   }, /*#__PURE__*/React.createElement("div", {
     className: "section-heading"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
-    className: "eyebrow"
-  }, searchOpen ? "SEARCH RESULTS" : category === "favorite" ? "YOUR SAVED LINES" : "COURSE SHELF"), /*#__PURE__*/React.createElement("h2", null, searchOpen ? "搜索结果" : category === "favorite" ? "我喜欢" : "为你准备")), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("h2", null, searchOpen ? "搜索结果" : category === "favorite" ? "我喜欢" : "为你准备"), /*#__PURE__*/React.createElement("span", {
     className: "section-count"
   }, searchOpen ? visibleCourses.length : categoryCourses.length, " \u95E8")), searchOpen && !normalizedQuery ? /*#__PURE__*/React.createElement("div", {
     className: "search-idle"
@@ -2852,12 +2843,14 @@ function SettingsScreen({
     className: "settings-control-group settings-control-group--switches"
   }, /*#__PURE__*/React.createElement("div", {
     className: "settings-control-group__label"
-  }, /*#__PURE__*/React.createElement("strong", null, "\u4E2D\u6587\u7FFB\u8BD1"), /*#__PURE__*/React.createElement("span", null, "\u5206\u522B\u63A7\u5236\u56DB\u4E2A\u5B66\u4E60\u6A21\u5F0F")), translationModes.map(mode => /*#__PURE__*/React.createElement(Switch, {
+  }, /*#__PURE__*/React.createElement("strong", null, "\u4E2D\u6587\u7FFB\u8BD1"), /*#__PURE__*/React.createElement("span", null, "\u5206\u522B\u63A7\u5236\u56DB\u4E2A\u5B66\u4E60\u6A21\u5F0F")), /*#__PURE__*/React.createElement("div", {
+    className: "translation-grid"
+  }, translationModes.map(mode => /*#__PURE__*/React.createElement(Switch, {
     checked: draftSettings.translations[mode.value],
     id: `translation-${mode.value}`,
     key: mode.value,
     onChange: checked => updateTranslation(mode.value, checked)
-  }, mode.label)))), /*#__PURE__*/React.createElement("button", {
+  }, mode.label))))), /*#__PURE__*/React.createElement("button", {
     className: "settings-link-row",
     onClick: onOpenPreferences,
     type: "button"

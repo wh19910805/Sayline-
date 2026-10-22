@@ -184,25 +184,16 @@ function HomeScreen({
 
       <div className="home-scroll">
         {!searchOpen && category !== "favorite" && (
-          <section className="home-section">
-            <div className="section-heading">
-              <span className="eyebrow">PICK UP WHERE YOU LEFT OFF</span>
-              <button className="text-link" onClick={() => onOpenCourse(continueCourse)} type="button">查看播放器</button>
-            </div>
+          <section className="home-section home-section--continue">
             <ContinueCard course={continueCourse} onOpen={() => onOpenCourse(continueCourse)} />
           </section>
         )}
 
         <section className="home-section home-section--courses">
           <div className="section-heading">
-            <div>
-              <p className="eyebrow">
-                {searchOpen ? "SEARCH RESULTS" : category === "favorite" ? "YOUR SAVED LINES" : "COURSE SHELF"}
-              </p>
-              <h2>
-                {searchOpen ? "搜索结果" : category === "favorite" ? "我喜欢" : "为你准备"}
-              </h2>
-            </div>
+            <h2>
+              {searchOpen ? "搜索结果" : category === "favorite" ? "我喜欢" : "为你准备"}
+            </h2>
             <span className="section-count">{searchOpen ? visibleCourses.length : categoryCourses.length} 门</span>
           </div>
 
@@ -651,16 +642,18 @@ function SettingsScreen({
               <strong>中文翻译</strong>
               <span>分别控制四个学习模式</span>
             </div>
-            {translationModes.map((mode) => (
-              <Switch
-                checked={draftSettings.translations[mode.value]}
-                id={`translation-${mode.value}`}
-                key={mode.value}
-                onChange={(checked) => updateTranslation(mode.value, checked)}
-              >
-                {mode.label}
-              </Switch>
-            ))}
+            <div className="translation-grid">
+              {translationModes.map((mode) => (
+                <Switch
+                  checked={draftSettings.translations[mode.value]}
+                  id={`translation-${mode.value}`}
+                  key={mode.value}
+                  onChange={(checked) => updateTranslation(mode.value, checked)}
+                >
+                  {mode.label}
+                </Switch>
+              ))}
+            </div>
           </div>
         </section>
 

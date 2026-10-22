@@ -1350,7 +1350,7 @@
     },
     {
       "name": "--text-body-lg",
-      "value": "1rem",
+      "value": "1.0625rem",
       "kind": "font",
       "definedIn": "tokens/typography.css",
       "annotation": "font"
@@ -1364,21 +1364,21 @@
     },
     {
       "name": "--text-body-sm",
-      "value": ".8125rem",
+      "value": ".875rem",
       "kind": "font",
       "definedIn": "tokens/typography.css",
       "annotation": "font"
     },
     {
       "name": "--text-caption",
-      "value": ".6875rem",
+      "value": ".75rem",
       "kind": "font",
       "definedIn": "tokens/typography.css",
       "annotation": "font"
     },
     {
       "name": "--text-micro",
-      "value": ".5625rem",
+      "value": ".625rem",
       "kind": "font",
       "definedIn": "tokens/typography.css",
       "annotation": "font"

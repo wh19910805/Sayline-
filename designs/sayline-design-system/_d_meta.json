@@ -62,8 +62,23 @@
           "section": "Review"
         }
       ]
+    },
+    "Sayline Refinement Comparison": {
+      "versions": [
+        {
+          "path": "reviews/sayline-refinement-comparison.html",
+          "createdAt": "2026-10-22T03:11:20.291Z",
+          "status": "needs-review",
+          "subtitle": "Before-and-after review of the refined learner experience",
+          "viewport": {
+            "width": 1440,
+            "height": 2100
+          },
+          "section": "Review"
+        }
+      ]
     }
   },
   "createdAt": "2026-10-21T08:57:54.734Z",
-  "updatedAt": "2026-10-22T02:48:35.113Z"
+  "updatedAt": "2026-10-22T03:11:20.293Z"
 }

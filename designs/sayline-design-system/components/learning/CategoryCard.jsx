@@ -27,12 +27,11 @@ export function CategoryCard({
       />
       <div className="sl-category-card__shade" aria-hidden="true" />
       <div className="sl-category-card__top">
-        <span>Course collection</span>
         <span>{courseCount} 门课程</span>
       </div>
       <figcaption className="sl-category-card__copy">
-        <span>{description}</span>
         <h2>{title}</h2>
+        <span>{description}</span>
         <i aria-hidden="true" />
       </figcaption>
     </figure>

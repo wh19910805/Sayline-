@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sayline · Refinement Comparison</title>
+  <link rel="icon" href="../assets/brand/sayline-app-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 46px 48px 62px;
+      color: var(--color-text);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(255,255,255,.8), transparent 27%),
+        #dcd9d2;
+      font-family: var(--font-ui);
+    }
+    header { max-width: 1340px; margin: 0 auto 34px; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+    .eyebrow { margin: 0 0 8px; color: var(--color-text-tertiary); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { margin: 0; font-family: var(--font-display); font-size: 58px; font-weight: 400; line-height: .95; letter-spacing: -.035em; }
+    header p:last-child { max-width: 430px; margin: 0 0 3px; color: var(--color-text-secondary); font-size: 13px; line-height: 1.8; }
+    .changes { max-width: 1340px; margin: 0 auto 28px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .changes span { padding: 7px 11px; border: 1px solid var(--color-border); border-radius: 99px; background: rgba(255,253,250,.5); color: var(--color-text-secondary); font-size: 9px; }
+    .grid { max-width: 1340px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .comparison { overflow: hidden; border: 1px solid rgba(23,26,22,.1); border-radius: 22px; background: var(--color-paper-50); box-shadow: 0 14px 38px rgba(30,34,27,.07); }
+    .comparison__head { padding: 17px 20px 13px; border-bottom: 1px solid var(--color-border); display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .comparison__head h2 { margin: 0; font-family: var(--font-display); font-size: 27px; font-weight: 400; }
+    .comparison__head span { color: var(--color-text-tertiary); font-size: 8px; letter-spacing: .08em; }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 18px; background: #ebe8e1; }
+    .shot { min-width: 0; }
+    .shot-label { margin: 0 0 8px 3px; display: flex; justify-content: space-between; color: var(--color-text-tertiary); font-size: 8px; letter-spacing: .1em; text-transform: uppercase; }
+    .shot-label strong { color: var(--color-text-secondary); font-weight: 600; }
+    .frame { overflow: hidden; border: 5px solid #1a1f19; border-radius: 25px; background: var(--color-paper-100); box-shadow: 0 12px 25px rgba(24,29,22,.12); }
+    .frame img { display: block; width: 100%; height: auto; }
+    .comparison__notes { padding: 14px 20px 17px; display: grid; gap: 5px; }
+    .comparison__notes p { margin: 0; color: var(--color-text-secondary); font-size: 10px; line-height: 1.6; }
+    .comparison__notes strong { color: var(--color-text); font-weight: 600; }
+    @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } header { display: block; } header p:last-child { margin-top: 16px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <p class="eyebrow">Sayline / Visual refinement</p>
+      <h1>更少的界面，<br>更清楚的学习。</h1>
+    </div>
+    <p>这一轮精修移除了重复的卡片壳和微型英文标签，放大了内容层级，并强化播放器、信息流与设置页各自的主角。</p>
+  </header>
+  <div class="changes">
+    <span>字号层级更清楚</span><span>卡片噪音减少</span><span>绿色统一表示进度</span><span>播放器增加当前句标记</span><span>设置页改为连续纸面</span>
+  </div>
+  <main class="grid">
+    <section class="comparison">
+      <div class="comparison__head"><h2>首页 · 课程探索</h2><span>DISCOVERY</span></div>
+      <div class="pair">
+        <div class="shot"><div class="shot-label"><strong>修改前</strong><span>Before</span></div><div class="frame"><img src="./snapshots-v1/home-mobile.png" alt="修改前首页"></div></div>
+        <div class="shot"><div class="shot-label"><strong>修改后</strong><span>After</span></div><div class="frame"><img src="../ui_kits/learner/home-mobile.png" alt="修改后首页"></div></div>
+      </div>
+      <div class="comparison__notes"><p><strong>更明确的主角：</strong>继续学习卡和课程瀑布流不再被过多辅助标签分散；分类图更大、更接近作品封面。</p></div>
+    </section>
+
+    <section class="comparison">
+      <div class="comparison__head"><h2>播放器 · 沉浸与控制</h2><span>LISTENING</span></div>
+      <div class="pair">
+        <div class="shot"><div class="shot-label"><strong>修改前</strong><span>Before</span></div><div class="frame"><img src="./snapshots-v1/player-controls-mobile.png" alt="修改前播放器"></div></div>
+        <div class="shot"><div class="shot-label"><strong>修改后</strong><span>After</span></div><div class="frame"><img src="../ui_kits/learner/player-controls-mobile.png" alt="修改后播放器"></div></div>
+      </div>
+      <div class="comparison__notes"><p><strong>更像聆听空间：</strong>当前句加入品牌细线标记，控制层采用完整的磨砂渐隐，字幕与操作区不再互相穿透。</p></div>
+    </section>
+
+    <section class="comparison">
+      <div class="comparison__head"><h2>写模式 · 逐词听写</h2><span>DICTATION</span></div>
+      <div class="pair">
+        <div class="shot"><div class="shot-label"><strong>修改前</strong><span>Before</span></div><div class="frame"><img src="./snapshots-v1/player-write-letter-feedback.png" alt="修改前写模式"></div></div>
+        <div class="shot"><div class="shot-label"><strong>修改后</strong><span>After</span></div><div class="frame"><img src="../ui_kits/learner/player-write-letter-feedback.png" alt="修改后写模式"></div></div>
+      </div>
+      <div class="comparison__notes"><p><strong>操作更集中：</strong>去掉重复序号、提交按钮和输入框卡片外壳，逐词填空成为当前句内部唯一的核心操作。</p></div>
+    </section>
+
+    <section class="comparison">
+      <div class="comparison__head"><h2>设置 · 个人与显示</h2><span>SETTINGS</span></div>
+      <div class="pair">
+        <div class="shot"><div class="shot-label"><strong>修改前</strong><span>Before</span></div><div class="frame"><img src="./snapshots-v1/settings-mobile.png" alt="修改前设置"></div></div>
+        <div class="shot"><div class="shot-label"><strong>修改后</strong><span>After</span></div><div class="frame"><img src="../ui_kits/learner/settings-mobile.png" alt="修改后设置"></div></div>
+      </div>
+      <div class="comparison__notes"><p><strong>从表单到纸面：</strong>去掉两个大白卡外壳，以细线和更大的编辑式标题组织设置，整体更像成熟产品而不是后台表单。</p></div>
+    </section>
+  </main>
+</body>
+</html>

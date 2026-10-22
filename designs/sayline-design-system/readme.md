@@ -113,6 +113,17 @@ Sayline 不做游戏化闯关，也不把成人学习包装成儿童课程。它
 
 全局样式入口是 [`styles.css`](styles.css)。消费者只需要链接这个文件并加载编译后的 `_ds_bundle.js`。
 
+## 2026-10-22 视觉精修
+
+- 提高正文、元信息和控件标签的最小字号，减少微小英文标签
+- 统一课程进度为绿色，橙色仅用于行动与当前句
+- 调整首页标题、继续学习卡与课程信息流的主次关系
+- 播放器增加当前句品牌标记、磨砂控制层和更稳定的歌词淡出
+- 写模式减少重复状态标签，移除嵌套输入卡
+- “我的”改为连续个人资料与设置列表，学习指标合并为一个面板
+- 设置页改为连续纸面结构，翻译开关压缩为 2×2 控制矩阵
+- 精修前后对比：[`reviews/sayline-refinement-comparison.html`](reviews/sayline-refinement-comparison.html)
+
 ## COMPONENTS
 
 - Core：`Icon`、`Button`、`IconButton`、`Input`、`Textarea`、`Checkbox`、`Switch`、`Badge`

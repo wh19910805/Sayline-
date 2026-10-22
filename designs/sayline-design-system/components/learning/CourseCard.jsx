@@ -105,7 +105,7 @@ export function CourseCard({
         </div>
         <p className="sl-course-card__meta">{meta}</p>
         {typeof progress === "number" && (
-          <ProgressBar className="sl-course-card__progress" value={progress} />
+          <ProgressBar className="sl-course-card__progress" tone="moss" value={progress} />
         )}
       </div>
     </div>

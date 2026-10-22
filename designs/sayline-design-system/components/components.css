@@ -691,17 +691,17 @@ textarea.sl-field__control {
   display: block;
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(23, 26, 22, .08);
   border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 6px 18px rgba(35, 39, 29, .045);
   break-inside: avoid;
   margin-bottom: 18px;
 }
 
 .sl-course-card--feed:hover {
   border-color: var(--color-border-strong);
-  box-shadow: 0 12px 28px rgba(35, 39, 29, .085);
+  box-shadow: 0 12px 28px rgba(35, 39, 29, .075);
   transform: translateY(-1px);
 }
 
@@ -760,14 +760,14 @@ textarea.sl-field__control {
 
 .sl-course-card__feed-body {
   display: grid;
-  gap: 6px;
-  padding: 10px 11px 12px;
+  gap: 7px;
+  padding: 12px 12px 13px;
 }
 
 .sl-course-card__feed-body .sl-course-card__title {
   overflow: visible;
-  font-size: var(--text-body-sm);
-  line-height: 1.42;
+  font-size: 14px;
+  line-height: 1.45;
   text-overflow: unset;
   white-space: normal;
 }
@@ -818,12 +818,11 @@ textarea.sl-field__control {
   left: 12px;
   right: 12px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
-  color: rgba(255,250,240,.7);
+  color: rgba(255,250,240,.76);
   font: var(--weight-medium) var(--text-micro)/1 var(--font-ui);
-  letter-spacing: .08em;
-  text-transform: uppercase;
+  letter-spacing: .03em;
 }
 
 .sl-category-card__copy {
@@ -836,21 +835,24 @@ textarea.sl-field__control {
 }
 
 .sl-category-card__copy > span {
-  color: rgba(255,250,240,.62);
-  font-size: var(--text-micro);
+  display: block;
+  margin-top: 5px;
+  color: rgba(255,250,240,.68);
+  font-size: var(--text-caption);
   line-height: 1.55;
 }
 
 .sl-category-card__copy h2 {
-  margin: 4px 0 9px;
+  margin: 0 0 3px;
   font-family: var(--font-display);
-  font-size: var(--text-heading-xl);
+  font-size: 27px;
   font-weight: var(--weight-regular);
   line-height: 1;
   letter-spacing: -.025em;
 }
 
 .sl-category-card__copy i {
+  margin-top: 12px;
   display: block;
   width: 44px;
   height: 2px;

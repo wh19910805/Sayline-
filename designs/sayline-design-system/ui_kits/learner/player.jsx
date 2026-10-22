@@ -140,7 +140,6 @@ function WriteMode({
           <span className="eyebrow">DICTATION · {activeCue + 1}/{course.cues.length}</span>
           <h2>{modeCopy.write.title}</h2>
         </div>
-        <Badge>第 {activeCue + 1} / {course.cues.length} 句</Badge>
       </div>
 
       <div className="write-transcript" ref={transcriptRef}>
@@ -468,7 +467,7 @@ function PlayerScreen({
 
   return (
     <div
-      className={`app-screen player-screen player-mode-${mode}`}
+      className={`app-screen player-screen player-mode-${mode} ${controlsVisible ? "controls-visible" : ""}`}
       onClickCapture={(event) => {
         if (!swipeWasTriggered.current) return;
         event.preventDefault();
@@ -612,10 +611,6 @@ function PlayerScreen({
         )}
 
         <div className="player-complete-row">
-          <div>
-            <span>{modeCopy[mode].label}环节</span>
-            <small>{Math.round(modeProgress[mode])}%</small>
-          </div>
           <Button
             disabled={!canConfirm}
             onClick={() => setConfirmed((value) => ({ ...value, [mode]: true }))}

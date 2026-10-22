@@ -9,11 +9,11 @@
   --text-heading-xl: 1.75rem; /* @kind font */
   --text-heading-lg: 1.375rem; /* @kind font */
   --text-heading-md: 1.125rem; /* @kind font */
-  --text-body-lg: 1rem; /* @kind font */
+  --text-body-lg: 1.0625rem; /* @kind font */
   --text-body: .9375rem; /* @kind font */
-  --text-body-sm: .8125rem; /* @kind font */
-  --text-caption: .6875rem; /* @kind font */
-  --text-micro: .5625rem; /* @kind font */
+  --text-body-sm: .875rem; /* @kind font */
+  --text-caption: .75rem; /* @kind font */
+  --text-micro: .625rem; /* @kind font */
 
   --leading-none: 1; /* @kind font */
   --leading-tight: 1.12; /* @kind font */
