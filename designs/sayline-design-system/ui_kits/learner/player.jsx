@@ -317,6 +317,7 @@ function AudioDeck({ playing, onPlay, onReplay, onForward, speed, onSpeed, progr
 function PlayerScreen({
   course,
   initialMode = "listen",
+  learningSettings,
   onClose,
   onToggleFavorite,
   onMoveCourse,
@@ -330,7 +331,9 @@ function PlayerScreen({
   const [controlsVisible, setControlsVisible] = React.useState(requestedControls !== "0");
   const [controlsActivity, setControlsActivity] = React.useState(0);
   const [activeCue, setActiveCue] = React.useState(2);
-  const [showTranslation, setShowTranslation] = React.useState(true);
+  const [showTranslation, setShowTranslation] = React.useState(
+    learningSettings.translations[validInitialMode],
+  );
   const [playing, setPlaying] = React.useState(false);
   const [speed, setSpeed] = React.useState(1);
   const [wordAnswers, setWordAnswers] = React.useState([]);
@@ -369,6 +372,10 @@ function PlayerScreen({
     setWordAnswers([]);
     setFeedback("");
   }, [activeCue, course.id]);
+
+  React.useEffect(() => {
+    setShowTranslation(learningSettings.translations[mode]);
+  }, [mode, learningSettings.translations]);
 
   React.useEffect(() => {
     function handleKeyDown(event) {
@@ -474,6 +481,9 @@ function PlayerScreen({
       style={{
         "--course-a": course.colorA,
         "--course-b": course.colorB,
+        "--caption-scale": learningSettings.captionScale,
+        "--caption-color": learningSettings.captionColor,
+        "--caption-muted": learningSettings.captionMuted,
       }}
     >
       <div className="player-atmosphere" aria-hidden="true"></div>
@@ -621,6 +631,7 @@ function PlayerScreen({
             iconOnly
             onChange={(nextMode) => {
               setMode(nextMode);
+              setShowTranslation(learningSettings.translations[nextMode]);
               setControlsVisible(["listen", "read"].includes(nextMode));
             }}
             value={mode}

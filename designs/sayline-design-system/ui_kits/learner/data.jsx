@@ -219,10 +219,44 @@ const defaultInterests = ["work", "spoken"];
 
 const profile = {
   nickname: "林禾",
-  phone: "138****8000",
+  phone: "13800138000",
+  phoneMasked: "138****8000",
   joinedAt: "2026 年 10 月加入",
   studyDays: 27,
+  avatarUrl: "",
 };
+
+const learningSettings = {
+  captionScale: 1,
+  captionColor: "#fffaf0",
+  captionMuted: "rgba(255,250,240,.42)",
+  translations: {
+    listen: true,
+    read: true,
+    write: true,
+    speak: true,
+  },
+};
+
+const captionSizes = [
+  { value: 0.9, label: "小" },
+  { value: 1, label: "标准" },
+  { value: 1.12, label: "大" },
+];
+
+const captionColors = [
+  { value: "#fffaf0", muted: "rgba(255,250,240,.42)", label: "米白" },
+  { value: "#f0d398", muted: "rgba(240,211,152,.44)", label: "暖金" },
+  { value: "#cce5d0", muted: "rgba(204,229,208,.4)", label: "浅绿" },
+  { value: "#d8e9f2", muted: "rgba(216,233,242,.4)", label: "霜蓝" },
+];
+
+const translationModes = [
+  { value: "listen", label: "听模式" },
+  { value: "read", label: "读模式" },
+  { value: "write", label: "写模式" },
+  { value: "speak", label: "说模式" },
+];
 
 window.SaylineData = {
   courses,
@@ -230,6 +264,10 @@ window.SaylineData = {
   categories,
   defaultInterests,
   profile,
+  learningSettings,
+  captionSizes,
+  captionColors,
+  translationModes,
   modes: [
     { value: "listen", label: "听", icon: "headphones" },
     { value: "read", label: "读", icon: "book-open" },

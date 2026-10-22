@@ -126,6 +126,10 @@
         "message": "<StatTile> doesn't accept that prop. Declared props: value, label, detail, className."
       },
       {
+        "selector": "JSXOpeningElement[name.name='Switch'] > JSXAttribute > JSXIdentifier[name!=/^(?:id|checked|onChange|children|className|key|ref|style)$/]",
+        "message": "<Switch> doesn't accept that prop. Declared props: id, checked, onChange, children, className."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='Tabs'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|value|onChange|ariaLabel|variant|className|key|ref|style|children)$/]",
         "message": "<Tabs> doesn't accept that prop. Declared props: items, value, onChange, ariaLabel, variant, className."
       },
@@ -200,6 +204,9 @@
         "replaces": []
       },
       "StatTile": {
+        "replaces": []
+      },
+      "Switch": {
         "replaces": []
       },
       "Tabs": {

@@ -227,6 +227,68 @@ textarea.sl-field__control {
   accent-color: var(--color-action);
 }
 
+.sl-switch {
+  min-height: var(--touch-target);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--color-text);
+  font: var(--weight-medium) var(--text-body-sm)/1.4 var(--font-ui);
+  cursor: pointer;
+}
+
+.sl-switch__label {
+  flex: 1;
+}
+
+.sl-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sl-switch__track {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex: 0 0 auto;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-paper-200);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
+}
+
+.sl-switch__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-bg-elevated);
+  box-shadow: 0 1px 4px rgba(20,25,18,.2);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.sl-switch input:checked + .sl-switch__track {
+  border-color: var(--color-moss-700);
+  background: var(--color-moss-500);
+}
+
+.sl-switch input:checked + .sl-switch__track .sl-switch__thumb {
+  transform: translateX(18px);
+}
+
+.sl-switch input:focus-visible + .sl-switch__track {
+  outline: var(--border-focus);
+  outline-offset: 3px;
+}
+
 .sl-badge {
   min-height: 24px;
   display: inline-flex;

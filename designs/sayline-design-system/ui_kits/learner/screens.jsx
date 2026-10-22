@@ -11,6 +11,7 @@ const {
   Input,
   ProgressBar,
   StatTile,
+  Switch,
   Tabs,
 } = window.SaylineDesignSystem_1a4fd3;
 
@@ -268,14 +269,17 @@ function MyScreen({
   setPeriod,
   onNavigate,
   onOpenPreferences,
+  onOpenSettings,
+  profile,
+  learningSettings,
   interests,
   defaultTab,
 }) {
   const report = window.SaylineData.stats[period];
-  const profile = window.SaylineData.profile;
   const defaultLabel = defaultTab === "favorite"
     ? "我喜欢"
     : window.SaylineData.categories.find((item) => item.value === defaultTab)?.fullLabel;
+  const enabledTranslationCount = Object.values(learningSettings.translations).filter(Boolean).length;
 
   return (
     <div className="app-screen me-screen">
@@ -284,30 +288,48 @@ function MyScreen({
           <p className="eyebrow">MY SPACE</p>
           <h1>我的</h1>
         </div>
-        <IconButton label="学习偏好" onClick={onOpenPreferences} variant="outline">
+        <IconButton label="打开设置" onClick={onOpenSettings} variant="outline">
           <Icon name="settings-2" size={20} />
         </IconButton>
       </header>
 
       <div className="me-scroll">
-        <section className="profile-card">
-          <span className="profile-card__avatar">{profile.nickname.slice(0, 1)}</span>
+        <button className="profile-card" onClick={onOpenSettings} type="button">
+          <span className="profile-card__avatar">
+            {profile.avatarUrl
+              ? <img alt="" src={profile.avatarUrl} />
+              : profile.nickname.slice(0, 1)}
+          </span>
           <div className="profile-card__copy">
             <span>PERSONAL PROFILE</span>
             <h2>{profile.nickname}</h2>
-            <p>{profile.phone}</p>
+            <p>{profile.phoneMasked}</p>
           </div>
-          <span className="profile-card__joined">{profile.joinedAt}</span>
-        </section>
-
-        <button className="preference-entry" onClick={onOpenPreferences} type="button">
-          <span className="preference-entry__icon"><Icon name="settings-2" size={18} /></span>
-          <span className="preference-entry__copy">
-            <strong>学习偏好</strong>
-            <small>{interests.length} 个兴趣分类 · 默认：{defaultLabel || "职场英语"}</small>
+          <span className="profile-card__edit">
+            <Icon name="pen-line" size={14} />
+            编辑资料
           </span>
-          <Icon name="chevron-right" size={18} />
         </button>
+
+        <section className="settings-shortcuts">
+          <button onClick={onOpenSettings} type="button">
+            <span className="settings-shortcuts__icon"><Icon name="captions" size={18} /></span>
+            <span>
+              <strong>学习设置</strong>
+              <small>字幕字号、颜色、翻译显示</small>
+            </span>
+            <span className="settings-shortcuts__meta">{enabledTranslationCount}/4 中文</span>
+            <Icon name="chevron-right" size={18} />
+          </button>
+          <button onClick={onOpenPreferences} type="button">
+            <span className="settings-shortcuts__icon"><Icon name="settings-2" size={18} /></span>
+            <span>
+              <strong>学习偏好</strong>
+              <small>{interests.length} 个兴趣分类 · 默认：{defaultLabel || "职场英语"}</small>
+            </span>
+            <Icon name="chevron-right" size={18} />
+          </button>
+        </section>
 
         <div className="report-title">
           <div>
@@ -465,6 +487,195 @@ function InterestOnboardingScreen({ onComplete }) {
         >
           完成，开始学习
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function SettingsScreen({
+  profile,
+  learningSettings,
+  onBack,
+  onSave,
+  onOpenPreferences,
+}) {
+  const [draftProfile, setDraftProfile] = React.useState(profile);
+  const [draftSettings, setDraftSettings] = React.useState(learningSettings);
+  const fileInputRef = React.useRef(null);
+  const captionColors = window.SaylineData.captionColors;
+  const captionSizes = window.SaylineData.captionSizes;
+  const translationModes = window.SaylineData.translationModes;
+  const activeColor = captionColors.find((item) => item.value === draftSettings.captionColor) || captionColors[0];
+
+  function updateTranslation(mode, checked) {
+    setDraftSettings((current) => ({
+      ...current,
+      translations: {
+        ...current.translations,
+        [mode]: checked,
+      },
+    }));
+  }
+
+  return (
+    <div className="app-screen settings-screen">
+      <header className="settings-header">
+        <IconButton label="返回我的" onClick={onBack}>
+          <Icon name="chevron-left" size={23} />
+        </IconButton>
+        <div>
+          <p className="eyebrow">SETTINGS</p>
+          <h1>设置</h1>
+        </div>
+        <span>PERSONAL</span>
+      </header>
+
+      <div className="settings-scroll">
+        <section className="settings-section">
+          <div className="settings-section__head">
+            <h2>个人信息</h2>
+            <span>PERSONAL PROFILE</span>
+          </div>
+
+          <div className="settings-profile">
+            <button
+              aria-label="更换头像"
+              className="settings-avatar"
+              onClick={() => fileInputRef.current?.click()}
+              type="button"
+            >
+              {draftProfile.avatarUrl
+                ? <img alt="" src={draftProfile.avatarUrl} />
+                : draftProfile.nickname.slice(0, 1)}
+              <span><Icon name="image" size={14} /></span>
+            </button>
+            <input
+              accept="image/*"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                setDraftProfile((current) => ({
+                  ...current,
+                  avatarUrl: URL.createObjectURL(file),
+                }));
+              }}
+              ref={fileInputRef}
+              type="file"
+            />
+            <div>
+              <strong>头像与账号资料</strong>
+              <small>点击头像更换图片</small>
+            </div>
+          </div>
+
+          <div className="settings-field-grid">
+            <Input
+              id="profile-nickname"
+              label="昵称"
+              maxLength={20}
+              onChange={(event) => setDraftProfile((current) => ({ ...current, nickname: event.target.value }))}
+              value={draftProfile.nickname}
+            />
+            <Input
+              id="profile-phone"
+              inputMode="tel"
+              label="手机号"
+              onChange={(event) => setDraftProfile((current) => ({ ...current, phone: event.target.value }))}
+              value={draftProfile.phone}
+            />
+          </div>
+          <p className="settings-note">更换手机号后需要重新验证，验证流程将在正式开发中接入。</p>
+        </section>
+
+        <section className="settings-section">
+          <div className="settings-section__head">
+            <h2>学习设置</h2>
+            <span>PLAYER DISPLAY</span>
+          </div>
+
+          <div className="settings-control-group">
+            <div className="settings-control-group__label">
+              <strong>字幕字号</strong>
+              <span>影响听、读、写、说模式</span>
+            </div>
+            <Tabs
+              items={captionSizes.map((item) => ({ value: String(item.value), label: item.label }))}
+              onChange={(value) => setDraftSettings((current) => ({ ...current, captionScale: Number(value) }))}
+              value={String(draftSettings.captionScale)}
+              variant="pill"
+            />
+          </div>
+
+          <div className="settings-control-group">
+            <div className="settings-control-group__label">
+              <strong>字幕颜色</strong>
+              <span>{activeColor.label}</span>
+            </div>
+            <div className="caption-colors">
+              {captionColors.map((item) => (
+                <button
+                  aria-label={`字幕颜色：${item.label}`}
+                  aria-pressed={draftSettings.captionColor === item.value}
+                  className={draftSettings.captionColor === item.value ? "is-active" : ""}
+                  key={item.value}
+                  onClick={() => setDraftSettings((current) => ({
+                    ...current,
+                    captionColor: item.value,
+                    captionMuted: item.muted,
+                  }))}
+                  type="button"
+                >
+                  <i style={{ background: item.value }}></i>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div
+            className="caption-preview"
+            style={{
+              "--preview-caption-color": draftSettings.captionColor,
+              "--preview-caption-muted": draftSettings.captionMuted,
+              "--preview-caption-scale": draftSettings.captionScale,
+            }}
+          >
+            <span>PREVIEW</span>
+            <strong>Every sentence has its own rhythm.</strong>
+            <small>每一句话都有自己的节奏。</small>
+          </div>
+
+          <div className="settings-control-group settings-control-group--switches">
+            <div className="settings-control-group__label">
+              <strong>中文翻译</strong>
+              <span>分别控制四个学习模式</span>
+            </div>
+            {translationModes.map((mode) => (
+              <Switch
+                checked={draftSettings.translations[mode.value]}
+                id={`translation-${mode.value}`}
+                key={mode.value}
+                onChange={(checked) => updateTranslation(mode.value, checked)}
+              >
+                {mode.label}
+              </Switch>
+            ))}
+          </div>
+        </section>
+
+        <button className="settings-link-row" onClick={onOpenPreferences} type="button">
+          <span><Icon name="settings-2" size={18} /></span>
+          <div>
+            <strong>首页分类与默认 Tab</strong>
+            <small>调整兴趣、顺序和登录后的默认页面</small>
+          </div>
+          <Icon name="chevron-right" size={18} />
+        </button>
+      </div>
+
+      <div className="settings-footer">
+        <Button fullWidth onClick={() => onSave(draftProfile, draftSettings)} size="lg">保存设置</Button>
       </div>
     </div>
   );
@@ -632,6 +843,7 @@ Object.assign(window, {
   HomeScreen,
   MyScreen,
   InterestOnboardingScreen,
+  SettingsScreen,
   PreferencesScreen,
   ContinueCard,
 });

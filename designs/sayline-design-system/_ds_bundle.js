@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CategoryCard","sourcePath":"components/learning/CategoryCard.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"WordInput","sourcePath":"components/learning/WordInput.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"ecb82d2b8de5","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CategoryCard.jsx":"d7c5f606f862","components/learning/CourseCard.jsx":"91495d6bfafe","components/learning/ModeSwitcher.jsx":"1e910a80ba0f","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/learning/WordInput.jsx":"8fb78c2b1d9c","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"ae8a0f5b6241","ui_kits/learner/data.jsx":"c3d748fb0e55","ui_kits/learner/player.jsx":"773660f515cb","ui_kits/learner/screens.jsx":"f0b8d405ce16","ui_kits/learner/shared.jsx":"a20116a63ff4"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Switch","sourcePath":"components/core/Switch.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CategoryCard","sourcePath":"components/learning/CategoryCard.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"WordInput","sourcePath":"components/learning/WordInput.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"ecb82d2b8de5","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Switch.jsx":"b3b88523155c","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CategoryCard.jsx":"d7c5f606f862","components/learning/CourseCard.jsx":"91495d6bfafe","components/learning/ModeSwitcher.jsx":"1e910a80ba0f","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/learning/WordInput.jsx":"8fb78c2b1d9c","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"5e843b18a550","ui_kits/learner/data.jsx":"2cd232190380","ui_kits/learner/player.jsx":"6bd094420499","ui_kits/learner/screens.jsx":"67a30cc667f5","ui_kits/learner/shared.jsx":"eef8541b52bc"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -211,6 +211,36 @@ function Input({
 }
 Object.assign(__ds_scope, { Input });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/Input.jsx", error: String((e && e.message) || e) }); }
+
+// components/core/Switch.jsx
+try { (() => {
+function Switch({
+  id,
+  checked = false,
+  onChange,
+  children,
+  className = ""
+}) {
+  return /*#__PURE__*/React.createElement("label", {
+    className: ["sl-switch", className].filter(Boolean).join(" "),
+    htmlFor: id
+  }, children && /*#__PURE__*/React.createElement("span", {
+    className: "sl-switch__label"
+  }, children), /*#__PURE__*/React.createElement("input", {
+    checked: checked,
+    id: id,
+    onChange: event => onChange?.(event.target.checked),
+    role: "switch",
+    type: "checkbox"
+  }), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true",
+    className: "sl-switch__track"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "sl-switch__thumb"
+  })));
+}
+Object.assign(__ds_scope, { Switch });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/Switch.jsx", error: String((e && e.message) || e) }); }
 
 // components/core/Textarea.jsx
 try { (() => {
@@ -746,6 +776,7 @@ const {
   HomeScreen,
   MyScreen,
   InterestOnboardingScreen,
+  SettingsScreen,
   PreferencesScreen
 } = window;
 const {
@@ -757,7 +788,7 @@ const {
 function App() {
   const initialParams = new URLSearchParams(window.location.search);
   const requestedScreen = initialParams.get("screen");
-  const initialScreen = ["login", "interests", "home", "me", "player", "preferences"].includes(requestedScreen) ? requestedScreen : "home";
+  const initialScreen = ["login", "interests", "home", "me", "player", "settings", "preferences"].includes(requestedScreen) ? requestedScreen : "home";
   const initialInterests = window.SaylineData.defaultInterests;
   const requestedCategory = initialParams.get("category");
   const initialCategory = requestedCategory === "favorite" || initialInterests.includes(requestedCategory) ? requestedCategory : initialInterests[0];
@@ -767,7 +798,10 @@ function App() {
   const [category, setCategory] = React.useState(initialCategory);
   const [interests, setInterests] = React.useState(initialInterests);
   const [defaultTab, setDefaultTab] = React.useState(initialInterests[0]);
+  const [profile, setProfile] = React.useState(window.SaylineData.profile);
+  const [learningSettings, setLearningSettings] = React.useState(window.SaylineData.learningSettings);
   const [period, setPeriod] = React.useState(initialPeriod);
+  const [preferencesReturnTo, setPreferencesReturnTo] = React.useState("me");
   const [courses, setCourses] = React.useState(window.SaylineData.courses);
   const [playerCourseId, setPlayerCourseId] = React.useState(initialScreen === "player" ? defaultPlayerCourse.id : null);
   const [playerListIds, setPlayerListIds] = React.useState(initialScreen === "player" ? (initialCategory === "favorite" ? courses.filter(course => course.favorite) : courses.filter(course => course.category === initialCategory)).map(course => course.id) : []);
@@ -827,7 +861,7 @@ function App() {
     className: "device-stage"
   }, /*#__PURE__*/React.createElement("div", {
     className: "device-caption"
-  }, /*#__PURE__*/React.createElement("span", null, screen === "player" ? "immersive player" : screen === "me" ? "learning report" : screen === "login" ? "account entry" : screen === "interests" ? "interest setup" : screen === "preferences" ? "learning preferences" : "course discovery"), /*#__PURE__*/React.createElement("span", null, "390 \xD7 844")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, screen === "player" ? "immersive player" : screen === "me" ? "learning report" : screen === "login" ? "account entry" : screen === "interests" ? "interest setup" : screen === "settings" ? "profile and learning settings" : screen === "preferences" ? "learning preferences" : "course discovery"), /*#__PURE__*/React.createElement("span", null, "390 \xD7 844")), /*#__PURE__*/React.createElement("div", {
     className: "phone-device"
   }, screen === "login" && /*#__PURE__*/React.createElement(LoginScreen, {
     onLogin: () => setScreen("interests")
@@ -849,14 +883,38 @@ function App() {
   }), screen === "me" && /*#__PURE__*/React.createElement(MyScreen, {
     defaultTab: defaultTab,
     interests: interests,
+    learningSettings: learningSettings,
     onNavigate: navigate,
-    onOpenPreferences: () => setScreen("preferences"),
+    onOpenPreferences: () => {
+      setPreferencesReturnTo("me");
+      setScreen("preferences");
+    },
+    onOpenSettings: () => setScreen("settings"),
     period: period,
+    profile: profile,
     setPeriod: setPeriod
+  }), screen === "settings" && /*#__PURE__*/React.createElement(SettingsScreen, {
+    learningSettings: learningSettings,
+    onBack: () => setScreen("me"),
+    onOpenPreferences: () => {
+      setPreferencesReturnTo("settings");
+      setScreen("preferences");
+    },
+    onSave: (nextProfile, nextSettings) => {
+      setProfile({
+        ...nextProfile,
+        phoneMasked: nextProfile.phone.length > 7 ? `${nextProfile.phone.slice(0, 3)}****${nextProfile.phone.slice(-4)}` : nextProfile.phone
+      });
+      setLearningSettings(nextSettings);
+      setScreen("me");
+      setToast("设置已保存");
+      window.setTimeout(() => setToast(""), 2200);
+    },
+    profile: profile
   }), screen === "preferences" && /*#__PURE__*/React.createElement(PreferencesScreen, {
     defaultTab: defaultTab,
     interests: interests,
-    onBack: () => setScreen("me"),
+    onBack: () => setScreen(preferencesReturnTo),
     onSave: (nextInterests, nextDefault) => {
       setInterests(nextInterests);
       setDefaultTab(nextDefault);
@@ -868,6 +926,7 @@ function App() {
   }), screen === "player" && playerCourse && /*#__PURE__*/React.createElement(PlayerScreen, {
     course: playerCourse,
     initialMode: initialParams.get("mode"),
+    learningSettings: learningSettings,
     onClose: () => setScreen("home"),
     onMoveCourse: moveCourse,
     onToggleFavorite: () => toggleFavorite(playerCourse.id)
@@ -1421,16 +1480,73 @@ const categories = [{
 const defaultInterests = ["work", "spoken"];
 const profile = {
   nickname: "林禾",
-  phone: "138****8000",
+  phone: "13800138000",
+  phoneMasked: "138****8000",
   joinedAt: "2026 年 10 月加入",
-  studyDays: 27
+  studyDays: 27,
+  avatarUrl: ""
 };
+const learningSettings = {
+  captionScale: 1,
+  captionColor: "#fffaf0",
+  captionMuted: "rgba(255,250,240,.42)",
+  translations: {
+    listen: true,
+    read: true,
+    write: true,
+    speak: true
+  }
+};
+const captionSizes = [{
+  value: 0.9,
+  label: "小"
+}, {
+  value: 1,
+  label: "标准"
+}, {
+  value: 1.12,
+  label: "大"
+}];
+const captionColors = [{
+  value: "#fffaf0",
+  muted: "rgba(255,250,240,.42)",
+  label: "米白"
+}, {
+  value: "#f0d398",
+  muted: "rgba(240,211,152,.44)",
+  label: "暖金"
+}, {
+  value: "#cce5d0",
+  muted: "rgba(204,229,208,.4)",
+  label: "浅绿"
+}, {
+  value: "#d8e9f2",
+  muted: "rgba(216,233,242,.4)",
+  label: "霜蓝"
+}];
+const translationModes = [{
+  value: "listen",
+  label: "听模式"
+}, {
+  value: "read",
+  label: "读模式"
+}, {
+  value: "write",
+  label: "写模式"
+}, {
+  value: "speak",
+  label: "说模式"
+}];
 window.SaylineData = {
   courses,
   stats,
   categories,
   defaultInterests,
   profile,
+  learningSettings,
+  captionSizes,
+  captionColors,
+  translationModes,
   modes: [{
     value: "listen",
     label: "听",
@@ -1830,6 +1946,7 @@ function AudioDeck({
 function PlayerScreen({
   course,
   initialMode = "listen",
+  learningSettings,
   onClose,
   onToggleFavorite,
   onMoveCourse
@@ -1841,7 +1958,7 @@ function PlayerScreen({
   const [controlsVisible, setControlsVisible] = React.useState(requestedControls !== "0");
   const [controlsActivity, setControlsActivity] = React.useState(0);
   const [activeCue, setActiveCue] = React.useState(2);
-  const [showTranslation, setShowTranslation] = React.useState(true);
+  const [showTranslation, setShowTranslation] = React.useState(learningSettings.translations[validInitialMode]);
   const [playing, setPlaying] = React.useState(false);
   const [speed, setSpeed] = React.useState(1);
   const [wordAnswers, setWordAnswers] = React.useState([]);
@@ -1882,6 +1999,9 @@ function PlayerScreen({
     setWordAnswers([]);
     setFeedback("");
   }, [activeCue, course.id]);
+  React.useEffect(() => {
+    setShowTranslation(learningSettings.translations[mode]);
+  }, [mode, learningSettings.translations]);
   React.useEffect(() => {
     function handleKeyDown(event) {
       if (event.key === "ArrowUp") {
@@ -1976,7 +2096,10 @@ function PlayerScreen({
     onClick: handlePlayerClick,
     style: {
       "--course-a": course.colorA,
-      "--course-b": course.colorB
+      "--course-b": course.colorB,
+      "--caption-scale": learningSettings.captionScale,
+      "--caption-color": learningSettings.captionColor,
+      "--caption-muted": learningSettings.captionMuted
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "player-atmosphere",
@@ -2100,6 +2223,7 @@ function PlayerScreen({
     iconOnly: true,
     onChange: nextMode => {
       setMode(nextMode);
+      setShowTranslation(learningSettings.translations[nextMode]);
       setControlsVisible(["listen", "read"].includes(nextMode));
     },
     value: mode
@@ -2136,6 +2260,7 @@ const {
   Input,
   ProgressBar,
   StatTile,
+  Switch,
   Tabs
 } = window.SaylineDesignSystem_1a4fd3;
 function LoginScreen({
@@ -2376,12 +2501,15 @@ function MyScreen({
   setPeriod,
   onNavigate,
   onOpenPreferences,
+  onOpenSettings,
+  profile,
+  learningSettings,
   interests,
   defaultTab
 }) {
   const report = window.SaylineData.stats[period];
-  const profile = window.SaylineData.profile;
   const defaultLabel = defaultTab === "favorite" ? "我喜欢" : window.SaylineData.categories.find(item => item.value === defaultTab)?.fullLabel;
+  const enabledTranslationCount = Object.values(learningSettings.translations).filter(Boolean).length;
   return /*#__PURE__*/React.createElement("div", {
     className: "app-screen me-screen"
   }, /*#__PURE__*/React.createElement("header", {
@@ -2389,37 +2517,57 @@ function MyScreen({
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "eyebrow"
   }, "MY SPACE"), /*#__PURE__*/React.createElement("h1", null, "\u6211\u7684")), /*#__PURE__*/React.createElement(IconButton, {
-    label: "\u5B66\u4E60\u504F\u597D",
-    onClick: onOpenPreferences,
+    label: "\u6253\u5F00\u8BBE\u7F6E",
+    onClick: onOpenSettings,
     variant: "outline"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "settings-2",
     size: 20
   }))), /*#__PURE__*/React.createElement("div", {
     className: "me-scroll"
-  }, /*#__PURE__*/React.createElement("section", {
-    className: "profile-card"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "profile-card",
+    onClick: onOpenSettings,
+    type: "button"
   }, /*#__PURE__*/React.createElement("span", {
     className: "profile-card__avatar"
-  }, profile.nickname.slice(0, 1)), /*#__PURE__*/React.createElement("div", {
+  }, profile.avatarUrl ? /*#__PURE__*/React.createElement("img", {
+    alt: "",
+    src: profile.avatarUrl
+  }) : profile.nickname.slice(0, 1)), /*#__PURE__*/React.createElement("div", {
     className: "profile-card__copy"
-  }, /*#__PURE__*/React.createElement("span", null, "PERSONAL PROFILE"), /*#__PURE__*/React.createElement("h2", null, profile.nickname), /*#__PURE__*/React.createElement("p", null, profile.phone)), /*#__PURE__*/React.createElement("span", {
-    className: "profile-card__joined"
-  }, profile.joinedAt)), /*#__PURE__*/React.createElement("button", {
-    className: "preference-entry",
+  }, /*#__PURE__*/React.createElement("span", null, "PERSONAL PROFILE"), /*#__PURE__*/React.createElement("h2", null, profile.nickname), /*#__PURE__*/React.createElement("p", null, profile.phoneMasked)), /*#__PURE__*/React.createElement("span", {
+    className: "profile-card__edit"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "pen-line",
+    size: 14
+  }), "\u7F16\u8F91\u8D44\u6599")), /*#__PURE__*/React.createElement("section", {
+    className: "settings-shortcuts"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onOpenSettings,
+    type: "button"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "settings-shortcuts__icon"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "captions",
+    size: 18
+  })), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "\u5B66\u4E60\u8BBE\u7F6E"), /*#__PURE__*/React.createElement("small", null, "\u5B57\u5E55\u5B57\u53F7\u3001\u989C\u8272\u3001\u7FFB\u8BD1\u663E\u793A")), /*#__PURE__*/React.createElement("span", {
+    className: "settings-shortcuts__meta"
+  }, enabledTranslationCount, "/4 \u4E2D\u6587"), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevron-right",
+    size: 18
+  })), /*#__PURE__*/React.createElement("button", {
     onClick: onOpenPreferences,
     type: "button"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "preference-entry__icon"
+    className: "settings-shortcuts__icon"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "settings-2",
     size: 18
-  })), /*#__PURE__*/React.createElement("span", {
-    className: "preference-entry__copy"
-  }, /*#__PURE__*/React.createElement("strong", null, "\u5B66\u4E60\u504F\u597D"), /*#__PURE__*/React.createElement("small", null, interests.length, " \u4E2A\u5174\u8DA3\u5206\u7C7B \xB7 \u9ED8\u8BA4\uFF1A", defaultLabel || "职场英语")), /*#__PURE__*/React.createElement(Icon, {
+  })), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "\u5B66\u4E60\u504F\u597D"), /*#__PURE__*/React.createElement("small", null, interests.length, " \u4E2A\u5174\u8DA3\u5206\u7C7B \xB7 \u9ED8\u8BA4\uFF1A", defaultLabel || "职场英语")), /*#__PURE__*/React.createElement(Icon, {
     name: "chevron-right",
     size: 18
-  })), /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "report-title"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "eyebrow"
@@ -2563,6 +2711,169 @@ function InterestOnboardingScreen({
     onClick: () => selected.length && onComplete(selected),
     size: "lg"
   }, "\u5B8C\u6210\uFF0C\u5F00\u59CB\u5B66\u4E60")));
+}
+function SettingsScreen({
+  profile,
+  learningSettings,
+  onBack,
+  onSave,
+  onOpenPreferences
+}) {
+  const [draftProfile, setDraftProfile] = React.useState(profile);
+  const [draftSettings, setDraftSettings] = React.useState(learningSettings);
+  const fileInputRef = React.useRef(null);
+  const captionColors = window.SaylineData.captionColors;
+  const captionSizes = window.SaylineData.captionSizes;
+  const translationModes = window.SaylineData.translationModes;
+  const activeColor = captionColors.find(item => item.value === draftSettings.captionColor) || captionColors[0];
+  function updateTranslation(mode, checked) {
+    setDraftSettings(current => ({
+      ...current,
+      translations: {
+        ...current.translations,
+        [mode]: checked
+      }
+    }));
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "app-screen settings-screen"
+  }, /*#__PURE__*/React.createElement("header", {
+    className: "settings-header"
+  }, /*#__PURE__*/React.createElement(IconButton, {
+    label: "\u8FD4\u56DE\u6211\u7684",
+    onClick: onBack
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "chevron-left",
+    size: 23
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "eyebrow"
+  }, "SETTINGS"), /*#__PURE__*/React.createElement("h1", null, "\u8BBE\u7F6E")), /*#__PURE__*/React.createElement("span", null, "PERSONAL")), /*#__PURE__*/React.createElement("div", {
+    className: "settings-scroll"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "settings-section"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "settings-section__head"
+  }, /*#__PURE__*/React.createElement("h2", null, "\u4E2A\u4EBA\u4FE1\u606F"), /*#__PURE__*/React.createElement("span", null, "PERSONAL PROFILE")), /*#__PURE__*/React.createElement("div", {
+    className: "settings-profile"
+  }, /*#__PURE__*/React.createElement("button", {
+    "aria-label": "\u66F4\u6362\u5934\u50CF",
+    className: "settings-avatar",
+    onClick: () => fileInputRef.current?.click(),
+    type: "button"
+  }, draftProfile.avatarUrl ? /*#__PURE__*/React.createElement("img", {
+    alt: "",
+    src: draftProfile.avatarUrl
+  }) : draftProfile.nickname.slice(0, 1), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(Icon, {
+    name: "image",
+    size: 14
+  }))), /*#__PURE__*/React.createElement("input", {
+    accept: "image/*",
+    hidden: true,
+    onChange: event => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      setDraftProfile(current => ({
+        ...current,
+        avatarUrl: URL.createObjectURL(file)
+      }));
+    },
+    ref: fileInputRef,
+    type: "file"
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "\u5934\u50CF\u4E0E\u8D26\u53F7\u8D44\u6599"), /*#__PURE__*/React.createElement("small", null, "\u70B9\u51FB\u5934\u50CF\u66F4\u6362\u56FE\u7247"))), /*#__PURE__*/React.createElement("div", {
+    className: "settings-field-grid"
+  }, /*#__PURE__*/React.createElement(Input, {
+    id: "profile-nickname",
+    label: "\u6635\u79F0",
+    maxLength: 20,
+    onChange: event => setDraftProfile(current => ({
+      ...current,
+      nickname: event.target.value
+    })),
+    value: draftProfile.nickname
+  }), /*#__PURE__*/React.createElement(Input, {
+    id: "profile-phone",
+    inputMode: "tel",
+    label: "\u624B\u673A\u53F7",
+    onChange: event => setDraftProfile(current => ({
+      ...current,
+      phone: event.target.value
+    })),
+    value: draftProfile.phone
+  })), /*#__PURE__*/React.createElement("p", {
+    className: "settings-note"
+  }, "\u66F4\u6362\u624B\u673A\u53F7\u540E\u9700\u8981\u91CD\u65B0\u9A8C\u8BC1\uFF0C\u9A8C\u8BC1\u6D41\u7A0B\u5C06\u5728\u6B63\u5F0F\u5F00\u53D1\u4E2D\u63A5\u5165\u3002")), /*#__PURE__*/React.createElement("section", {
+    className: "settings-section"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "settings-section__head"
+  }, /*#__PURE__*/React.createElement("h2", null, "\u5B66\u4E60\u8BBE\u7F6E"), /*#__PURE__*/React.createElement("span", null, "PLAYER DISPLAY")), /*#__PURE__*/React.createElement("div", {
+    className: "settings-control-group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "settings-control-group__label"
+  }, /*#__PURE__*/React.createElement("strong", null, "\u5B57\u5E55\u5B57\u53F7"), /*#__PURE__*/React.createElement("span", null, "\u5F71\u54CD\u542C\u3001\u8BFB\u3001\u5199\u3001\u8BF4\u6A21\u5F0F")), /*#__PURE__*/React.createElement(Tabs, {
+    items: captionSizes.map(item => ({
+      value: String(item.value),
+      label: item.label
+    })),
+    onChange: value => setDraftSettings(current => ({
+      ...current,
+      captionScale: Number(value)
+    })),
+    value: String(draftSettings.captionScale),
+    variant: "pill"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "settings-control-group"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "settings-control-group__label"
+  }, /*#__PURE__*/React.createElement("strong", null, "\u5B57\u5E55\u989C\u8272"), /*#__PURE__*/React.createElement("span", null, activeColor.label)), /*#__PURE__*/React.createElement("div", {
+    className: "caption-colors"
+  }, captionColors.map(item => /*#__PURE__*/React.createElement("button", {
+    "aria-label": `字幕颜色：${item.label}`,
+    "aria-pressed": draftSettings.captionColor === item.value,
+    className: draftSettings.captionColor === item.value ? "is-active" : "",
+    key: item.value,
+    onClick: () => setDraftSettings(current => ({
+      ...current,
+      captionColor: item.value,
+      captionMuted: item.muted
+    })),
+    type: "button"
+  }, /*#__PURE__*/React.createElement("i", {
+    style: {
+      background: item.value
+    }
+  }), /*#__PURE__*/React.createElement("span", null, item.label))))), /*#__PURE__*/React.createElement("div", {
+    className: "caption-preview",
+    style: {
+      "--preview-caption-color": draftSettings.captionColor,
+      "--preview-caption-muted": draftSettings.captionMuted,
+      "--preview-caption-scale": draftSettings.captionScale
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "PREVIEW"), /*#__PURE__*/React.createElement("strong", null, "Every sentence has its own rhythm."), /*#__PURE__*/React.createElement("small", null, "\u6BCF\u4E00\u53E5\u8BDD\u90FD\u6709\u81EA\u5DF1\u7684\u8282\u594F\u3002")), /*#__PURE__*/React.createElement("div", {
+    className: "settings-control-group settings-control-group--switches"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "settings-control-group__label"
+  }, /*#__PURE__*/React.createElement("strong", null, "\u4E2D\u6587\u7FFB\u8BD1"), /*#__PURE__*/React.createElement("span", null, "\u5206\u522B\u63A7\u5236\u56DB\u4E2A\u5B66\u4E60\u6A21\u5F0F")), translationModes.map(mode => /*#__PURE__*/React.createElement(Switch, {
+    checked: draftSettings.translations[mode.value],
+    id: `translation-${mode.value}`,
+    key: mode.value,
+    onChange: checked => updateTranslation(mode.value, checked)
+  }, mode.label)))), /*#__PURE__*/React.createElement("button", {
+    className: "settings-link-row",
+    onClick: onOpenPreferences,
+    type: "button"
+  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(Icon, {
+    name: "settings-2",
+    size: 18
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "\u9996\u9875\u5206\u7C7B\u4E0E\u9ED8\u8BA4 Tab"), /*#__PURE__*/React.createElement("small", null, "\u8C03\u6574\u5174\u8DA3\u3001\u987A\u5E8F\u548C\u767B\u5F55\u540E\u7684\u9ED8\u8BA4\u9875\u9762")), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevron-right",
+    size: 18
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "settings-footer"
+  }, /*#__PURE__*/React.createElement(Button, {
+    fullWidth: true,
+    onClick: () => onSave(draftProfile, draftSettings),
+    size: "lg"
+  }, "\u4FDD\u5B58\u8BBE\u7F6E")));
 }
 function PreferencesScreen({
   interests,
@@ -2711,6 +3022,7 @@ Object.assign(window, {
   HomeScreen,
   MyScreen,
   InterestOnboardingScreen,
+  SettingsScreen,
   PreferencesScreen,
   ContinueCard
 });
@@ -2797,7 +3109,7 @@ const ReviewRail = ({
   screen,
   onNavigate
 }) => {
-  const screens = [["login", "01 / 登录"], ["interests", "02 / 兴趣选择"], ["home", "03 / 首页"], ["player", "04 / 播放器"], ["me", "05 / 我的学习"], ["preferences", "06 / 学习偏好"]];
+  const screens = [["login", "01 / 登录"], ["interests", "02 / 兴趣选择"], ["home", "03 / 首页"], ["player", "04 / 播放器"], ["me", "05 / 我的学习"], ["settings", "06 / 设置"], ["preferences", "07 / 学习偏好"]];
   return /*#__PURE__*/React.createElement("aside", {
     className: "review-rail"
   }, /*#__PURE__*/React.createElement(SaylineWordmark, null), /*#__PURE__*/React.createElement("p", {
@@ -2833,6 +3145,8 @@ __ds_ns.Icon = __ds_scope.Icon;
 __ds_ns.IconButton = __ds_scope.IconButton;
 
 __ds_ns.Input = __ds_scope.Input;
+
+__ds_ns.Switch = __ds_scope.Switch;
 
 __ds_ns.Textarea = __ds_scope.Textarea;
 

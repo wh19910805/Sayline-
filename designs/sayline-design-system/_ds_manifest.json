@@ -187,6 +187,32 @@
       ]
     },
     {
+      "name": "Switch",
+      "sourcePath": "components/core/Switch.jsx",
+      "props": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "checked",
+          "type": "boolean"
+        },
+        {
+          "name": "onChange",
+          "type": "(checked: boolean) => void"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode"
+        },
+        {
+          "name": "className",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "Textarea",
       "sourcePath": "components/core/Textarea.jsx",
       "props": [
@@ -577,6 +603,15 @@
       "section": "Core",
       "subtitle": "Text field with validation states",
       "viewport": "700x320"
+    },
+    {
+      "name": "Switch",
+      "path": "components/core/Switch.jsx",
+      "previewPath": "components/core/core.card.html",
+      "kind": "component",
+      "section": "Core",
+      "subtitle": "Accessible preference switch",
+      "viewport": "700x220"
     },
     {
       "name": "Textarea",

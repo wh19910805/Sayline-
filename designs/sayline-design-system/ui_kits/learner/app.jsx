@@ -4,6 +4,7 @@ const {
   HomeScreen,
   MyScreen,
   InterestOnboardingScreen,
+  SettingsScreen,
   PreferencesScreen,
 } = window;
 const { PlayerScreen } = window.SaylinePlayer;
@@ -12,7 +13,7 @@ const { Toast } = window.SaylineDesignSystem_1a4fd3;
 function App() {
   const initialParams = new URLSearchParams(window.location.search);
   const requestedScreen = initialParams.get("screen");
-  const initialScreen = ["login", "interests", "home", "me", "player", "preferences"].includes(requestedScreen)
+  const initialScreen = ["login", "interests", "home", "me", "player", "settings", "preferences"].includes(requestedScreen)
     ? requestedScreen
     : "home";
   const initialInterests = window.SaylineData.defaultInterests;
@@ -27,7 +28,10 @@ function App() {
   const [category, setCategory] = React.useState(initialCategory);
   const [interests, setInterests] = React.useState(initialInterests);
   const [defaultTab, setDefaultTab] = React.useState(initialInterests[0]);
+  const [profile, setProfile] = React.useState(window.SaylineData.profile);
+  const [learningSettings, setLearningSettings] = React.useState(window.SaylineData.learningSettings);
   const [period, setPeriod] = React.useState(initialPeriod);
+  const [preferencesReturnTo, setPreferencesReturnTo] = React.useState("me");
   const [courses, setCourses] = React.useState(window.SaylineData.courses);
   const [playerCourseId, setPlayerCourseId] = React.useState(
     initialScreen === "player" ? defaultPlayerCourse.id : null,
@@ -117,6 +121,8 @@ function App() {
                   ? "account entry"
                   : screen === "interests"
                     ? "interest setup"
+                    : screen === "settings"
+                      ? "profile and learning settings"
                     : screen === "preferences"
                       ? "learning preferences"
                       : "course discovery"}
@@ -150,17 +156,46 @@ function App() {
             <MyScreen
               defaultTab={defaultTab}
               interests={interests}
+              learningSettings={learningSettings}
               onNavigate={navigate}
-              onOpenPreferences={() => setScreen("preferences")}
+              onOpenPreferences={() => {
+                setPreferencesReturnTo("me");
+                setScreen("preferences");
+              }}
+              onOpenSettings={() => setScreen("settings")}
               period={period}
+              profile={profile}
               setPeriod={setPeriod}
+            />
+          )}
+          {screen === "settings" && (
+            <SettingsScreen
+              learningSettings={learningSettings}
+              onBack={() => setScreen("me")}
+              onOpenPreferences={() => {
+                setPreferencesReturnTo("settings");
+                setScreen("preferences");
+              }}
+              onSave={(nextProfile, nextSettings) => {
+                setProfile({
+                  ...nextProfile,
+                  phoneMasked: nextProfile.phone.length > 7
+                    ? `${nextProfile.phone.slice(0, 3)}****${nextProfile.phone.slice(-4)}`
+                    : nextProfile.phone,
+                });
+                setLearningSettings(nextSettings);
+                setScreen("me");
+                setToast("设置已保存");
+                window.setTimeout(() => setToast(""), 2200);
+              }}
+              profile={profile}
             />
           )}
           {screen === "preferences" && (
             <PreferencesScreen
               defaultTab={defaultTab}
               interests={interests}
-              onBack={() => setScreen("me")}
+              onBack={() => setScreen(preferencesReturnTo)}
               onSave={(nextInterests, nextDefault) => {
                 setInterests(nextInterests);
                 setDefaultTab(nextDefault);
@@ -175,6 +210,7 @@ function App() {
             <PlayerScreen
               course={playerCourse}
               initialMode={initialParams.get("mode")}
+              learningSettings={learningSettings}
               onClose={() => setScreen("home")}
               onMoveCourse={moveCourse}
               onToggleFavorite={() => toggleFavorite(playerCourse.id)}
