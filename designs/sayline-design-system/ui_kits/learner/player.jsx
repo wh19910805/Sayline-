@@ -258,8 +258,10 @@ function PlayerScreen({
     ? initialMode
     : "listen";
   const initialParams = new URLSearchParams(window.location.search);
+  const requestedControls = initialParams.get("controls");
   const [mode, setMode] = React.useState(validInitialMode);
-  const [controlsVisible, setControlsVisible] = React.useState(initialParams.get("controls") === "1");
+  const [controlsVisible, setControlsVisible] = React.useState(requestedControls !== "0");
+  const [controlsActivity, setControlsActivity] = React.useState(0);
   const [activeCue, setActiveCue] = React.useState(2);
   const [showTranslation, setShowTranslation] = React.useState(true);
   const [playing, setPlaying] = React.useState(false);
@@ -310,6 +312,12 @@ function PlayerScreen({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onMoveCourse]);
+
+  React.useEffect(() => {
+    if (!["listen", "read"].includes(mode) || !controlsVisible) return undefined;
+    const timer = window.setTimeout(() => setControlsVisible(false), 6000);
+    return () => window.clearTimeout(timer);
+  }, [mode, controlsVisible, controlsActivity]);
 
   const current = course.cues[Math.min(activeCue, course.cues.length - 1)];
   const playbackProgress = Math.max(8, ((activeCue + 1) / course.cues.length) * 100);
@@ -364,6 +372,7 @@ function PlayerScreen({
 
   function handlePlayerClick(event) {
     if (!["listen", "read"].includes(mode)) return;
+    setControlsActivity((value) => value + 1);
     if (
       event.target.closest(
         "input, textarea, .audio-deck, .sl-mode-switch, .player-header, .player-identity, .player-complete-row, .translation-toggle",
@@ -380,7 +389,7 @@ function PlayerScreen({
 
   return (
     <div
-      className="app-screen player-screen"
+      className={`app-screen player-screen player-mode-${mode}`}
       onClickCapture={(event) => {
         if (!swipeWasTriggered.current) return;
         event.preventDefault();
@@ -502,44 +511,52 @@ function PlayerScreen({
         )}
       </main>
 
-      {(mode === "listen" || mode === "read") && (
-        <div className={"player-control-layer " + (controlsVisible ? "is-visible" : "")}>
-          <AudioDeck
-            onForward={(steps = 1) => setActiveCue((value) => Math.min(course.cues.length - 1, value + steps))}
-            onPlay={() => setPlaying((value) => !value)}
-            onReplay={(steps = 0) => setActiveCue((value) => Math.max(0, value - Math.abs(steps || 1)))}
-            onSpeed={cycleSpeed}
-            playing={playing}
-            progress={playbackProgress}
-            speed={speed}
+      <div
+        aria-hidden={(["listen", "read"].includes(mode) && !controlsVisible) || undefined}
+        className={
+          "player-bottom-ui " +
+          (["listen", "read"].includes(mode) && !controlsVisible ? "is-hidden" : "")
+        }
+      >
+        {(mode === "listen" || mode === "read") && (
+          <div className="player-control-layer">
+            <AudioDeck
+              onForward={(steps = 1) => setActiveCue((value) => Math.min(course.cues.length - 1, value + steps))}
+              onPlay={() => setPlaying((value) => !value)}
+              onReplay={(steps = 0) => setActiveCue((value) => Math.max(0, value - Math.abs(steps || 1)))}
+              onSpeed={cycleSpeed}
+              playing={playing}
+              progress={playbackProgress}
+              speed={speed}
+            />
+          </div>
+        )}
+
+        <div className="player-complete-row">
+          <div>
+            <span>{modeCopy[mode].label}环节</span>
+            <small>{Math.round(modeProgress[mode])}%</small>
+          </div>
+          <Button
+            disabled={!canConfirm}
+            onClick={() => setConfirmed((value) => ({ ...value, [mode]: true }))}
+            size="sm"
+            variant={confirmed[mode] ? "secondary" : "accent"}
+          >
+            {confirmed[mode] ? <><Icon name="check" size={16} /> 已完成</> : "完成本环节"}
+          </Button>
+        </div>
+
+        <div className="player-mode-dock">
+          <ModeSwitcher
+            iconOnly
+            onChange={(nextMode) => {
+              setMode(nextMode);
+              setControlsVisible(["listen", "read"].includes(nextMode));
+            }}
+            value={mode}
           />
         </div>
-      )}
-
-      <div className="player-complete-row">
-        <div>
-          <span>{modeCopy[mode].label}环节</span>
-          <small>{Math.round(modeProgress[mode])}%</small>
-        </div>
-        <Button
-          disabled={!canConfirm}
-          onClick={() => setConfirmed((value) => ({ ...value, [mode]: true }))}
-          size="sm"
-          variant={confirmed[mode] ? "secondary" : "accent"}
-        >
-          {confirmed[mode] ? <><Icon name="check" size={16} /> 已完成</> : "完成本环节"}
-        </Button>
-      </div>
-
-      <div className="player-mode-dock">
-        <ModeSwitcher
-          iconOnly
-          onChange={(nextMode) => {
-            setMode(nextMode);
-            setControlsVisible(false);
-          }}
-          value={mode}
-        />
       </div>
 
       <div className="swipe-guide" aria-hidden="true">

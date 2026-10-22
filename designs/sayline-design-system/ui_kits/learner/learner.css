@@ -2243,28 +2243,28 @@ button {
   padding: 7px 9px 4px;
 }
 
-.player-control-layer {
+.player-bottom-ui {
   position: absolute;
-  z-index: 3;
-  left: 13px;
-  right: 13px;
-  bottom: calc(102px + var(--safe-bottom));
-  padding: 2px 4px 4px;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, rgba(15,19,14,.08), rgba(12,16,11,.4));
-  backdrop-filter: blur(10px);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(12px);
+  z-index: 4;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, transparent, rgba(9,12,9,.4) 26%, rgba(9,12,9,.56));
   transition:
     opacity var(--duration-base) var(--ease-out),
     transform var(--duration-base) var(--ease-out);
 }
 
-.player-control-layer.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
+.player-bottom-ui.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(16px);
+}
+
+.player-control-layer {
+  padding: 0 12px 2px;
 }
 
 .audio-deck__times {
@@ -2420,6 +2420,11 @@ button {
 .player-mode-dock .sl-icon {
   width: 22px;
   height: 22px;
+}
+
+.player-mode-write .player-stage,
+.player-mode-speak .player-stage {
+  padding-bottom: 120px;
 }
 
 .swipe-guide {
