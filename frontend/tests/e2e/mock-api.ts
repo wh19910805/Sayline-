@@ -166,6 +166,34 @@ export async function mockUserApi(page: Page, role: 'USER' | 'ADMIN') {
       })
     }
     if (path === '/api/v1/learning/stats') {
+      if (url.searchParams.get('period') === 'MONTH') {
+        const activeMinutes: Record<number, number> = {
+          1: 8, 3: 16, 6: 42, 7: 25, 10: 64, 11: 19, 14: 48, 17: 31, 18: 12, 20: 39, 21: 58, 22: 26,
+        }
+        const days = Array.from({ length: 31 }, (_, index) => {
+          const day = index + 1
+          const minutes = activeMinutes[day] ?? 0
+          return {
+            date: `2026-10-${String(day).padStart(2, '0')}`,
+            active: minutes > 0,
+            sessions: minutes > 0 ? (minutes >= 40 ? 2 : 1) : 0,
+            studyMs: minutes * 60_000,
+          }
+        })
+        return json(route, {
+          rangeStart: '2026-10-01',
+          rangeEnd: '2026-10-31',
+          days,
+          summary: {
+            studyDays: 12,
+            sessions: 16,
+            studyMs: 22_140_000,
+            dictationAccuracy: 86,
+            speakingCount: 24,
+          },
+        })
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1_500))
       return json(route, {
         rangeStart: '2026-10-19',
         rangeEnd: '2026-10-25',

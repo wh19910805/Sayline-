@@ -55,3 +55,16 @@ test('learner report has no horizontal overflow on mobile', async ({ page }) => 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
   expect(overflow).toBe(false)
 })
+
+test('learner month view shows calendar heat levels, today and legend', async ({ page }) => {
+  await page.goto('/me')
+  await page.getByRole('button', { name: '本月' }).click()
+  await page.waitForTimeout(1_700)
+
+  await expect(page.getByRole('heading', { name: '十月学习记录' })).toBeVisible()
+  await expect(page.locator('.month-day.level-1')).toHaveCount(4)
+  await expect(page.locator('.month-day.level-2')).toHaveCount(6)
+  await expect(page.locator('.month-day.level-3')).toHaveCount(2)
+  await expect(page.locator('.month-day.is-today')).toHaveCount(1)
+  await expect(page.locator('.report-card__legend i')).toHaveCount(4)
+})

@@ -17,6 +17,8 @@ const profile = ref<Profile | null>(null)
 const stats = ref<StatsResponse | null>(null)
 const settings = ref<Awaited<ReturnType<typeof learnerApi.settings>> | null>(null)
 const error = ref('')
+let latestStatsRequest = 0
+const statsLoading = ref(false)
 
 const translationCount = computed(() =>
   settings.value
@@ -45,12 +47,20 @@ interface CalendarCell {
   empty: boolean
   day?: number
   minutes?: number
+  date?: string
+  today?: boolean
 }
 
 const monthCells = computed<CalendarCell[]>(() => {
   if (!stats.value) return []
   const [year, month] = stats.value.rangeStart.split('-').map(Number)
   const firstWeekday = (new Date(year!, month! - 1, 1).getDay() + 6) % 7
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
   return [
     ...Array.from({ length: firstWeekday }, (_, index): CalendarCell => ({ key: `empty-${index}`, empty: true })),
     ...stats.value.days.map((day) => ({
@@ -58,12 +68,44 @@ const monthCells = computed<CalendarCell[]>(() => {
       empty: false,
       day: Number(day.date.slice(-2)),
       minutes: Math.round(day.studyMs / 60_000),
+      date: day.date,
+      today: day.date === today,
     })),
   ]
 })
 
+const monthTitle = computed(() => {
+  if (!stats.value) return '本月'
+  return new Intl.DateTimeFormat('zh-CN', { month: 'long' }).format(
+    new Date(`${stats.value.rangeStart}T00:00:00+08:00`),
+  )
+})
+
+function monthDayClass(cell: CalendarCell) {
+  if (cell.empty) return 'is-empty'
+  const level = cell.minutes
+    ? cell.minutes < 20
+      ? 1
+      : cell.minutes < 50
+        ? 2
+        : 3
+    : 0
+  return [`level-${level}`, { 'is-today': cell.today }]
+}
+
 async function loadStats() {
-  stats.value = await learnerApi.stats(period.value)
+  const request = ++latestStatsRequest
+  statsLoading.value = true
+  try {
+    const response = await learnerApi.stats(period.value)
+    if (request === latestStatsRequest) {
+      stats.value = response
+    }
+  } finally {
+    if (request === latestStatsRequest) {
+      statsLoading.value = false
+    }
+  }
 }
 
 onMounted(async () => {
@@ -77,8 +119,25 @@ onMounted(async () => {
 })
 
 async function changePeriod(next: 'WEEK' | 'MONTH') {
+  if (next === period.value && stats.value) return
   period.value = next
-  await loadStats()
+  error.value = ''
+  const request = ++latestStatsRequest
+  statsLoading.value = true
+  try {
+    const response = await learnerApi.stats(next)
+    if (request === latestStatsRequest) {
+      stats.value = response
+    }
+  } catch (reason) {
+    if (request === latestStatsRequest) {
+      error.value = apiErrorMessage(reason)
+    }
+  } finally {
+    if (request === latestStatsRequest) {
+      statsLoading.value = false
+    }
+  }
 }
 </script>
 
@@ -147,7 +206,7 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
         <div class="report-card__head">
           <div>
             <p class="eyebrow">{{ period === 'WEEK' ? 'THIS WEEK' : 'THIS MONTH' }}</p>
-            <h2>{{ period === 'WEEK' ? '本周学习节奏' : '本月学习记录' }}</h2>
+            <h2>{{ period === 'WEEK' ? '本周学习节奏' : `${monthTitle}学习记录` }}</h2>
           </div>
           <span
             class="sl-badge"
@@ -156,7 +215,7 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
             {{ stats?.summary.studyDays ? '有学习' : '待开始' }}
           </span>
         </div>
-        <div v-if="period === 'WEEK'" class="week-chart" aria-label="本周学习时长">
+        <div v-if="!statsLoading && period === 'WEEK'" class="week-chart" aria-label="本周学习时长">
           <div v-for="day in weekDays" :key="day.date" class="week-day">
             <div class="week-day__track">
               <span
@@ -168,19 +227,29 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
             <span>{{ day.label }}</span>
           </div>
         </div>
-        <div v-else class="month-heatmap">
+        <div v-else-if="!statsLoading" class="month-heatmap">
           <span v-for="day in ['一', '二', '三', '四', '五', '六', '日']" :key="day" class="month-weekday">{{ day }}</span>
           <span
             v-for="cell in monthCells"
             :key="cell.key"
             class="month-day"
-            :class="cell.empty ? 'is-empty' : `level-${cell.minutes ? (cell.minutes < 20 ? 1 : cell.minutes < 50 ? 2 : 3) : 0}`"
+            :class="monthDayClass(cell)"
+            :aria-label="cell.empty ? undefined : `${cell.day} 日，学习 ${cell.minutes || 0} 分钟`"
           >
             {{ cell.empty ? '' : cell.day }}
           </span>
         </div>
+        <div v-if="statsLoading" class="report-loading">正在整理学习记录…</div>
         <div class="report-card__legend">
-          <span v-if="stats">{{ stats.rangeStart }} — {{ stats.rangeEnd }}</span>
+          <template v-if="period === 'MONTH'">
+            <span>少</span>
+            <i class="legend-0" />
+            <i class="legend-1" />
+            <i class="legend-2" />
+            <i class="legend-3" />
+            <span>多</span>
+          </template>
+          <span v-else-if="stats">{{ stats.rangeStart }} — {{ stats.rangeEnd }}</span>
         </div>
       </section>
 
@@ -200,3 +269,40 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
     <AppBottomNav value="me" @navigate="(value) => router.push(value === 'home' ? '/' : '/me')" />
   </main>
 </template>
+
+<style scoped>
+.month-heatmap {
+  width: min(100%, 440px);
+  grid-auto-rows: 30px;
+  gap: 6px 9px;
+  margin: 14px auto 0;
+}
+
+.month-weekday {
+  align-self: end;
+  padding-bottom: 0;
+  font-size: 8px;
+}
+
+.month-day {
+  width: 30px;
+  height: 30px;
+  aspect-ratio: auto;
+  justify-self: center;
+  border-radius: 7px;
+  font-size: 9px;
+}
+
+.report-card__legend {
+  min-height: 24px;
+  margin-top: 8px;
+}
+
+.report-loading {
+  min-height: 210px;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-caption);
+}
+</style>
