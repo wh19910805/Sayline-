@@ -25,3 +25,11 @@ test('admin course cards remain usable on mobile', async ({ page }) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
   expect(overflow).toBe(false)
 })
+
+test('admin account can enter the learner experience', async ({ page }) => {
+  await mockUserApi(page, 'ADMIN')
+  await page.goto('/')
+
+  await expect(page.locator('[data-test="course-card"]').first()).toBeVisible()
+  await expect(page.locator('.admin-sidebar')).toHaveCount(0)
+})

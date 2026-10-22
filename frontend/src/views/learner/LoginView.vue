@@ -102,6 +102,10 @@ async function submit() {
         {{ registerMode ? '已有账号？' : '还没有账号？' }}
         <span>{{ registerMode ? '返回登录' : '创建一个' }}</span>
       </button>
+      <RouterLink v-if="adminMode" class="login-register" to="/">
+        不是管理员？
+        <span>前往用户学习端</span>
+      </RouterLink>
     </form>
     <p class="login-footnote">继续即表示你同意用户协议与隐私政策</p>
   </main>

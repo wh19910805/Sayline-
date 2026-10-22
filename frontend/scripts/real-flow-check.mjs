@@ -63,7 +63,14 @@ try {
   await admin.getByText('学习正在发生。').waitFor()
   await adminContext.close()
 
-  console.log(JSON.stringify({ learnerPhone: phone, learnerFlow: 'ok', adminFlow: 'ok' }))
+  const anonymousContext = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const anonymous = await anonymousContext.newPage()
+  await anonymous.goto(`${baseUrl}/admin/login`)
+  await anonymous.getByRole('link', { name: /前往用户学习端/ }).click()
+  await anonymous.waitForURL('**/login')
+  await anonymousContext.close()
+
+  console.log(JSON.stringify({ learnerPhone: phone, learnerFlow: 'ok', adminFlow: 'ok', learnerEntry: 'ok' }))
 } finally {
   await browser.close()
 }

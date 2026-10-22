@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BookOpen, FolderTree, LayoutDashboard, LogOut, UsersRound } from 'lucide-vue-next'
+import { BookOpen, FolderTree, GraduationCap, LayoutDashboard, LogOut, UsersRound } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
 import BrandLogo from '@/components/BrandLogo.vue'
@@ -32,6 +32,10 @@ async function logout() {
             {{ item.label }}
           </RouterLink>
         </nav>
+        <RouterLink class="admin-learn-link" to="/">
+          <GraduationCap :size="18" />
+          进入学习端
+        </RouterLink>
         <div style="margin-top: auto; display: grid; gap: 10px">
           <span style="font-size: 12px; color: rgba(255,250,240,.52)">{{ auth.user?.nickname }}</span>
           <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="logout">

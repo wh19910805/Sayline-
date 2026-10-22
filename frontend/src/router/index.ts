@@ -107,15 +107,14 @@ router.beforeEach(async (to) => {
   if (to.meta.public) {
     if (!user) return true
     if (to.meta.admin) {
-      return user.role === 'ADMIN' ? '/admin' : true
+      return user.role === 'ADMIN' ? '/admin' : '/'
     }
-    return user.role === 'ADMIN' ? '/admin' : '/'
+    return '/'
   }
 
   if (!user) {
     return to.meta.admin ? '/admin/login' : '/login'
   }
   if (to.meta.admin && user.role !== 'ADMIN') return '/'
-  if (!to.meta.admin && user.role === 'ADMIN' && !to.path.startsWith('/admin')) return '/admin'
   return true
 })

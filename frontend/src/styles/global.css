@@ -453,6 +453,19 @@ a {
   color: var(--color-paper-50);
 }
 
+.admin-learn-link {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,250,240,.18);
+  border-radius: 10px;
+  color: var(--color-oat-200);
+  font-size: 13px;
+  text-decoration: none;
+}
+
 .admin-main {
   min-width: 0;
   padding: 36px clamp(20px, 4vw, 54px) 64px;
