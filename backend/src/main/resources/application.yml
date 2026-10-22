@@ -44,6 +44,12 @@ app:
   access-token-minutes: 15
   refresh-token-days: 30
   cookie-secure: ${COOKIE_SECURE:false}
+  storage:
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    access-key: ${STORAGE_ACCESS_KEY:sayline}
+    secret-key: ${STORAGE_SECRET_KEY:sayline_dev_password}
+    bucket: ${STORAGE_BUCKET:sayline-media}
+    region: ${STORAGE_REGION:us-east-1}
 
 logging:
   pattern:

@@ -3,6 +3,7 @@ package com.sayline.englishstudy.common;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,6 +29,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     ResponseEntity<ApiError> handleNotFound(NoResourceFoundException exception, HttpServletRequest request) {
         return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "请求的资源不存在", request);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ApiError> handleAccessDenied(Exception exception, HttpServletRequest request) {
+        return error(HttpStatus.FORBIDDEN, "FORBIDDEN", "没有访问权限", request);
     }
 
     @ExceptionHandler(Exception.class)
