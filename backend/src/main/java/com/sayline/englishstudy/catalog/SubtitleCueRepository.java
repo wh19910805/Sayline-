@@ -9,4 +9,6 @@ public interface SubtitleCueRepository extends JpaRepository<SubtitleCue, Long> 
     List<SubtitleCue> findByCourseIdOrderBySequenceNoAsc(Long courseId);
 
     long countByCourseId(Long courseId);
+
+    void deleteByCourseId(Long courseId);
 }

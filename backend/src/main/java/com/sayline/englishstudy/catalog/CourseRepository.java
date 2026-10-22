@@ -12,6 +12,25 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     Optional<Course> findByIdAndStatus(Long id, CourseStatus status);
 
+    boolean existsByCategoryId(Long categoryId);
+
+    long countByStatus(CourseStatus status);
+
+    @Query("""
+        select c from Course c
+        join c.category category
+        where (:categoryId is null or category.id = :categoryId)
+          and (:status is null or c.status = :status)
+          and (:query is null
+            or lower(c.title) like lower(concat('%', :query, '%'))
+            or lower(category.name) like lower(concat('%', :query, '%')))
+        """)
+    Page<Course> searchAdmin(
+        @Param("categoryId") Long categoryId,
+        @Param("status") CourseStatus status,
+        @Param("query") String query,
+        Pageable pageable);
+
     @Query("""
         select c from Course c
         join c.category category

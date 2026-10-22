@@ -7,4 +7,6 @@ public interface DictationAttemptRepository extends JpaRepository<DictationAttem
     long countByUserId(Long userId);
 
     long countByUserIdAndCorrectTrue(Long userId);
+
+    long countByCorrectTrue();
 }
