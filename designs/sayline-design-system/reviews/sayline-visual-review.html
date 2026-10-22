@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sayline · Visual Polish Review</title>
+  <link rel="icon" href="../assets/brand/sayline-app-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--color-text);
+      background: #d8d5ce;
+      font-family: var(--font-ui);
+    }
+    .review-header {
+      max-width: 1430px;
+      margin: 0 auto;
+      padding: 44px 46px 30px;
+      display: grid;
+      grid-template-columns: 1.4fr .6fr;
+      gap: 54px;
+      align-items: end;
+    }
+    .review-header__eyebrow {
+      margin: 0 0 10px;
+      color: var(--color-text-tertiary);
+      font-size: 9px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .review-header h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 58px;
+      font-weight: 400;
+      line-height: .95;
+      letter-spacing: -.035em;
+    }
+    .review-header__lede {
+      max-width: 690px;
+      margin: 15px 0 0;
+      color: var(--color-text-secondary);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .review-meta {
+      padding: 16px 18px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: rgba(244,240,232,.76);
+    }
+    .review-meta dl { display: grid; grid-template-columns: 88px 1fr; gap: 9px 12px; margin: 0; font-size: 10px; line-height: 1.5; }
+    .review-meta dt { color: var(--color-text-tertiary); }
+    .review-meta dd { margin: 0; color: var(--color-text); }
+    data-overlay { display: block; }
+    .review-stage {
+      max-width: 1430px;
+      margin: 0 auto;
+      padding: 16px 46px 54px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px 26px;
+      align-items: start;
+    }
+    .screen-artboard {
+      min-width: 0;
+    }
+    .screen-artboard__label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 0 5px 10px;
+    }
+    .screen-artboard__label strong { font-size: 11px; }
+    .screen-artboard__label span { color: var(--color-text-tertiary); font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+    .screen-frame {
+      position: relative;
+      overflow: hidden;
+      border: 7px solid #1a1f19;
+      border-radius: 37px;
+      background: var(--color-paper-100);
+      box-shadow: 0 22px 48px rgba(27,32,24,.15);
+    }
+    .screen-frame img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .anchor {
+      position: absolute;
+      z-index: 2;
+      display: block;
+      border: 0;
+      background: transparent;
+      pointer-events: none;
+    }
+    .anchor--home-nav { top: 1%; left: 0; width: 100%; height: 9%; }
+    .anchor--home-cover { top: 29%; left: 0; width: 50%; height: 27%; }
+    .anchor--home-card-meta { top: 45%; right: 0; width: 50%; height: 33%; }
+    .anchor--player-lyrics { top: 17%; left: 0; width: 100%; height: 51%; }
+    .anchor--player-controls { left: 0; right: 0; bottom: 0; height: 34%; }
+    .anchor--player-progress { left: 0; right: 0; bottom: 19%; height: 12%; }
+    .anchor--write-current { top: 19%; left: 0; width: 100%; height: 63%; }
+    .anchor--write-blanks { top: 32%; left: 0; width: 100%; height: 30%; }
+    .anchor--my-profile { top: 12%; left: 0; width: 100%; height: 21%; }
+    .anchor--my-shortcuts { top: 34%; left: 0; width: 100%; height: 18%; }
+    .anchor--settings-header { top: 0; left: 0; width: 100%; height: 10%; }
+    .anchor--settings-display { top: 47%; left: 0; width: 100%; height: 50%; }
+    .anchor--settings-colors { top: 12%; left: 0; width: 100%; height: 42%; }
+    .anchor--settings-translations { top: 52%; left: 0; width: 100%; height: 38%; }
+    @media (max-width: 1000px) {
+      .review-header { display: block; padding: 28px 20px; }
+      .review-header h1 { font-size: 44px; }
+      .review-meta { margin-top: 20px; }
+      .review-stage { grid-template-columns: 1fr 1fr; padding: 12px 20px 38px; }
+    }
+    @media (max-width: 700px) {
+      .review-stage { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="review-header">
+    <div>
+      <p class="review-header__eyebrow">Sayline / Design review</p>
+      <h1>从完成，到<br><em>想使用。</em></h1>
+      <p class="review-header__lede">目标不是增加更多视觉元素，而是统一信息密度、容器规则与情绪节奏，让品牌、课程发现和沉浸学习形成同一种精致感。</p>
+    </div>
+    <aside class="review-meta">
+      <dl>
+        <dt>Product</dt><dd>成人英语自学 H5</dd>
+        <dt>Session</dt><dd>视觉精修与一致性</dd>
+        <dt>Reviewed</dt><dd>2026-10-22</dd>
+        <dt>Views</dt><dd>精致感机会 → 已成立部分 → 一致性收尾</dd>
+      </dl>
+    </aside>
+  </header>
+
+  <script src="./data-overlay.js"></script>
+  <data-overlay src="./feedback-views.js" controls="on">
+    <main class="review-stage">
+      <article class="screen-artboard">
+        <div class="screen-artboard__label"><strong>首页 · 探索</strong><span>Discovery</span></div>
+        <div class="screen-frame">
+          <img src="../ui_kits/learner/home-mobile.png" alt="首页">
+          <span class="anchor anchor--home-nav" data-metric-id="home-navigation"></span>
+          <span class="anchor anchor--home-cover" data-metric-id="home-category-cover"></span>
+          <span class="anchor anchor--home-card-meta" data-metric-id="home-card-metadata"></span>
+        </div>
+      </article>
+
+      <article class="screen-artboard">
+        <div class="screen-artboard__label"><strong>播放器 · 控制</strong><span>Listening</span></div>
+        <div class="screen-frame">
+          <img src="../ui_kits/learner/player-controls-mobile.png" alt="播放器控制">
+          <span class="anchor anchor--player-lyrics" data-metric-id="player-lyrics"></span>
+          <span class="anchor anchor--player-controls" data-metric-id="player-controls"></span>
+          <span class="anchor anchor--player-progress" data-metric-id="player-progress"></span>
+        </div>
+      </article>
+
+      <article class="screen-artboard">
+        <div class="screen-artboard__label"><strong>播放器 · 写</strong><span>Dictation</span></div>
+        <div class="screen-frame">
+          <img src="../ui_kits/learner/player-write-letter-feedback.png" alt="写模式">
+          <span class="anchor anchor--write-current" data-metric-id="write-current"></span>
+          <span class="anchor anchor--write-blanks" data-metric-id="write-blanks"></span>
+        </div>
+      </article>
+
+      <article class="screen-artboard">
+        <div class="screen-artboard__label"><strong>设置 · 个人</strong><span>Profile</span></div>
+        <div class="screen-frame">
+          <img src="../ui_kits/learner/settings-mobile.png" alt="个人设置">
+          <span class="anchor anchor--settings-header" data-metric-id="settings-header"></span>
+          <span class="anchor anchor--settings-display" data-metric-id="settings-display"></span>
+          <span class="anchor anchor--settings-colors" data-metric-id="settings-colors"></span>
+        </div>
+      </article>
+
+      <article class="screen-artboard">
+        <div class="screen-artboard__label"><strong>设置 · 翻译</strong><span>Preferences</span></div>
+        <div class="screen-frame">
+          <img src="../ui_kits/learner/settings-options-mobile.png" alt="翻译设置">
+          <span class="anchor anchor--settings-translations" data-metric-id="settings-translations"></span>
+        </div>
+      </article>
+
+      <article class="screen-artboard">
+        <div class="screen-artboard__label"><strong>我的 · 学习</strong><span>Progress</span></div>
+        <div class="screen-frame">
+          <img src="../ui_kits/learner/me-week-mobile.png" alt="我的学习">
+          <span class="anchor anchor--my-profile" data-metric-id="my-profile"></span>
+          <span class="anchor anchor--my-shortcuts" data-metric-id="my-shortcuts"></span>
+        </div>
+      </article>
+    </main>
+  </data-overlay>
+</body>
+</html>
