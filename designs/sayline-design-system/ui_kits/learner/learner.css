@@ -1646,9 +1646,14 @@ button {
     radial-gradient(circle at 50% 45%, transparent, rgba(5,8,5,.18));
 }
 
-.player-screen > *:not(.player-atmosphere):not(.player-overlay) {
+.player-screen > *:not(.player-atmosphere):not(.player-overlay):not(.player-bottom-ui):not(.swipe-guide) {
   position: relative;
   z-index: 1;
+}
+
+.player-screen > .player-bottom-ui {
+  position: absolute;
+  z-index: 4;
 }
 
 .player-header {
@@ -1797,16 +1802,22 @@ button {
 .lyrics-window {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 8px;
-  padding: 6px 5px;
+  overflow-y: auto;
+  display: block;
+  padding: 18px 5px 28px;
   mask-image: linear-gradient(transparent, #000 10%, #000 89%, transparent);
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+
+.lyrics-window::-webkit-scrollbar {
+  display: none;
 }
 
 .lyric-line {
+  width: 100%;
+  margin: 0 0 8px;
   flex: 0 0 auto;
   display: grid;
   gap: 5px;

@@ -28,9 +28,23 @@ function cueSeconds(cue) {
 }
 
 function ListenMode({ course, activeCue, setActiveCue, showTranslation, setShowTranslation }) {
+  const lyricsRef = React.useRef(null);
+  const activeLineRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const container = lyricsRef.current;
+    const activeLine = activeLineRef.current;
+    if (!container || !activeLine) return;
+
+    container.scrollTop = Math.max(
+      0,
+      activeLine.offsetTop - container.clientHeight * 0.27,
+    );
+  }, [activeCue, course.id, showTranslation]);
+
   return (
     <div className="listen-mode">
-      <div className="lyrics-window">
+      <div className="lyrics-window" ref={lyricsRef}>
         {course.cues.map((cue, index) => {
           const distance = Math.abs(index - activeCue);
           return (
@@ -42,6 +56,7 @@ function ListenMode({ course, activeCue, setActiveCue, showTranslation, setShowT
               }
               key={cue.id}
               onClick={() => setActiveCue(index)}
+              ref={index === activeCue ? activeLineRef : undefined}
               type="button"
             >
               <span className="lyric-line__en" lang="en">{cue.en}</span>
