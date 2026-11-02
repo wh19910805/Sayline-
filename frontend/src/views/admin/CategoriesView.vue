@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { Pencil, Plus, Trash2, Upload } from 'lucide-vue-next'
 
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
 import type { AdminCategory } from '@/api/types'
+import { resolveContentType } from '@/utils/uploadContentType'
 
 const categories = ref<AdminCategory[]>([])
 const editingId = ref<number | null>(null)
 const formOpen = ref(false)
 const error = ref('')
+const uploading = ref(false)
 const form = reactive({
   name: '',
   description: '',
@@ -67,6 +69,33 @@ async function save() {
   }
 }
 
+async function uploadCover(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  uploading.value = true
+  error.value = ''
+  try {
+    const contentType = resolveContentType(file, 'COVER')
+    const presigned = await adminApi.presignUpload({
+      kind: 'COVER',
+      fileName: file.name,
+      contentType,
+      sizeBytes: file.size,
+    })
+    const uploadResponse = await fetch(presigned.uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body: file,
+    })
+    if (!uploadResponse.ok) throw new Error('文件上传失败')
+    form.coverObjectKey = presigned.objectKey
+  } catch (reason) {
+    error.value = apiErrorMessage(reason)
+  } finally {
+    uploading.value = false
+  }
+}
+
 async function remove(category: AdminCategory) {
   if (!window.confirm(`确定删除“${category.name}”吗？有关联课程时只能隐藏。`)) return
   try {
@@ -114,6 +143,11 @@ onMounted(load)
         <div class="sl-dialog__body admin-form">
           <label class="sl-field"><span class="sl-field__label">分类名称</span><input v-model="form.name" class="sl-field__control" required /></label>
           <label class="sl-field"><span class="sl-field__label">简介</span><input v-model="form.description" class="sl-field__control" /></label>
+          <label class="admin-upload">
+            <strong><Upload :size="15" /> 分类封面</strong>
+            <input type="file" accept="image/jpeg,image/png,image/webp" @change="uploadCover" />
+            <span>{{ uploading ? '上传中…' : form.coverObjectKey || 'JPG / PNG / WebP，最大 5 MB（可选，用作课程封面背景）' }}</span>
+          </label>
           <div class="admin-form-grid">
             <label class="sl-field"><span class="sl-field__label">主色</span><input v-model="form.themeColorPrimary" class="sl-field__control" type="color" /></label>
             <label class="sl-field"><span class="sl-field__label">辅助色</span><input v-model="form.themeColorSecondary" class="sl-field__control" type="color" /></label>

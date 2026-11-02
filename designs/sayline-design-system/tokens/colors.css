@@ -24,6 +24,8 @@
   --color-oat-200: #ead5aa;
   --color-oat-100: #f3e7c9;
 
+  --color-blush-200: #ffd9df;
+
   --color-silver-500: #8d948b;
   --color-silver-300: #c9c8c1;
   --color-silver-200: #dddcd6;
@@ -52,6 +54,7 @@
   --color-action-hover: var(--color-ember-700);
   --color-action-soft: var(--color-ember-100);
   --color-focus: var(--color-ember-500);
+  --color-favorite: var(--color-blush-200);
 
   --player-base: #1d221c;
   --player-overlay: rgba(10, 13, 9, .52);

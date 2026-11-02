@@ -97,6 +97,7 @@ export const adminApi = {
     http.patch<AdminCourse>(`/api/v1/admin/courses/${id}`, payload),
   publishCourse: (id: number) => http.post<AdminCourse>(`/api/v1/admin/courses/${id}/publish`),
   offlineCourse: (id: number) => http.post<AdminCourse>(`/api/v1/admin/courses/${id}/offline`),
+  deleteCourse: (id: number) => http.delete<void>(`/api/v1/admin/courses/${id}`),
   users: (q?: string) => {
     const params = new URLSearchParams({ size: '50' })
     if (q) params.set('q', q)

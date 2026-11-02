@@ -31,6 +31,27 @@ class SubtitleParserTest {
     }
 
     @Test
+    void swapsChineseFirstCuesIntoEnglishFirst() {
+        var cues = parser.parse("""
+            1
+            00:00:00,000 --> 00:00:02,500
+            早上好。
+            Good morning.
+
+            2
+            00:00:02,500 --> 00:00:05,000
+            有什么可以帮您？
+            How can I help?
+            """, "lesson.srt");
+
+        assertThat(cues).hasSize(2);
+        assertThat(cues.getFirst().englishText()).isEqualTo("Good morning.");
+        assertThat(cues.getFirst().chineseText()).isEqualTo("早上好。");
+        assertThat(cues.getLast().englishText()).isEqualTo("How can I help?");
+        assertThat(cues.getLast().chineseText()).isEqualTo("有什么可以帮您？");
+    }
+
+    @Test
     void parsesWebVttWithShortTimestamps() {
         var cues = parser.parse("""
             WEBVTT

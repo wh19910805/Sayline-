@@ -104,6 +104,12 @@ public class AdminController {
         return adminService.offline(courseId);
     }
 
+    @DeleteMapping("/courses/{courseId}")
+    public ResponseEntity<Void> deleteCourse(@PathVariable Long courseId) {
+        adminService.deleteCourse(courseId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/users")
     public PageResponse<UserAdminView> users(
         @RequestParam(required = false) String q,

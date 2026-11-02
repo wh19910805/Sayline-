@@ -755,7 +755,7 @@
       "path": "guidelines/colors-brand.html",
       "group": "Colors",
       "viewport": "700x220",
-      "subtitle": "Ink, paper, ember, moss, and oat",
+      "subtitle": "Ink, paper, ember, moss, oat, and blush",
       "name": "Brand palette"
     },
     {
@@ -1004,6 +1004,12 @@
       "definedIn": "tokens/colors.css"
     },
     {
+      "name": "--color-blush-200",
+      "value": "#ffd9df",
+      "kind": "color",
+      "definedIn": "tokens/colors.css"
+    },
+    {
       "name": "--color-silver-500",
       "value": "#8d948b",
       "kind": "color",
@@ -1156,6 +1162,12 @@
     {
       "name": "--color-focus",
       "value": "var(--color-ember-500)",
+      "kind": "color",
+      "definedIn": "tokens/colors.css"
+    },
+    {
+      "name": "--color-favorite",
+      "value": "var(--color-blush-200)",
       "kind": "color",
       "definedIn": "tokens/colors.css"
     },

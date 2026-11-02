@@ -84,12 +84,12 @@ const cues = [
   chineseText,
 }))
 
-const learning = {
+const createLearning = (listenProgress: number) => ({
   lastMode: 'LISTEN',
   lastCueId: 1,
   lastPositionMs: 0,
   modes: {
-    listen: { progress: 40, confirmed: false },
+    listen: { progress: listenProgress, confirmed: false },
     read: { progress: 20, confirmed: false },
     write: { progress: 0, confirmed: false },
     speak: { progress: 0, confirmed: false },
@@ -102,7 +102,7 @@ const learning = {
     spoken: false,
   })),
   completed: false,
-}
+})
 
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({
@@ -112,7 +112,12 @@ function json(route: Route, body: unknown, status = 200) {
   })
 }
 
-export async function mockUserApi(page: Page, role: 'USER' | 'ADMIN') {
+export async function mockUserApi(
+  page: Page,
+  role: 'USER' | 'ADMIN',
+  options: { listenProgress?: number } = {},
+) {
+  const learning = createLearning(options.listenProgress ?? 40)
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request()
     const url = new URL(request.url())

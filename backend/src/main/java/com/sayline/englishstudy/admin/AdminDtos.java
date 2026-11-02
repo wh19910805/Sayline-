@@ -32,6 +32,7 @@ public final class AdminDtos {
         String name,
         String description,
         String coverObjectKey,
+        String coverUrl,
         String themeColorPrimary,
         String themeColorSecondary,
         int sortOrder,

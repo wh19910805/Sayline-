@@ -121,6 +121,27 @@ class UserProfileApiTest {
     }
 
     @Test
+    void addsInterestToExistingSelectionWithoutConflict() throws Exception {
+        mockMvc.perform(put("/api/v1/me/interests")
+                .header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"categoryIds":[%d]}
+                    """.formatted(listening.getId())))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/v1/me/interests")
+                .header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"categoryIds":[%d,%d]}
+                    """.formatted(listening.getId(), work.getId())))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].id").value(listening.getId()))
+            .andExpect(jsonPath("$[1].id").value(work.getId()));
+    }
+
+    @Test
     void savesOrderedInterestsAndUsesFirstAsDefaultTab() throws Exception {
         mockMvc.perform(put("/api/v1/me/interests")
                 .header("Authorization", bearer())

@@ -43,6 +43,16 @@ async function offline(course: AdminCourse) {
   }
 }
 
+async function remove(course: AdminCourse) {
+  if (!window.confirm(`确认删除课程「${course.title}」？关联的字幕、收藏和学习记录会一并删除，且无法恢复。`)) return
+  try {
+    await adminApi.deleteCourse(course.id)
+    await load()
+  } catch (reason) {
+    error.value = apiErrorMessage(reason)
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -81,6 +91,7 @@ onMounted(load)
                 <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="router.push(`/admin/courses/${course.id}/edit`)">编辑</button>
                 <button v-if="course.status !== 'PUBLISHED'" class="sl-button sl-button--secondary sl-button--sm" type="button" @click="publish(course)">发布</button>
                 <button v-else class="sl-button sl-button--ghost sl-button--sm" type="button" @click="offline(course)">下架</button>
+                <button v-if="course.status !== 'PUBLISHED'" class="sl-button sl-button--danger sl-button--sm" type="button" @click="remove(course)">删除</button>
               </div>
             </td>
           </tr>

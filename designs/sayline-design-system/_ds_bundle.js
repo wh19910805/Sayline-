@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Switch","sourcePath":"components/core/Switch.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CategoryCard","sourcePath":"components/learning/CategoryCard.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"WordInput","sourcePath":"components/learning/WordInput.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"ecb82d2b8de5","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Switch.jsx":"ab5e398431ae","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CategoryCard.jsx":"128dec5ddb45","components/learning/CourseCard.jsx":"90a089af0cb2","components/learning/ModeSwitcher.jsx":"1e910a80ba0f","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/learning/WordInput.jsx":"8fb78c2b1d9c","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"5e843b18a550","ui_kits/learner/data.jsx":"2cd232190380","ui_kits/learner/player.jsx":"e193bec1f6a6","ui_kits/learner/screens.jsx":"86d1e0f7e2f7","ui_kits/learner/shared.jsx":"eef8541b52bc"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"SaylineDesignSystem_1a4fd3","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Checkbox","sourcePath":"components/core/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Input","sourcePath":"components/core/Input.jsx"},{"name":"Switch","sourcePath":"components/core/Switch.jsx"},{"name":"Textarea","sourcePath":"components/core/Textarea.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"CategoryCard","sourcePath":"components/learning/CategoryCard.jsx"},{"name":"CourseCard","sourcePath":"components/learning/CourseCard.jsx"},{"name":"ModeSwitcher","sourcePath":"components/learning/ModeSwitcher.jsx"},{"name":"ProgressBar","sourcePath":"components/learning/ProgressBar.jsx"},{"name":"StatTile","sourcePath":"components/learning/StatTile.jsx"},{"name":"WordInput","sourcePath":"components/learning/WordInput.jsx"},{"name":"BottomNav","sourcePath":"components/navigation/BottomNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"f4dc27c43834","components/core/Button.jsx":"560230796a99","components/core/Checkbox.jsx":"e801f8d5ecf5","components/core/Icon.jsx":"ecb82d2b8de5","components/core/IconButton.jsx":"59b83667549a","components/core/Input.jsx":"67e5554024bb","components/core/Switch.jsx":"ab5e398431ae","components/core/Textarea.jsx":"51af41919ebe","components/feedback/Dialog.jsx":"fbb4b1cc77d6","components/feedback/Toast.jsx":"12f43dc740b4","components/learning/CategoryCard.jsx":"128dec5ddb45","components/learning/CourseCard.jsx":"90a089af0cb2","components/learning/ModeSwitcher.jsx":"1e910a80ba0f","components/learning/ProgressBar.jsx":"a8796c8f5b85","components/learning/StatTile.jsx":"453b801ffb90","components/learning/WordInput.jsx":"8fb78c2b1d9c","components/navigation/BottomNav.jsx":"1edd2eee690a","components/navigation/Tabs.jsx":"524a3820eb15","ui_kits/learner/app.jsx":"1f471f52f6a5","ui_kits/learner/data.jsx":"2cd232190380","ui_kits/learner/player.jsx":"e193bec1f6a6","ui_kits/learner/screens.jsx":"3d64c2b574ea","ui_kits/learner/shared.jsx":"04888558c2b5"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -777,7 +777,8 @@ const {
   HomeScreen,
   MyScreen,
   InterestOnboardingScreen,
-  SettingsScreen,
+  ProfileSettingsScreen,
+  LearningSettingsScreen,
   PreferencesScreen
 } = window;
 const {
@@ -789,7 +790,8 @@ const {
 function App() {
   const initialParams = new URLSearchParams(window.location.search);
   const requestedScreen = initialParams.get("screen");
-  const initialScreen = ["login", "interests", "home", "me", "player", "settings", "preferences"].includes(requestedScreen) ? requestedScreen : "home";
+  const standalone = initialParams.get("standalone") === "1";
+  const initialScreen = ["login", "interests", "home", "me", "player", "profile-settings", "learning-settings", "preferences"].includes(requestedScreen) ? requestedScreen : "home";
   const initialInterests = window.SaylineData.defaultInterests;
   const requestedCategory = initialParams.get("category");
   const initialCategory = requestedCategory === "favorite" || initialInterests.includes(requestedCategory) ? requestedCategory : initialInterests[0];
@@ -847,6 +849,119 @@ function App() {
     }
     setPlayerCourseId(playerListIds[nextIndex]);
   }
+  function renderActiveScreen() {
+    if (screen === "login") {
+      return /*#__PURE__*/React.createElement(LoginScreen, {
+        onLogin: () => setScreen("interests")
+      });
+    }
+    if (screen === "interests") {
+      return /*#__PURE__*/React.createElement(InterestOnboardingScreen, {
+        onComplete: selected => {
+          setInterests(selected);
+          setDefaultTab(selected[0]);
+          setCategory(selected[0]);
+          setScreen("home");
+        }
+      });
+    }
+    if (screen === "home") {
+      return /*#__PURE__*/React.createElement(HomeScreen, {
+        category: category,
+        categories: homeCategories,
+        courses: courses,
+        onCategory: setCategory,
+        onNavigate: navigate,
+        onOpenCourse: openCourse,
+        onToggleFavorite: toggleFavorite
+      });
+    }
+    if (screen === "me") {
+      return /*#__PURE__*/React.createElement(MyScreen, {
+        defaultTab: defaultTab,
+        interests: interests,
+        learningSettings: learningSettings,
+        onNavigate: navigate,
+        onOpenPreferences: () => {
+          setPreferencesReturnTo("me");
+          setScreen("preferences");
+        },
+        onOpenLearningSettings: () => setScreen("learning-settings"),
+        onOpenProfile: () => setScreen("profile-settings"),
+        period: period,
+        profile: profile,
+        setPeriod: setPeriod
+      });
+    }
+    if (screen === "profile-settings") {
+      return /*#__PURE__*/React.createElement(ProfileSettingsScreen, {
+        onBack: () => setScreen("me"),
+        onSave: nextProfile => {
+          setProfile({
+            ...nextProfile,
+            phoneMasked: nextProfile.phone.length > 7 ? `${nextProfile.phone.slice(0, 3)}****${nextProfile.phone.slice(-4)}` : nextProfile.phone
+          });
+          setScreen("me");
+          setToast("个人资料已保存");
+          window.setTimeout(() => setToast(""), 2200);
+        },
+        profile: profile
+      });
+    }
+    if (screen === "learning-settings") {
+      return /*#__PURE__*/React.createElement(LearningSettingsScreen, {
+        learningSettings: learningSettings,
+        onBack: () => setScreen("me"),
+        onOpenPreferences: () => {
+          setPreferencesReturnTo("learning-settings");
+          setScreen("preferences");
+        },
+        onSave: nextSettings => {
+          setLearningSettings(nextSettings);
+          setScreen("me");
+          setToast("学习设置已保存");
+          window.setTimeout(() => setToast(""), 2200);
+        }
+      });
+    }
+    if (screen === "preferences") {
+      return /*#__PURE__*/React.createElement(PreferencesScreen, {
+        defaultTab: defaultTab,
+        interests: interests,
+        onBack: () => setScreen(preferencesReturnTo),
+        onSave: (nextInterests, nextDefault) => {
+          setInterests(nextInterests);
+          setDefaultTab(nextDefault);
+          setCategory(nextDefault);
+          setScreen("home");
+          setToast("学习偏好已保存");
+          window.setTimeout(() => setToast(""), 2200);
+        }
+      });
+    }
+    if (screen === "player" && playerCourse) {
+      return /*#__PURE__*/React.createElement(PlayerScreen, {
+        course: playerCourse,
+        initialMode: initialParams.get("mode"),
+        learningSettings: learningSettings,
+        onClose: () => setScreen("home"),
+        onMoveCourse: moveCourse,
+        onToggleFavorite: () => toggleFavorite(playerCourse.id)
+      });
+    }
+    return null;
+  }
+  if (standalone) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "standalone-app",
+      "data-screen": screen
+    }, renderActiveScreen(), toast && /*#__PURE__*/React.createElement("div", {
+      className: "prototype-toast"
+    }, /*#__PURE__*/React.createElement(Toast, {
+      message: toast,
+      tone: toast.includes("已") ? "success" : "neutral"
+    })));
+  }
   return /*#__PURE__*/React.createElement("div", {
     className: "review-shell"
   }, /*#__PURE__*/React.createElement(ReviewRail, {
@@ -862,76 +977,9 @@ function App() {
     className: "device-stage"
   }, /*#__PURE__*/React.createElement("div", {
     className: "device-caption"
-  }, /*#__PURE__*/React.createElement("span", null, screen === "player" ? "immersive player" : screen === "me" ? "learning report" : screen === "login" ? "account entry" : screen === "interests" ? "interest setup" : screen === "settings" ? "profile and learning settings" : screen === "preferences" ? "learning preferences" : "course discovery"), /*#__PURE__*/React.createElement("span", null, "390 \xD7 844")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, screen === "player" ? "immersive player" : screen === "me" ? "learning report" : screen === "login" ? "account entry" : screen === "interests" ? "interest setup" : screen === "profile-settings" ? "personal profile" : screen === "learning-settings" ? "learning display settings" : screen === "preferences" ? "learning preferences" : "course discovery"), /*#__PURE__*/React.createElement("span", null, "390 \xD7 844")), /*#__PURE__*/React.createElement("div", {
     className: "phone-device"
-  }, screen === "login" && /*#__PURE__*/React.createElement(LoginScreen, {
-    onLogin: () => setScreen("interests")
-  }), screen === "interests" && /*#__PURE__*/React.createElement(InterestOnboardingScreen, {
-    onComplete: selected => {
-      setInterests(selected);
-      setDefaultTab(selected[0]);
-      setCategory(selected[0]);
-      setScreen("home");
-    }
-  }), screen === "home" && /*#__PURE__*/React.createElement(HomeScreen, {
-    category: category,
-    categories: homeCategories,
-    courses: courses,
-    onCategory: setCategory,
-    onNavigate: navigate,
-    onOpenCourse: openCourse,
-    onToggleFavorite: toggleFavorite
-  }), screen === "me" && /*#__PURE__*/React.createElement(MyScreen, {
-    defaultTab: defaultTab,
-    interests: interests,
-    learningSettings: learningSettings,
-    onNavigate: navigate,
-    onOpenPreferences: () => {
-      setPreferencesReturnTo("me");
-      setScreen("preferences");
-    },
-    onOpenSettings: () => setScreen("settings"),
-    period: period,
-    profile: profile,
-    setPeriod: setPeriod
-  }), screen === "settings" && /*#__PURE__*/React.createElement(SettingsScreen, {
-    learningSettings: learningSettings,
-    onBack: () => setScreen("me"),
-    onOpenPreferences: () => {
-      setPreferencesReturnTo("settings");
-      setScreen("preferences");
-    },
-    onSave: (nextProfile, nextSettings) => {
-      setProfile({
-        ...nextProfile,
-        phoneMasked: nextProfile.phone.length > 7 ? `${nextProfile.phone.slice(0, 3)}****${nextProfile.phone.slice(-4)}` : nextProfile.phone
-      });
-      setLearningSettings(nextSettings);
-      setScreen("me");
-      setToast("设置已保存");
-      window.setTimeout(() => setToast(""), 2200);
-    },
-    profile: profile
-  }), screen === "preferences" && /*#__PURE__*/React.createElement(PreferencesScreen, {
-    defaultTab: defaultTab,
-    interests: interests,
-    onBack: () => setScreen(preferencesReturnTo),
-    onSave: (nextInterests, nextDefault) => {
-      setInterests(nextInterests);
-      setDefaultTab(nextDefault);
-      setCategory(nextDefault);
-      setScreen("home");
-      setToast("学习偏好已保存");
-      window.setTimeout(() => setToast(""), 2200);
-    }
-  }), screen === "player" && playerCourse && /*#__PURE__*/React.createElement(PlayerScreen, {
-    course: playerCourse,
-    initialMode: initialParams.get("mode"),
-    learningSettings: learningSettings,
-    onClose: () => setScreen("home"),
-    onMoveCourse: moveCourse,
-    onToggleFavorite: () => toggleFavorite(playerCourse.id)
-  })), /*#__PURE__*/React.createElement("div", {
+  }, renderActiveScreen()), /*#__PURE__*/React.createElement("div", {
     className: "device-hint"
   }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("i", null), " \u53EF\u4EA4\u4E92\u539F\u578B"), /*#__PURE__*/React.createElement("span", null, "\u64AD\u653E\u5668\uFF1A\u2191 / \u2193 \u5207\u6362\u8BFE\u7A0B"))), toast && /*#__PURE__*/React.createElement("div", {
     className: "prototype-toast"
@@ -2395,21 +2443,9 @@ function HomeScreen({
   const showFeed = !searchOpen || normalizedQuery;
   return /*#__PURE__*/React.createElement("div", {
     className: "app-screen home-screen"
-  }, /*#__PURE__*/React.createElement("header", {
-    className: "home-header"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "home-header__label"
-  }, "\u8BFE\u7A0B"), /*#__PURE__*/React.createElement(IconButton, {
-    "aria-expanded": searchOpen,
-    label: searchOpen ? "关闭搜索" : "搜索课程",
-    onClick: () => {
-      setSearchOpen(value => !value);
-      setSearchTerm("");
-    }
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: searchOpen ? "x" : "search",
-    size: 21
-  }))), searchOpen ? /*#__PURE__*/React.createElement("label", {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "home-top-row"
+  }, searchOpen ? /*#__PURE__*/React.createElement("label", {
     className: "course-search"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "search",
@@ -2426,7 +2462,17 @@ function HomeScreen({
     items: tabItems,
     onChange: onCategory,
     value: category
-  }), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(IconButton, {
+    "aria-expanded": searchOpen,
+    label: searchOpen ? "关闭搜索" : "搜索课程",
+    onClick: () => {
+      setSearchOpen(value => !value);
+      setSearchTerm("");
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: searchOpen ? "x" : "search",
+    size: 21
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "home-scroll"
   }, !searchOpen && category !== "favorite" && /*#__PURE__*/React.createElement("section", {
     className: "home-section home-section--continue"
@@ -2492,7 +2538,8 @@ function MyScreen({
   setPeriod,
   onNavigate,
   onOpenPreferences,
-  onOpenSettings,
+  onOpenProfile,
+  onOpenLearningSettings,
   profile,
   learningSettings,
   interests,
@@ -2503,22 +2550,11 @@ function MyScreen({
   const enabledTranslationCount = Object.values(learningSettings.translations).filter(Boolean).length;
   return /*#__PURE__*/React.createElement("div", {
     className: "app-screen me-screen"
-  }, /*#__PURE__*/React.createElement("header", {
-    className: "me-header"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
-    className: "eyebrow"
-  }, "MY SPACE"), /*#__PURE__*/React.createElement("h1", null, "\u6211\u7684")), /*#__PURE__*/React.createElement(IconButton, {
-    label: "\u6253\u5F00\u8BBE\u7F6E",
-    onClick: onOpenSettings,
-    variant: "outline"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "settings-2",
-    size: 20
-  }))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "me-scroll"
   }, /*#__PURE__*/React.createElement("button", {
     className: "profile-card",
-    onClick: onOpenSettings,
+    onClick: onOpenProfile,
     type: "button"
   }, /*#__PURE__*/React.createElement("span", {
     className: "profile-card__avatar"
@@ -2535,7 +2571,18 @@ function MyScreen({
   }), "\u7F16\u8F91\u8D44\u6599")), /*#__PURE__*/React.createElement("section", {
     className: "settings-shortcuts"
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: onOpenSettings,
+    onClick: onOpenProfile,
+    type: "button"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "settings-shortcuts__icon"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "user-round",
+    size: 18
+  })), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "\u4E2A\u4EBA\u8D44\u6599"), /*#__PURE__*/React.createElement("small", null, "\u5934\u50CF\u3001\u6635\u79F0\u548C\u624B\u673A\u53F7")), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevron-right",
+    size: 18
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: onOpenLearningSettings,
     type: "button"
   }, /*#__PURE__*/React.createElement("span", {
     className: "settings-shortcuts__icon"
@@ -2559,10 +2606,8 @@ function MyScreen({
     name: "chevron-right",
     size: 18
   }))), /*#__PURE__*/React.createElement("div", {
-    className: "report-title"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
-    className: "eyebrow"
-  }, "LEARNING REPORT"), /*#__PURE__*/React.createElement("h2", null, "\u5B66\u4E60\u7EDF\u8BA1")), /*#__PURE__*/React.createElement("span", null, report.studiedDays, " \u5929\u6709\u5B66\u4E60")), /*#__PURE__*/React.createElement("div", {
+    className: "study-summary-line"
+  }, /*#__PURE__*/React.createElement("span", null, "\u5B66\u4E60\u7EDF\u8BA1"), /*#__PURE__*/React.createElement("em", null, report.studiedDays, " \u5929\u6709\u5B66\u4E60")), /*#__PURE__*/React.createElement("div", {
     className: "period-switch"
   }, /*#__PURE__*/React.createElement(Tabs, {
     items: [{
@@ -2703,31 +2748,15 @@ function InterestOnboardingScreen({
     size: "lg"
   }, "\u5B8C\u6210\uFF0C\u5F00\u59CB\u5B66\u4E60")));
 }
-function SettingsScreen({
+function ProfileSettingsScreen({
   profile,
-  learningSettings,
   onBack,
-  onSave,
-  onOpenPreferences
+  onSave
 }) {
   const [draftProfile, setDraftProfile] = React.useState(profile);
-  const [draftSettings, setDraftSettings] = React.useState(learningSettings);
   const fileInputRef = React.useRef(null);
-  const captionColors = window.SaylineData.captionColors;
-  const captionSizes = window.SaylineData.captionSizes;
-  const translationModes = window.SaylineData.translationModes;
-  const activeColor = captionColors.find(item => item.value === draftSettings.captionColor) || captionColors[0];
-  function updateTranslation(mode, checked) {
-    setDraftSettings(current => ({
-      ...current,
-      translations: {
-        ...current.translations,
-        [mode]: checked
-      }
-    }));
-  }
   return /*#__PURE__*/React.createElement("div", {
-    className: "app-screen settings-screen"
+    className: "app-screen settings-screen profile-settings-screen"
   }, /*#__PURE__*/React.createElement("header", {
     className: "settings-header"
   }, /*#__PURE__*/React.createElement(IconButton, {
@@ -2738,13 +2767,13 @@ function SettingsScreen({
     size: 23
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "eyebrow"
-  }, "SETTINGS"), /*#__PURE__*/React.createElement("h1", null, "\u8BBE\u7F6E")), /*#__PURE__*/React.createElement("span", null, "PERSONAL")), /*#__PURE__*/React.createElement("div", {
+  }, "ACCOUNT"), /*#__PURE__*/React.createElement("h1", null, "\u4E2A\u4EBA\u8D44\u6599")), /*#__PURE__*/React.createElement("span", null, "PROFILE")), /*#__PURE__*/React.createElement("div", {
     className: "settings-scroll"
   }, /*#__PURE__*/React.createElement("section", {
     className: "settings-section"
   }, /*#__PURE__*/React.createElement("div", {
     className: "settings-section__head"
-  }, /*#__PURE__*/React.createElement("h2", null, "\u4E2A\u4EBA\u4FE1\u606F"), /*#__PURE__*/React.createElement("span", null, "PERSONAL PROFILE")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("h2", null, "\u57FA\u672C\u4FE1\u606F"), /*#__PURE__*/React.createElement("span", null, "PERSONAL INFO")), /*#__PURE__*/React.createElement("div", {
     className: "settings-profile"
   }, /*#__PURE__*/React.createElement("button", {
     "aria-label": "\u66F4\u6362\u5934\u50CF",
@@ -2792,11 +2821,55 @@ function SettingsScreen({
     value: draftProfile.phone
   })), /*#__PURE__*/React.createElement("p", {
     className: "settings-note"
-  }, "\u66F4\u6362\u624B\u673A\u53F7\u540E\u9700\u8981\u91CD\u65B0\u9A8C\u8BC1\uFF0C\u9A8C\u8BC1\u6D41\u7A0B\u5C06\u5728\u6B63\u5F0F\u5F00\u53D1\u4E2D\u63A5\u5165\u3002")), /*#__PURE__*/React.createElement("section", {
+  }, "\u66F4\u6362\u624B\u673A\u53F7\u540E\u9700\u8981\u91CD\u65B0\u9A8C\u8BC1\uFF0C\u9A8C\u8BC1\u6D41\u7A0B\u5C06\u5728\u6B63\u5F0F\u5F00\u53D1\u4E2D\u63A5\u5165\u3002"), /*#__PURE__*/React.createElement("div", {
+    className: "settings-info-row"
+  }, /*#__PURE__*/React.createElement("span", null, "\u52A0\u5165\u65F6\u95F4"), /*#__PURE__*/React.createElement("strong", null, draftProfile.joinedAt)))), /*#__PURE__*/React.createElement("div", {
+    className: "settings-footer"
+  }, /*#__PURE__*/React.createElement(Button, {
+    fullWidth: true,
+    onClick: () => onSave(draftProfile),
+    size: "lg"
+  }, "\u4FDD\u5B58\u8D44\u6599")));
+}
+function LearningSettingsScreen({
+  learningSettings,
+  onBack,
+  onSave,
+  onOpenPreferences
+}) {
+  const [draftSettings, setDraftSettings] = React.useState(learningSettings);
+  const captionColors = window.SaylineData.captionColors;
+  const captionSizes = window.SaylineData.captionSizes;
+  const translationModes = window.SaylineData.translationModes;
+  const activeColor = captionColors.find(item => item.value === draftSettings.captionColor) || captionColors[0];
+  function updateTranslation(mode, checked) {
+    setDraftSettings(current => ({
+      ...current,
+      translations: {
+        ...current.translations,
+        [mode]: checked
+      }
+    }));
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "app-screen settings-screen learning-settings-screen"
+  }, /*#__PURE__*/React.createElement("header", {
+    className: "settings-header"
+  }, /*#__PURE__*/React.createElement(IconButton, {
+    label: "\u8FD4\u56DE\u6211\u7684",
+    onClick: onBack
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "chevron-left",
+    size: 23
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "eyebrow"
+  }, "PLAYER"), /*#__PURE__*/React.createElement("h1", null, "\u5B66\u4E60\u8BBE\u7F6E")), /*#__PURE__*/React.createElement("span", null, "READING")), /*#__PURE__*/React.createElement("div", {
+    className: "settings-scroll"
+  }, /*#__PURE__*/React.createElement("section", {
     className: "settings-section"
   }, /*#__PURE__*/React.createElement("div", {
     className: "settings-section__head"
-  }, /*#__PURE__*/React.createElement("h2", null, "\u5B66\u4E60\u8BBE\u7F6E"), /*#__PURE__*/React.createElement("span", null, "PLAYER DISPLAY")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("h2", null, "\u5B57\u5E55\u663E\u793A"), /*#__PURE__*/React.createElement("span", null, "CAPTION STYLE")), /*#__PURE__*/React.createElement("div", {
     className: "settings-control-group"
   }, /*#__PURE__*/React.createElement("div", {
     className: "settings-control-group__label"
@@ -2839,34 +2912,34 @@ function SettingsScreen({
       "--preview-caption-muted": draftSettings.captionMuted,
       "--preview-caption-scale": draftSettings.captionScale
     }
-  }, /*#__PURE__*/React.createElement("span", null, "PREVIEW"), /*#__PURE__*/React.createElement("strong", null, "Every sentence has its own rhythm."), /*#__PURE__*/React.createElement("small", null, "\u6BCF\u4E00\u53E5\u8BDD\u90FD\u6709\u81EA\u5DF1\u7684\u8282\u594F\u3002")), /*#__PURE__*/React.createElement("div", {
-    className: "settings-control-group settings-control-group--switches"
+  }, /*#__PURE__*/React.createElement("span", null, "PREVIEW"), /*#__PURE__*/React.createElement("strong", null, "Every sentence has its own rhythm."), /*#__PURE__*/React.createElement("small", null, "\u6BCF\u4E00\u53E5\u8BDD\u90FD\u6709\u81EA\u5DF1\u7684\u8282\u594F\u3002"))), /*#__PURE__*/React.createElement("section", {
+    className: "settings-section"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "settings-control-group__label"
-  }, /*#__PURE__*/React.createElement("strong", null, "\u4E2D\u6587\u7FFB\u8BD1"), /*#__PURE__*/React.createElement("span", null, "\u5206\u522B\u63A7\u5236\u56DB\u4E2A\u5B66\u4E60\u6A21\u5F0F")), /*#__PURE__*/React.createElement("div", {
+    className: "settings-section__head"
+  }, /*#__PURE__*/React.createElement("h2", null, "\u4E2D\u6587\u7FFB\u8BD1"), /*#__PURE__*/React.createElement("span", null, "PER MODE")), /*#__PURE__*/React.createElement("div", {
     className: "translation-grid"
   }, translationModes.map(mode => /*#__PURE__*/React.createElement(Switch, {
     checked: draftSettings.translations[mode.value],
     id: `translation-${mode.value}`,
     key: mode.value,
     onChange: checked => updateTranslation(mode.value, checked)
-  }, mode.label))))), /*#__PURE__*/React.createElement("button", {
+  }, mode.label)))), /*#__PURE__*/React.createElement("button", {
     className: "settings-link-row",
     onClick: onOpenPreferences,
     type: "button"
   }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(Icon, {
     name: "settings-2",
     size: 18
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "\u9996\u9875\u5206\u7C7B\u4E0E\u9ED8\u8BA4 Tab"), /*#__PURE__*/React.createElement("small", null, "\u8C03\u6574\u5174\u8DA3\u3001\u987A\u5E8F\u548C\u767B\u5F55\u540E\u7684\u9ED8\u8BA4\u9875\u9762")), /*#__PURE__*/React.createElement(Icon, {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "\u5B66\u4E60\u504F\u597D"), /*#__PURE__*/React.createElement("small", null, "\u7BA1\u7406\u5174\u8DA3\u5206\u7C7B\u3001\u987A\u5E8F\u548C\u9ED8\u8BA4 Tab")), /*#__PURE__*/React.createElement(Icon, {
     name: "chevron-right",
     size: 18
   }))), /*#__PURE__*/React.createElement("div", {
     className: "settings-footer"
   }, /*#__PURE__*/React.createElement(Button, {
     fullWidth: true,
-    onClick: () => onSave(draftProfile, draftSettings),
+    onClick: () => onSave(draftSettings),
     size: "lg"
-  }, "\u4FDD\u5B58\u8BBE\u7F6E")));
+  }, "\u4FDD\u5B58\u5B66\u4E60\u8BBE\u7F6E")));
 }
 function PreferencesScreen({
   interests,
@@ -3015,7 +3088,8 @@ Object.assign(window, {
   HomeScreen,
   MyScreen,
   InterestOnboardingScreen,
-  SettingsScreen,
+  ProfileSettingsScreen,
+  LearningSettingsScreen,
   PreferencesScreen,
   ContinueCard
 });
@@ -3102,7 +3176,7 @@ const ReviewRail = ({
   screen,
   onNavigate
 }) => {
-  const screens = [["login", "01 / 登录"], ["interests", "02 / 兴趣选择"], ["home", "03 / 首页"], ["player", "04 / 播放器"], ["me", "05 / 我的学习"], ["settings", "06 / 设置"], ["preferences", "07 / 学习偏好"]];
+  const screens = [["login", "01 / 登录"], ["interests", "02 / 兴趣选择"], ["home", "03 / 首页"], ["player", "04 / 播放器"], ["me", "05 / 我的"], ["profile-settings", "06 / 个人资料"], ["learning-settings", "07 / 学习设置"], ["preferences", "08 / 学习偏好"]];
   return /*#__PURE__*/React.createElement("aside", {
     className: "review-rail"
   }, /*#__PURE__*/React.createElement(SaylineWordmark, null), /*#__PURE__*/React.createElement("p", {

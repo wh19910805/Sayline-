@@ -13,6 +13,7 @@ public class SubtitleParser {
     private static final Pattern TIMESTAMP = Pattern.compile(
         "^(?:(\\d{2}):)?(\\d{2}):(\\d{2})[,.](\\d{3})$");
     private static final Pattern TIMING_LINE = Pattern.compile("^(.+?)\\s+-->\\s+(.+?)(?:\\s+.*)?$");
+    private static final Pattern HAN = Pattern.compile("[\\u4e00-\\u9fff]");
 
     public List<ParsedSubtitleCue> parse(String content, String fileName) {
         if (content == null || content.isBlank()) {
@@ -72,12 +73,15 @@ public class SubtitleParser {
             if (!cues.isEmpty() && startMs < cues.getLast().endMs()) {
                 throw new SubtitleParseException(timingLineNumber, "字幕时间轴不能重叠");
             }
+            String first = textLines.get(0);
+            String second = textLines.get(1);
+            boolean firstIsChinese = containsHan(first) && !containsHan(second);
             cues.add(new ParsedSubtitleCue(
                 cues.size() + 1,
                 startMs,
                 endMs,
-                textLines.get(0),
-                textLines.get(1)));
+                firstIsChinese ? second : first,
+                firstIsChinese ? first : second));
         }
 
         if (cues.isEmpty()) {
@@ -91,6 +95,10 @@ public class SubtitleParser {
             index++;
         }
         return index;
+    }
+
+    private boolean containsHan(String text) {
+        return HAN.matcher(text).find();
     }
 
     private long parseTimestamp(String value, int lineNumber) {

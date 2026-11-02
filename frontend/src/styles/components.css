@@ -754,7 +754,7 @@ textarea.sl-field__control {
 }
 
 .sl-course-card__favorite--feed[aria-pressed="true"] {
-  color: #ffd9df;
+  color: var(--color-favorite);
   background: rgba(17, 22, 16, .38);
 }
 

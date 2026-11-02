@@ -190,6 +190,15 @@ public class AdminService {
         return toView(course);
     }
 
+    @Transactional
+    public void deleteCourse(Long courseId) {
+        Course course = requiredCourse(courseId);
+        if (course.getStatus() == CourseStatus.PUBLISHED) {
+            throw new ApiException("COURSE_PUBLISHED", HttpStatus.CONFLICT, "已发布课程需先下架才能删除");
+        }
+        courseRepository.delete(course);
+    }
+
     @Transactional(readOnly = true)
     public PageResponse<UserAdminView> users(String query, int page, int size) {
         String normalizedQuery = query == null || query.isBlank() ? null : query.trim();
@@ -307,10 +316,15 @@ public class AdminService {
             category.getName(),
             category.getDescription(),
             category.getCoverObjectKey(),
+            coverUrl(category.getCoverObjectKey()),
             category.getThemeColorPrimary(),
             category.getThemeColorSecondary(),
             category.getSortOrder(),
             category.isVisible());
+    }
+
+    private String coverUrl(String objectKey) {
+        return isBlank(objectKey) ? null : storageService.presignDownload(objectKey);
     }
 
     private CourseAdminView toView(Course course) {
