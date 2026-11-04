@@ -281,7 +281,7 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
 .month-weekday {
   align-self: end;
   padding-bottom: 0;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .month-day {
@@ -290,7 +290,7 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
   aspect-ratio: auto;
   justify-self: center;
   border-radius: 7px;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .report-card__legend {

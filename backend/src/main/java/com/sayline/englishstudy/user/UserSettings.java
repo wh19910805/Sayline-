@@ -52,6 +52,9 @@ public class UserSettings extends AuditableEntity {
     @Column(name = "show_chinese_speak", nullable = false)
     private boolean showChineseSpeak = true;
 
+    @Column(name = "playback_rate", nullable = false, precision = 3, scale = 2)
+    private BigDecimal playbackRate = BigDecimal.ONE;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_category_id")
     private CourseCategory defaultCategory;

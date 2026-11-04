@@ -69,6 +69,9 @@ public class UserProfileService {
         if (request.subtitleColor() != null) {
             settings.setSubtitleColor(request.subtitleColor().toUpperCase());
         }
+        if (request.playbackRate() != null) {
+            settings.setPlaybackRate(request.playbackRate());
+        }
         if (request.showChineseListen() != null) {
             settings.setShowChineseListen(request.showChineseListen());
         }
@@ -156,6 +159,7 @@ public class UserProfileService {
         return new SettingsView(
             settings.getFontScale(),
             settings.getSubtitleColor(),
+            settings.getPlaybackRate(),
             settings.isShowChineseListen(),
             settings.isShowChineseRead(),
             settings.isShowChineseWrite(),

@@ -26,6 +26,7 @@ public final class UserProfileDtos {
     public record SettingsView(
         BigDecimal fontScale,
         String subtitleColor,
+        BigDecimal playbackRate,
         boolean showChineseListen,
         boolean showChineseRead,
         boolean showChineseWrite,
@@ -37,6 +38,7 @@ public final class UserProfileDtos {
     public record SettingsUpdate(
         @DecimalMin("0.8") @DecimalMax("1.8") BigDecimal fontScale,
         @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "颜色需为 6 位十六进制色值") String subtitleColor,
+        @DecimalMin("0.25") @DecimalMax("2.0") BigDecimal playbackRate,
         Boolean showChineseListen,
         Boolean showChineseRead,
         Boolean showChineseWrite,

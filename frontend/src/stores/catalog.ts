@@ -11,6 +11,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   const selectedCategoryId = ref<number | 'favorite'>('favorite')
   const currentListIds = ref<number[]>([])
   const loading = ref(false)
+  let interestsResolved = false
 
   const favoriteCount = computed(() => courses.value.filter((course) => course.favorite).length)
   const selectedCategory = computed(() =>
@@ -25,12 +26,14 @@ export const useCatalogStore = defineStore('catalog', () => {
     ])
     interests.value = saved.length ? saved : categories
     allCategories.value = categories
-    if (!saved.length) {
-      selectedCategoryId.value = categories[0]?.id ?? 'favorite'
-    } else {
-      const defaultCategory = saved.find((item) => item.id === settings.defaultCategoryId)
-      const currentCategory = saved.find((item) => item.id === selectedCategoryId.value)
-      selectedCategoryId.value = defaultCategory?.id ?? currentCategory?.id ?? saved[0]!.id
+    if (!interestsResolved) {
+      if (!saved.length) {
+        selectedCategoryId.value = categories[0]?.id ?? 'favorite'
+      } else {
+        const defaultCategory = saved.find((item) => item.id === settings.defaultCategoryId)
+        selectedCategoryId.value = defaultCategory?.id ?? saved[0]!.id
+      }
+      interestsResolved = true
     }
     return saved
   }

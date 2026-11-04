@@ -68,9 +68,11 @@ const recordSeconds = ref(0)
 const audioRecordingUrl = ref('')
 const recordingAudio = ref<HTMLAudioElement | null>(null)
 const writeSubmitted = ref(false)
+const showEnglishWrite = ref(false)
 const countdown = ref<number | null>(null)
 const modeCountdown = ref<number | null>(null)
 const pendingMode = ref<LearningMode | null>(null)
+const sentenceStopMs = ref<number | null>(null)
 const chineseOverrides = ref<Record<LearningMode, boolean | null>>({
   LISTEN: null,
   READ: null,
@@ -156,6 +158,7 @@ async function loadCourse(showLoader = true) {
     course.value = detail
     learning.value = state
     settings.value = userSettings
+    playbackRate.value = userSettings.playbackRate ?? 1
     duration.value = detail.durationMs / 1_000
     mode.value = state.lastMode || 'LISTEN'
     const savedIndex = detail.cues.findIndex((cue) => cue.id === state.lastCueId)
@@ -177,6 +180,7 @@ async function loadCourse(showLoader = true) {
 function selectMode(next: LearningMode) {
   if (recording.value) return
   mode.value = next
+  sentenceStopMs.value = null
   writeSubmitted.value = false
   visibility.show()
   learnerApi
@@ -213,6 +217,7 @@ function moveCue(offset: number) {
 function togglePlayback() {
   if (!audio.value) return
   if (audio.value.paused) {
+    sentenceStopMs.value = null
     audio.value.play()
   } else {
     audio.value.pause()
@@ -234,6 +239,7 @@ function seekToCue(cue: Cue) {
   activeSince = performance.now()
   if (audio.value) {
     audio.value.currentTime = cue.startMs / 1_000
+    sentenceStopMs.value = mode.value === 'LISTEN' ? null : cue.endMs
     audio.value.play().catch(() => undefined)
   }
   visibility.show()
@@ -242,7 +248,17 @@ function seekToCue(cue: Cue) {
 function replayCue() {
   if (!activeCue.value || !audio.value) return
   audio.value.currentTime = activeCue.value.startMs / 1_000
+  sentenceStopMs.value = activeCue.value.endMs
   audio.value.play().catch(() => undefined)
+}
+
+function toggleCuePlayback() {
+  if (!audio.value) return
+  if (!audio.value.paused) {
+    audio.value.pause()
+    return
+  }
+  replayCue()
 }
 
 function changeRate() {
@@ -270,6 +286,14 @@ function onTimeUpdate() {
   if (!audio.value || !course.value) return
   currentTime.value = audio.value.currentTime
   duration.value = audio.value.duration || course.value.durationMs / 1_000
+  if (
+    sentenceStopMs.value !== null &&
+    audio.value.currentTime * 1_000 >= sentenceStopMs.value
+  ) {
+    audio.value.pause()
+    sentenceStopMs.value = null
+    return
+  }
   let nextIndex = -1
   for (let index = course.value.cues.length - 1; index >= 0; index -= 1) {
     if (audio.value.currentTime * 1_000 >= course.value.cues[index]!.startMs) {
@@ -326,6 +350,22 @@ function savePosition() {
 function submitWriting(answer: string) {
   writeSubmitted.value = true
   markCurrentCue('WRITE', answer)
+}
+
+function selectCue(index: number) {
+  if (recording.value) return
+  activeCueIndex.value = index
+  writeSubmitted.value = false
+  nextTick(scrollWriteToCurrent)
+}
+
+function handleDictationComplete(answer: string) {
+  if (writeSubmitted.value) return
+  submitWriting(answer)
+  if (activeCueIndex.value < (course.value?.cues.length ?? 0) - 1) {
+    writeSubmitted.value = false
+    moveCue(1)
+  }
 }
 
 async function toggleRecording() {
@@ -740,6 +780,10 @@ onBeforeUnmount(() => {
                 v-if="index !== activeCueIndex"
                 class="write-context-row"
                 :class="index < activeCueIndex ? 'is-before' : 'is-after'"
+                role="button"
+                tabindex="0"
+                @click="selectCue(index)"
+                @keydown.enter="selectCue(index)"
               >
                 <span>{{ String(index + 1).padStart(2, '0') }}</span>
                 <div>
@@ -765,10 +809,22 @@ onBeforeUnmount(() => {
                       <Captions :size="17" />
                       <span>中文</span>
                     </button>
+                    <button
+                      type="button"
+                      :aria-pressed="showEnglishWrite"
+                      :class="{ 'is-active': showEnglishWrite }"
+                      @click.stop="showEnglishWrite = !showEnglishWrite"
+                    >
+                      <BookOpen :size="17" />
+                      <span>英文</span>
+                    </button>
                   </div>
                 </div>
                 <p class="write-current__translation" :class="{ 'is-hidden': !showChinese }">
                   {{ showChinese ? cue.chineseText : '中文翻译已隐藏' }}
+                </p>
+                <p v-if="showEnglishWrite" class="write-current__english" lang="en">
+                  {{ cue.englishText }}
                 </p>
                 <div class="word-input-card">
                   <div class="word-input-card__head">
@@ -780,6 +836,7 @@ onBeforeUnmount(() => {
                     :sentence="cue.englishText"
                     :submitted="writeSubmitted || Boolean(currentCueProgress?.written)"
                     @submit="submitWriting"
+                    @complete="handleDictationComplete"
                   />
                 </div>
                 <button
@@ -849,7 +906,7 @@ onBeforeUnmount(() => {
       </section>
 
       <div class="player-bottom-ui" :class="{ 'is-hidden': !visibility.visible.value }" @click.stop>
-        <div v-if="mode === 'LISTEN' || mode === 'READ'" class="player-control-layer">
+        <div v-if="mode === 'LISTEN'" class="player-control-layer">
           <div class="audio-deck">
             <div class="audio-deck__times">
               <span>{{ formatClock(currentTime * 1_000) }}</span>
@@ -865,7 +922,7 @@ onBeforeUnmount(() => {
                 </button>
                 <div v-if="speedMenuOpen" class="speed-menu" role="menu" @click.stop>
                   <button
-                    v-for="rate in [0.75, 1, 1.25, 1.5]"
+                    v-for="rate in [0.25, 0.5, 0.75, 1, 1.25, 1.5]"
                     :key="rate"
                     type="button"
                     role="menuitem"
@@ -907,6 +964,23 @@ onBeforeUnmount(() => {
               <button class="sl-icon-button transport-round" type="button" aria-label="前进 15 秒" @click="seek(15)">
                 <RotateCw :size="27" />
                 <span>15</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="mode === 'READ'" class="player-control-layer">
+          <div class="audio-deck">
+            <div class="audio-deck__controls audio-deck__controls--read">
+              <button class="sl-icon-button transport-skip" type="button" aria-label="上一句" @click="moveCue(-1)">
+                <SkipBack :size="27" fill="currentColor" />
+              </button>
+              <button class="audio-play" type="button" :aria-label="playing ? '暂停本句' : '播放本句'" @click="toggleCuePlayback">
+                <Pause v-if="playing" :size="28" fill="currentColor" />
+                <Play v-else :size="28" fill="currentColor" />
+              </button>
+              <button class="sl-icon-button transport-skip" type="button" aria-label="下一句" @click="moveCue(1)">
+                <SkipForward :size="27" fill="currentColor" />
               </button>
             </div>
           </div>
@@ -1131,6 +1205,10 @@ onBeforeUnmount(() => {
   padding: 0;
 }
 
+.audio-deck__controls--read {
+  grid-template-columns: 44px 58px 44px;
+}
+
 .audio-deck__controls .sl-icon-button {
   width: 42px;
   height: 42px;
@@ -1226,6 +1304,11 @@ onBeforeUnmount(() => {
   min-height: 0;
   flex: 1;
   padding-bottom: 150px;
+  transition: padding-bottom var(--duration-base) var(--ease-out);
+}
+
+.player-screen:not(.controls-visible) .player-stage {
+  padding-bottom: 40px;
 }
 
 .write-mode {

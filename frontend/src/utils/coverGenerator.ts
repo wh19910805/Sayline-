@@ -178,6 +178,6 @@ export async function generateCoverBlob(spec: CoverSpec): Promise<Blob> {
   if (!ctx) return Promise.reject(new Error('无法创建画布'))
   await renderCover(ctx, spec)
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('封面生成失败'))), 'image/png')
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('封面生成失败'))), 'image/webp', 0.82)
   })
 }

@@ -113,6 +113,7 @@ export interface Profile {
 export interface LearningSettings {
   fontScale: number
   subtitleColor: string
+  playbackRate: number
   showChineseListen: boolean
   showChineseRead: boolean
   showChineseWrite: boolean

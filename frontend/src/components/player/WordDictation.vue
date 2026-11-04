@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 import { dictationWords, getLetterStates } from '@/utils/dictation'
 
@@ -10,11 +10,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   submit: [answer: string]
+  complete: [answer: string]
 }>()
 
 const values = ref<string[]>([])
 const root = ref<HTMLElement | null>(null)
+const inputs = ref<Record<number, HTMLInputElement>>({})
 const words = computed(() => dictationWords(props.sentence))
+let completeTimer: ReturnType<typeof setTimeout> | undefined
+let leaveTimer: ReturnType<typeof setTimeout> | undefined
 
 function ensureValues() {
   if (values.value.length !== words.value.length) {
@@ -23,24 +27,41 @@ function ensureValues() {
 }
 ensureValues()
 
+function setInputRef(index: number, element: unknown) {
+  if (element instanceof HTMLInputElement) {
+    inputs.value[index] = element
+  } else {
+    delete inputs.value[index]
+  }
+}
+
 function setInput(index: number, event: Event) {
   const value = (event.target as HTMLInputElement).value.replace(/\s+/g, '')
   values.value[index] = value
   ;(event.target as HTMLInputElement).value = value
 }
 
+function handleKeydown(index: number, event: KeyboardEvent) {
+  if (event.key !== ' ') return
+  event.preventDefault()
+  inputs.value[index + 1]?.focus()
+}
+
 function letterStates(word: string, index: number) {
   return getLetterStates(values.value[index] ?? '', word)
 }
 
+function answerText() {
+  return words.value.map((_, index) => values.value[index] ?? '').join(' ')
+}
+
 function submitIfLeaving() {
-  nextTick(() => {
-    setTimeout(() => {
-      if (root.value?.contains(document.activeElement)) return
-      const answer = words.value.map((_, index) => values.value[index] ?? '').join(' ')
-      if (answer.trim()) emit('submit', answer)
-    }, 0)
-  })
+  if (leaveTimer) clearTimeout(leaveTimer)
+  leaveTimer = setTimeout(() => {
+    if (root.value?.contains(document.activeElement)) return
+    const answer = answerText()
+    if (answer.trim()) emit('submit', answer)
+  }, 0)
 }
 
 const correct = computed(() =>
@@ -50,6 +71,23 @@ const correct = computed(() =>
       word.replace(/[^a-zA-Z0-9']/g, '').toLowerCase(),
   ),
 )
+
+watch(correct, (isCorrect) => {
+  if (completeTimer) {
+    clearTimeout(completeTimer)
+    completeTimer = undefined
+  }
+  if (isCorrect && !props.submitted) {
+    completeTimer = setTimeout(() => {
+      emit('complete', answerText())
+    }, 500)
+  }
+})
+
+onBeforeUnmount(() => {
+  if (completeTimer) clearTimeout(completeTimer)
+  if (leaveTimer) clearTimeout(leaveTimer)
+})
 </script>
 
 <template>
@@ -72,6 +110,7 @@ const correct = computed(() =>
             </span>
           </span>
           <input
+            :ref="(element) => setInputRef(wordIndex, element)"
             :value="values[wordIndex]"
             :aria-label="`第 ${wordIndex + 1} 个单词`"
             :disabled="submitted"
@@ -80,6 +119,7 @@ const correct = computed(() =>
             inputmode="text"
             spellcheck="false"
             @input="setInput(wordIndex, $event)"
+            @keydown="handleKeydown(wordIndex, $event)"
           />
         </span>
       </label>

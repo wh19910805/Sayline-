@@ -110,16 +110,16 @@ async function generateAndUpload() {
   error.value = ''
   try {
     const blob = await generateCoverBlob(coverSpec())
-    const file = new File([blob], 'cover.png', { type: 'image/png' })
+    const file = new File([blob], 'cover.webp', { type: 'image/webp' })
     const presigned = await adminApi.presignUpload({
       kind: 'COVER',
       fileName: file.name,
-      contentType: 'image/png',
+      contentType: 'image/webp',
       sizeBytes: file.size,
     })
     const uploadResponse = await fetch(presigned.uploadUrl, {
       method: 'PUT',
-      headers: { 'Content-Type': 'image/png' },
+      headers: { 'Content-Type': 'image/webp' },
       body: file,
     })
     if (!uploadResponse.ok) throw new Error('封面生成上传失败')

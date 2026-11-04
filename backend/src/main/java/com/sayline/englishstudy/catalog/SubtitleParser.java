@@ -75,7 +75,7 @@ public class SubtitleParser {
             }
             String first = textLines.get(0);
             String second = textLines.get(1);
-            boolean firstIsChinese = containsHan(first) && !containsHan(second);
+            boolean firstIsChinese = hanCount(first) > hanCount(second);
             cues.add(new ParsedSubtitleCue(
                 cues.size() + 1,
                 startMs,
@@ -97,8 +97,13 @@ public class SubtitleParser {
         return index;
     }
 
-    private boolean containsHan(String text) {
-        return HAN.matcher(text).find();
+    private long hanCount(String text) {
+        long count = 0;
+        Matcher matcher = HAN.matcher(text);
+        while (matcher.find()) {
+            count++;
+        }
+        return count;
     }
 
     private long parseTimestamp(String value, int lineNumber) {

@@ -50,7 +50,6 @@ function coverStyle(course: CourseSummary) {
   return {
     '--card-color-a': course.themeColorPrimary || '#53634e',
     '--card-color-b': course.themeColorSecondary || '#263128',
-    backgroundImage: course.coverUrl ? `url("${course.coverUrl}")` : undefined,
   }
 }
 
@@ -58,6 +57,11 @@ function categoryStyle(category: Category) {
   return {
     '--category-card-a': category.themeColorPrimary || '#53634e',
     '--category-card-b': category.themeColorSecondary || '#263128',
+  }
+}
+
+function categoryImageStyle(category: Category) {
+  return {
     backgroundImage: category.coverUrl ? `url("${category.coverUrl}")` : undefined,
   }
 }
@@ -108,6 +112,7 @@ function categoryStyle(category: Category) {
         data-test="category-card"
         :style="categoryStyle(currentCategory)"
       >
+        <div class="sl-category-card__image" :style="categoryImageStyle(currentCategory)" />
         <div class="sl-category-card__shade" />
         <div class="sl-category-card__top">
           <span>{{ visibleCourses.length }} 门课程</span>
@@ -129,7 +134,9 @@ function categoryStyle(category: Category) {
         @keydown.enter="emit('openCourse', course)"
       >
         <div class="sl-course-card__feed-cover-wrap">
-          <div class="sl-course-card__feed-cover" :style="coverStyle(course)" />
+          <div class="sl-course-card__feed-cover" :style="coverStyle(course)">
+            <img v-if="course.coverUrl" :src="course.coverUrl" loading="lazy" decoding="async" alt="" />
+          </div>
           <span class="sl-course-card__duration">
             <Clock3 :size="11" />
             {{ durationLabel(course.durationMs) }}
@@ -183,8 +190,21 @@ function categoryStyle(category: Category) {
 
 <style scoped>
 .home-feed {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 18px;
+}
+
+.sl-course-card__feed-cover {
+  position: relative;
+}
+
+.sl-course-card__feed-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .home-tabs {
@@ -197,7 +217,7 @@ function categoryStyle(category: Category) {
   align-items: center;
   gap: 12px;
   margin: 0 -20px;
-  padding: 0 20px;
+  padding: calc(18px + var(--safe-top)) 20px 0;
   border-bottom: 1px solid var(--color-border);
 }
 
