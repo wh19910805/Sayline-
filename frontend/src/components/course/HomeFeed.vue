@@ -32,6 +32,15 @@ const visibleCourses = computed(() => {
   return props.courses.filter((course) => course.categoryId === props.selectedCategoryId)
 })
 
+const feedColumns = computed(() => {
+  const left: CourseSummary[] = []
+  const right: CourseSummary[] = []
+  visibleCourses.value.forEach((course, index) => {
+    ;(index % 2 === 0 ? left : right).push(course)
+  })
+  return [left, right]
+})
+
 const sectionTitle = computed(() => {
   if (props.searchResults) return '搜索结果'
   return props.selectedCategoryId === 'favorite' ? '我喜欢' : '为你准备'
@@ -106,33 +115,36 @@ function categoryImageStyle(category: Category) {
     </div>
 
     <div v-if="visibleCourses.length" class="course-feed">
-      <article
-        v-if="currentCategory && !searchResults"
-        class="sl-category-card home-category-card"
-        data-test="category-card"
-        :style="categoryStyle(currentCategory)"
-      >
-        <div class="sl-category-card__image" :style="categoryImageStyle(currentCategory)" />
-        <div class="sl-category-card__shade" />
-        <div class="sl-category-card__top">
-          <span>{{ visibleCourses.length }} 门课程</span>
-        </div>
-        <div class="sl-category-card__copy">
-          <h2>{{ currentCategory.name }}</h2>
-          <span>{{ currentCategory.description || '一句一句，听得更清楚' }}</span>
-          <i />
-        </div>
-      </article>
-
-      <article
-        v-for="course in visibleCourses"
-        :key="course.id"
-        class="sl-course-card sl-course-card--feed"
-        data-test="course-card"
-        tabindex="0"
-        @click="emit('openCourse', course)"
-        @keydown.enter="emit('openCourse', course)"
-      >
+      <div class="course-feed__columns">
+        <div v-for="(column, columnIndex) in feedColumns" :key="columnIndex" class="course-feed__column">
+          <article
+            v-if="columnIndex === 0 && currentCategory && !searchResults"
+            class="sl-category-card home-category-card"
+            data-test="category-card"
+            :style="categoryStyle(currentCategory)"
+          >
+            <div class="sl-category-card__image" :style="categoryImageStyle(currentCategory)" />
+            <div class="sl-category-card__shade" />
+            <div class="sl-category-card__top">
+              <span>{{ visibleCourses.length }} 门课程</span>
+            </div>
+            <div class="sl-category-card__copy">
+              <h2>{{ currentCategory.name }}</h2>
+              <span>{{ currentCategory.description || '一句一句，听得更清楚' }}</span>
+              <i />
+            </div>
+          </article>
+          <article
+            v-for="course in column"
+            :key="course.id"
+            class="sl-course-card sl-course-card--feed"
+            data-test="course-card"
+            role="button"
+            :aria-label="course.title"
+            tabindex="0"
+            @click="emit('openCourse', course)"
+            @keydown.enter="emit('openCourse', course)"
+          >
         <div class="sl-course-card__feed-cover-wrap">
           <div class="sl-course-card__feed-cover" :style="coverStyle(course)">
             <img v-if="course.coverUrl" :src="course.coverUrl" loading="lazy" decoding="async" alt="" />
@@ -161,7 +173,9 @@ function categoryImageStyle(category: Category) {
             </div>
           </div>
         </div>
-      </article>
+          </article>
+        </div>
+      </div>
     </div>
 
     <div v-else class="favorite-empty">

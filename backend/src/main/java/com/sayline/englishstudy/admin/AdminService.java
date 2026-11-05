@@ -130,7 +130,10 @@ public class AdminService {
         PageRequest pageable = PageRequest.of(
             Math.max(0, page),
             Math.min(50, Math.max(1, size)),
-            Sort.by(Sort.Order.desc("createdAt")));
+            Sort.by(
+                Sort.Order.asc("category.sortOrder"),
+                Sort.Order.asc("sortOrder"),
+                Sort.Order.asc("id")));
         return PageResponse.from(courseRepository.searchAdmin(categoryId, status, normalizedQuery, pageable)
             .map(this::toView));
     }

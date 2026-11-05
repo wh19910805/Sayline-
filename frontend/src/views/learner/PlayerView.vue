@@ -161,6 +161,7 @@ async function loadCourse(showLoader = true) {
     playbackRate.value = userSettings.playbackRate ?? 1
     duration.value = detail.durationMs / 1_000
     mode.value = state.lastMode || 'LISTEN'
+    autoHide.value = mode.value === 'LISTEN' || mode.value === 'READ'
     const savedIndex = detail.cues.findIndex((cue) => cue.id === state.lastCueId)
     activeCueIndex.value = savedIndex >= 0 ? savedIndex : 0
     await nextTick()
@@ -609,6 +610,7 @@ watch(mode, () => {
   cancelModeAdvance()
   activeSince = performance.now()
   writeSubmitted.value = false
+  autoHide.value = mode.value === 'LISTEN' || mode.value === 'READ'
   if (mode.value === 'READ') {
     startReadObservation()
   } else {
@@ -679,7 +681,12 @@ onBeforeUnmount(() => {
     <div class="player-atmosphere" aria-hidden="true" />
     <div class="player-overlay" aria-hidden="true" />
 
-    <div v-if="loading" class="page-loading">正在准备这一课…</div>
+    <div v-if="loading" class="player-loading-skeleton" aria-hidden="true">
+      <span class="skeleton-bar" style="width: 34%" />
+      <span class="skeleton-bar" style="width: 72%" />
+      <span class="skeleton-bar" style="width: 58%" />
+      <span class="skeleton-bar" style="width: 46%" />
+    </div>
     <template v-else-if="course && learning && settings">
       <header class="player-header" @click.stop>
         <button class="sl-icon-button" type="button" aria-label="返回首页" @click="router.push('/')">
@@ -894,7 +901,7 @@ onBeforeUnmount(() => {
               上一句
             </button>
             <button
-              class="sl-button"
+              class="sl-button sl-button--accent"
               type="button"
               :disabled="activeCueIndex === course.cues.length - 1"
               @click="moveCue(1)"
@@ -1018,6 +1025,7 @@ onBeforeUnmount(() => {
               @click="selectMode(item.value)"
             >
               <component :is="item.icon" :size="22" />
+              <span class="sl-mode__label">{{ item.label }}</span>
             </button>
           </div>
         </div>
@@ -1051,6 +1059,31 @@ onBeforeUnmount(() => {
 <style scoped>
 .player-screen {
   overflow: clip;
+}
+
+.player-loading-skeleton {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px 20px;
+}
+
+.skeleton-bar {
+  height: 15px;
+  border-radius: 8px;
+  background: rgba(255, 250, 240, .14);
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: .45; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bar { animation: none; }
 }
 
 .player-atmosphere {
@@ -1094,7 +1127,7 @@ onBeforeUnmount(() => {
 
 .player-header__title span {
   color: var(--player-text-muted);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .12em;
 }
 
@@ -1132,7 +1165,7 @@ onBeforeUnmount(() => {
   width: 100%;
   grid-template-columns: 1fr auto 1fr;
   color: rgba(255, 250, 240, .38);
-  font-size: 8px;
+  font-size: 10px;
   line-height: 1;
 }
 
@@ -1307,6 +1340,15 @@ onBeforeUnmount(() => {
   transition: padding-bottom var(--duration-base) var(--ease-out);
 }
 
+.player-mode-read .player-stage {
+  padding-bottom: 130px;
+}
+
+.player-mode-write .player-stage,
+.player-mode-speak .player-stage {
+  padding-bottom: 110px;
+}
+
 .player-screen:not(.controls-visible) .player-stage {
   padding-bottom: 40px;
 }
@@ -1325,11 +1367,11 @@ onBeforeUnmount(() => {
 
 .mode-copy h2,
 .read-mode__head h2 {
-  font-size: 30px;
+  font-size: 22px;
 }
 
 .speak-mode .mode-copy h2 {
-  font-size: clamp(22px, 6.9vw, 27px);
+  font-size: clamp(18px, 5.5vw, 22px);
   white-space: nowrap;
 }
 
@@ -1374,7 +1416,7 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(255, 250, 240, .16);
   border-radius: 99px;
   color: rgba(255, 250, 240, .58);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .record-wave {
@@ -1431,7 +1473,7 @@ onBeforeUnmount(() => {
 }
 
 .speak-quote span {
-  font-size: calc(26px * var(--caption-scale, 1));
+  font-size: calc(20px * var(--caption-scale, 1));
 }
 
 @keyframes record-breathe {
@@ -1458,7 +1500,7 @@ onBeforeUnmount(() => {
   border: 0;
   background: rgba(255, 250, 240, .68);
   color: var(--color-ink-900);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .player-complete-button:disabled {
@@ -1474,7 +1516,7 @@ onBeforeUnmount(() => {
   border-radius: 99px;
   background: rgba(255, 250, 240, .08);
   color: rgba(255, 250, 240, .68);
-  font-size: 9px;
+  font-size: 11px;
   animation: mode-prompt-in 180ms var(--ease-out);
 }
 

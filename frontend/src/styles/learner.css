@@ -71,7 +71,7 @@ button {
 .sayline-lockup__cn {
   margin-top: 5px;
   color: var(--color-text-secondary);
-  font-size: 7px;
+  font-size: 11px;
   letter-spacing: .3em;
 }
 
@@ -100,7 +100,7 @@ button {
 .review-rail__eyebrow {
   margin: 14px 0 -12px;
   color: var(--color-text-tertiary);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .16em;
   text-transform: uppercase;
 }
@@ -175,7 +175,7 @@ button {
   justify-content: space-between;
   gap: 16px;
   color: #656961;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -232,7 +232,7 @@ button {
 .eyebrow {
   margin: 0;
   color: var(--color-text-tertiary);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .16em;
   text-transform: uppercase;
 }
@@ -398,7 +398,7 @@ button {
 
 .login-panel__day {
   color: var(--color-action);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: var(--weight-bold);
   letter-spacing: .11em;
 }
@@ -451,7 +451,7 @@ button {
   padding: 0 22px 12px;
   background: var(--color-paper-50);
   color: var(--color-text-tertiary);
-  font-size: 8px;
+  font-size: 10px;
   text-align: center;
 }
 
@@ -532,7 +532,7 @@ button {
 .course-search > span {
   flex: 0 0 auto;
   color: var(--color-text-tertiary);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .home-scroll {
@@ -577,7 +577,7 @@ button {
 
 .continue-card {
   position: relative;
-  min-height: 170px;
+  min-height: 132px;
   overflow: hidden;
   display: flex;
   align-items: stretch;
@@ -599,7 +599,7 @@ button {
 }
 
 .continue-card__cover {
-  width: 108px;
+  width: 80px;
   height: auto;
   border-radius: 0;
   opacity: .82;
@@ -654,7 +654,7 @@ button {
   justify-content: space-between;
   gap: 10px;
   color: rgba(255,250,240,.57);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -693,16 +693,53 @@ button {
 }
 
 .course-feed {
-  columns: 2;
-  column-gap: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
-.course-feed .sl-course-card:nth-child(3n + 2) .sl-course-card__feed-cover {
-  aspect-ratio: 1 / 1.15;
+.course-feed .sl-category-card {
+  margin-bottom: 0;
 }
 
-.course-feed .sl-course-card:nth-child(3n) .sl-course-card__feed-cover {
-  aspect-ratio: 1 / .92;
+.course-feed__columns {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.course-feed__column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.course-feed .sl-course-card--feed {
+  margin-bottom: 0;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 280px;
+}
+
+.sl-course-card--feed:focus-visible {
+  outline-offset: -3px;
+}
+
+.course-feed__column:first-child .sl-course-card:nth-child(odd) .sl-course-card__feed-cover {
+  aspect-ratio: 1 / 1.12;
+}
+
+.course-feed__column:first-child .sl-course-card:nth-child(even) .sl-course-card__feed-cover {
+  aspect-ratio: 1 / 0.9;
+}
+
+.course-feed__column:last-child .sl-course-card:nth-child(odd) .sl-course-card__feed-cover {
+  aspect-ratio: 1 / 0.9;
+}
+
+.course-feed__column:last-child .sl-course-card:nth-child(even) .sl-course-card__feed-cover {
+  aspect-ratio: 1 / 1.12;
 }
 
 .home-section--courses {
@@ -805,7 +842,7 @@ button {
 
 .onboarding-header > span {
   color: var(--color-text-tertiary);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .13em;
 }
 
@@ -880,7 +917,7 @@ button {
   top: 8px;
   right: 43px;
   color: var(--color-text-tertiary);
-  font-size: 7px;
+  font-size: 11px;
   letter-spacing: .08em;
 }
 
@@ -907,7 +944,7 @@ button {
 
 .interest-option__copy small {
   color: var(--color-text-tertiary);
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.45;
 }
 
@@ -929,7 +966,7 @@ button {
   border-color: var(--color-action);
   background: var(--color-action);
   color: white;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: var(--weight-bold);
 }
 
@@ -948,7 +985,7 @@ button {
   justify-content: space-between;
   gap: 12px;
   color: var(--color-text-tertiary);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .onboarding-selection strong {
@@ -1022,7 +1059,7 @@ button {
 
 .profile-card__copy > span {
   color: rgba(255,250,240,.42);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .09em;
 }
 
@@ -1405,7 +1442,7 @@ button {
 .recent-row span {
   margin-top: 4px;
   color: var(--color-text-tertiary);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 /* Settings */
@@ -1438,7 +1475,7 @@ button {
 
 .settings-header > span {
   color: var(--color-text-tertiary);
-  font-size: 7px;
+  font-size: 11px;
   letter-spacing: .11em;
 }
 
@@ -1482,7 +1519,7 @@ button {
 
 .settings-section__head span {
   color: var(--color-text-tertiary);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .1em;
 }
 
@@ -1560,7 +1597,7 @@ button {
 .settings-note {
   margin: 10px 0 0;
   color: var(--color-text-tertiary);
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.55;
 }
 
@@ -1608,7 +1645,7 @@ button {
 
 .settings-control-group__label span {
   color: var(--color-text-tertiary);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .settings-control-group .sl-tabs--pill .sl-tab {
@@ -1632,7 +1669,7 @@ button {
   border-radius: 10px;
   background: transparent;
   color: var(--color-text-tertiary);
-  font-size: 8px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -1778,7 +1815,7 @@ button {
 
 .preferences-header__count {
   color: var(--color-text-tertiary);
-  font-size: 7px;
+  font-size: 11px;
   letter-spacing: .11em;
 }
 
@@ -1815,7 +1852,7 @@ button {
 .preferences-section__head span,
 .preferences-help {
   color: var(--color-text-tertiary);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .preferences-help {
@@ -1869,7 +1906,7 @@ button {
 .preference-row__copy small {
   overflow: hidden;
   color: var(--color-text-tertiary);
-  font-size: 8px;
+  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1894,7 +1931,7 @@ button {
   border-radius: var(--radius-pill);
   background: transparent;
   color: var(--color-text-tertiary);
-  font-size: 8px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -1943,14 +1980,14 @@ button {
   border-radius: var(--radius-pill);
   background: transparent;
   color: var(--color-text-secondary);
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
 }
 
 .interest-pool p {
   margin: 0;
   color: var(--color-text-tertiary);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .preferences-footer {
@@ -1966,7 +2003,7 @@ button {
 .preferences-footer p {
   margin: 0;
   color: var(--color-text-tertiary);
-  font-size: 8px;
+  font-size: 10px;
   text-align: center;
 }
 
@@ -2042,7 +2079,7 @@ button {
 
 .player-header__title span {
   color: rgba(255,250,240,.44);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .16em;
 }
 
@@ -2087,7 +2124,7 @@ button {
   display: flex;
   gap: 8px;
   color: rgba(255,250,240,.5);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .04em;
 }
 
@@ -2106,7 +2143,7 @@ button {
 .player-identity p {
   margin: 0;
   color: rgba(255,250,240,.46);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .player-more {
@@ -2259,7 +2296,7 @@ button {
   gap: 10px;
   margin-top: 3px;
   color: rgba(255,250,240,.34);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .translation-toggle {
@@ -2271,7 +2308,7 @@ button {
   border: 0;
   background: transparent;
   color: rgba(255,250,240,.56);
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -2294,7 +2331,7 @@ button {
 .mode-copy h2 {
   margin: 4px 0 0;
   font-family: var(--font-display);
-  font-size: 27px;
+  font-size: 22px;
   font-weight: var(--weight-regular);
   line-height: 1;
 }
@@ -2332,7 +2369,7 @@ button {
 .transcript-row__index {
   padding-top: 2px;
   color: rgba(255,250,240,.3);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .transcript-row__copy {
@@ -2418,7 +2455,7 @@ button {
 .write-context-row > span {
   padding-top: 2px;
   color: rgba(255,250,240,.28);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .write-context-row p {
@@ -2432,7 +2469,7 @@ button {
   display: block;
   margin-top: 4px;
   color: var(--caption-muted, rgba(255,250,240,.34));
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.45;
 }
 
@@ -2445,7 +2482,7 @@ button {
 
 .write-current__label {
   color: rgba(255,250,240,.36);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: .08em;
 }
 
@@ -2471,7 +2508,7 @@ button {
   border-radius: var(--radius-pill);
   background: rgba(255,255,255,.05);
   color: rgba(255,250,240,.62);
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -2490,7 +2527,7 @@ button {
 
 .write-current__translation.is-hidden {
   color: rgba(255,250,240,.3);
-  font-size: 9px;
+  font-size: 11px;
   font-style: italic;
 }
 
@@ -2547,7 +2584,7 @@ button {
 
 .word-input-card__head small {
   color: rgba(255,250,240,.3);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .player-screen .sl-word-input__word {
@@ -2579,7 +2616,7 @@ button {
   gap: 6px;
   padding: 11px 13px;
   border-radius: 10px;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .dictation-feedback > div {
@@ -2630,7 +2667,7 @@ button {
   border: 0;
   background: transparent;
   color: rgba(255,250,240,.38);
-  font-size: 8px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -2643,13 +2680,13 @@ button {
 .speak-quote span {
   color: var(--caption-color, var(--player-text));
   font-family: var(--font-display);
-  font-size: calc(24px * var(--caption-scale, 1));
+  font-size: calc(20px * var(--caption-scale, 1));
   line-height: 1.1;
 }
 
 .speak-quote small {
   color: var(--caption-muted, rgba(255,250,240,.42));
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .record-stage {
@@ -2722,7 +2759,7 @@ button {
 .record-stage p {
   margin: 0;
   color: rgba(255,250,240,.4);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .voice-compare {
@@ -2741,7 +2778,7 @@ button {
   border-radius: 10px;
   background: rgba(255,255,255,.05);
   color: rgba(255,250,240,.7);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .voice-compare button small {
@@ -2765,7 +2802,7 @@ button {
   bottom: 0;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(9,12,9,0), rgba(9,12,9,.7) 31%, rgba(9,12,9,.92));
+  background: linear-gradient(180deg, rgba(9,12,9,0), rgba(9,12,9,.82) 28%, rgba(9,12,9,.96));
   backdrop-filter: blur(9px);
   transition:
     opacity var(--duration-base) var(--ease-out),
@@ -2779,7 +2816,7 @@ button {
 }
 
 .player-screen.controls-visible .lyrics-window {
-  mask-image: linear-gradient(transparent, #000 9%, #000 57%, transparent 84%);
+  mask-image: linear-gradient(transparent, #000 9%, #000 46%, transparent 70%);
 }
 
 .player-control-layer {
@@ -2791,7 +2828,7 @@ button {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   color: rgba(255,250,240,.38);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .audio-deck__times span:last-child {
@@ -2805,7 +2842,7 @@ button {
   border-radius: 99px;
   background: rgba(255,255,255,.08);
   color: rgba(255,250,240,.6);
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -2858,7 +2895,7 @@ button {
   top: 50%;
   display: block;
   color: currentColor;
-  font-size: 7px;
+  font-size: 11px;
   font-weight: var(--weight-bold);
   line-height: 1;
   pointer-events: none;
@@ -2902,7 +2939,7 @@ button {
   border-color: rgba(255,255,255,.18);
   background: rgba(255,255,255,.08);
   color: var(--player-text);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .player-complete-row .sl-button--accent {

@@ -42,9 +42,20 @@ function setInput(index: number, event: Event) {
 }
 
 function handleKeydown(index: number, event: KeyboardEvent) {
-  if (event.key !== ' ') return
-  event.preventDefault()
-  inputs.value[index + 1]?.focus()
+  if (event.key === ' ') {
+    event.preventDefault()
+    inputs.value[index + 1]?.focus()
+    return
+  }
+  if (event.key === 'Backspace' && !(values.value[index] ?? '')) {
+    event.preventDefault()
+    const previous = inputs.value[index - 1]
+    if (previous) {
+      previous.focus()
+      const length = previous.value.length
+      previous.setSelectionRange(length, length)
+    }
+  }
 }
 
 function letterStates(word: string, index: number) {

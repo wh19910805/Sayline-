@@ -162,7 +162,7 @@ public class CourseCatalogService {
     private PageRequest pageRequest(int page, int size) {
         return PageRequest.of(
             Math.max(0, page),
-            Math.min(50, Math.max(1, size)),
+            Math.min(200, Math.max(1, size)),
             Sort.by(Sort.Order.asc("sortOrder"), Sort.Order.desc("id")));
     }
 

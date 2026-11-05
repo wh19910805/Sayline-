@@ -30,7 +30,7 @@ export const authApi = {
 export const learnerApi = {
   categories: () => http.get<Category[]>('/api/v1/categories'),
   courses: (categoryId?: number, q?: string) => {
-    const params = new URLSearchParams({ size: '50' })
+    const params = new URLSearchParams({ size: '200' })
     if (categoryId) params.set('categoryId', String(categoryId))
     if (q) params.set('q', q)
     return http.get<PageResponse<CourseSummary>>(`/api/v1/courses?${params}`)

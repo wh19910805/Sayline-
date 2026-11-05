@@ -33,6 +33,24 @@ a {
   color: inherit;
 }
 
+/* 统一焦点样式：2px 陶土橙外框（设计规范） */
+:focus-visible {
+  outline: 2px solid var(--color-action);
+  outline-offset: 3px;
+}
+
+/* 按压反馈：140ms 缩放（设计规范） */
+.sl-button:active,
+.sl-icon-button:active,
+.sl-tab:active,
+.sl-mode:active,
+.sl-course-card:active,
+.continue-card:active,
+.interest-option:active,
+.settings-shortcuts button:active {
+  transform: scale(0.97);
+}
+
 .standalone-app {
   height: 100vh;
   height: 100dvh;

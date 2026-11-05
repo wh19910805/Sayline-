@@ -414,7 +414,7 @@ textarea.sl-field__control {
 .sl-progress__value {
   height: 100%;
   border-radius: inherit;
-  background: var(--color-action);
+  background: var(--color-moss-500);
   transition: width var(--duration-slow) var(--ease-out);
 }
 
@@ -567,9 +567,14 @@ textarea.sl-field__control {
 .sl-mode-switch--icon-only .sl-mode {
   position: relative;
   min-height: 48px;
-  gap: 0;
+  gap: 4px;
   border-radius: 0;
   color: var(--player-text-muted);
+}
+
+.sl-mode-switch--icon-only .sl-mode__label {
+  font-size: 10px;
+  line-height: 1;
 }
 
 .sl-mode-switch--icon-only .sl-mode:hover {
