@@ -702,6 +702,8 @@ textarea.sl-field__control {
   box-shadow: 0 6px 18px rgba(35, 39, 29, .045);
   break-inside: avoid;
   margin-bottom: 18px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 280px;
 }
 
 .sl-course-card--feed:hover {
