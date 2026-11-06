@@ -44,8 +44,11 @@ public class AdminController {
     }
 
     @GetMapping("/categories")
-    public List<CategoryAdminView> categories() {
-        return adminService.categories();
+    public PageResponse<CategoryAdminView> categories(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        return adminService.categories(page, size);
     }
 
     @PostMapping("/categories")

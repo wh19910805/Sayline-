@@ -78,14 +78,17 @@ export const learnerApi = {
 
 export const adminApi = {
   dashboard: () => http.get<Dashboard>('/api/v1/admin/dashboard'),
-  categories: () => http.get<AdminCategory[]>('/api/v1/admin/categories'),
+  categories: (page = 0, size = 20) => {
+    const params = new URLSearchParams({ page: String(page), size: String(size) })
+    return http.get<PageResponse<AdminCategory>>(`/api/v1/admin/categories?${params}`)
+  },
   saveCategory: (payload: Record<string, unknown>, id?: number) =>
     id
       ? http.patch<AdminCategory>(`/api/v1/admin/categories/${id}`, payload)
       : http.post<AdminCategory>('/api/v1/admin/categories', payload),
   deleteCategory: (id: number) => http.delete(`/api/v1/admin/categories/${id}`),
-  courses: (filters: { categoryId?: number; status?: CourseStatus; q?: string }) => {
-    const params = new URLSearchParams({ size: '50' })
+  courses: (filters: { categoryId?: number; status?: CourseStatus; q?: string; page?: number }) => {
+    const params = new URLSearchParams({ size: '20', page: String(filters.page ?? 0) })
     if (filters.categoryId) params.set('categoryId', String(filters.categoryId))
     if (filters.status) params.set('status', filters.status)
     if (filters.q) params.set('q', filters.q)

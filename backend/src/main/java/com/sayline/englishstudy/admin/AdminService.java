@@ -89,10 +89,12 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
-    public List<CategoryAdminView> categories() {
-        return categoryRepository.findAll(Sort.by("sortOrder", "name")).stream()
-            .map(this::toView)
-            .toList();
+    public PageResponse<CategoryAdminView> categories(int page, int size) {
+        PageRequest pageable = PageRequest.of(
+            Math.max(0, page),
+            Math.min(50, Math.max(1, size)),
+            Sort.by("sortOrder", "name"));
+        return PageResponse.from(categoryRepository.findAll(pageable).map(this::toView));
     }
 
     @Transactional

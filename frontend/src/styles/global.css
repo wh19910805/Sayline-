@@ -364,7 +364,8 @@ a {
 }
 
 .admin-shell {
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
   background: #f1eee7;
 }
 
@@ -447,6 +448,36 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 18px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.category-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-palette__swatch {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.category-palette__swatch.is-active {
+  border-color: var(--color-ink-900);
+  box-shadow: 0 0 0 2px var(--color-bg);
 }
 
 .admin-metrics {

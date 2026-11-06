@@ -70,11 +70,19 @@ function openCourse(course: CourseSummary) {
 }
 
 function startStyle(course: CourseSummary) {
+  const category = catalog.selectedCategory
+  const primary = category?.themeColorPrimary || course.themeColorPrimary || '#53634e'
+  const secondary = category?.themeColorSecondary || course.themeColorSecondary || '#263128'
   return {
-    '--card-a': course.themeColorPrimary || '#53634e',
-    '--card-b': course.themeColorSecondary || '#263128',
-    '--cover-a': course.themeColorPrimary || '#53634e',
-    '--cover-b': course.themeColorSecondary || '#263128',
+    '--card-a': primary,
+    '--card-b': secondary,
+    '--cover-a': primary,
+    '--cover-b': secondary,
+  }
+}
+
+function coverImageStyle(course: CourseSummary) {
+  return {
     backgroundImage: course.coverUrl ? `url("${course.coverUrl}")` : undefined,
     backgroundPosition: 'center',
     backgroundSize: 'cover',
@@ -114,9 +122,10 @@ function startStyle(course: CourseSummary) {
             v-if="startCourse && !searchOpen && catalog.selectedCategoryId !== 'favorite'"
             class="continue-card"
             type="button"
+            :style="startStyle(startCourse)"
             @click="openCourse(startCourse)"
           >
-            <span class="continue-card__cover cover-art" :style="startStyle(startCourse)" />
+            <span class="continue-card__cover cover-art" :style="coverImageStyle(startCourse)" />
             <span class="continue-card__body">
               <span class="continue-card__head">
                 <span>{{ startCourse.progress > 0 ? '继续上次学习' : '开始第一课' }}</span>

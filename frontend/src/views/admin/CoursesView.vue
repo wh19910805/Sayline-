@@ -5,24 +5,47 @@ import { useRouter } from 'vue-router'
 
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
-import type { AdminCourse, CourseStatus } from '@/api/types'
+import type { AdminCategory, AdminCourse, CourseStatus } from '@/api/types'
 
 const router = useRouter()
 const courses = ref<AdminCourse[]>([])
+const categories = ref<AdminCategory[]>([])
+const categoryFilter = ref<number | ''>('')
 const statusFilter = ref<CourseStatus | ''>('')
 const query = ref('')
+const page = ref(0)
+const totalPages = ref(1)
+const totalElements = ref(0)
 const error = ref('')
 
 async function load() {
   try {
     const response = await adminApi.courses({
+      categoryId: categoryFilter.value || undefined,
       status: statusFilter.value || undefined,
       q: query.value.trim() || undefined,
+      page: page.value,
     })
     courses.value = response.content
+    totalPages.value = response.totalPages
+    totalElements.value = response.totalElements
   } catch (reason) {
     error.value = apiErrorMessage(reason)
   }
+}
+
+async function loadCategories() {
+  try {
+    const response = await adminApi.categories(0, 100)
+    categories.value = response.content
+  } catch (reason) {
+    error.value = apiErrorMessage(reason)
+  }
+}
+
+function goPage(next: number) {
+  page.value = next
+  load()
 }
 
 async function publish(course: AdminCourse) {
@@ -53,7 +76,10 @@ async function remove(course: AdminCourse) {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  loadCategories()
+  load()
+})
 </script>
 
 <template>
@@ -63,14 +89,18 @@ onMounted(load)
       <button class="sl-button sl-button--accent" type="button" @click="router.push('/admin/courses/new')"><Plus :size="17" /> 新建课程</button>
     </header>
     <div class="admin-actions" style="margin-bottom: 16px">
-      <select v-model="statusFilter" class="sl-field__control" style="width: 150px" @change="load">
+      <select v-model="categoryFilter" class="sl-field__control" style="width: 150px" @change="page = 0; load()">
+        <option value="">全部分类</option>
+        <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+      </select>
+      <select v-model="statusFilter" class="sl-field__control" style="width: 150px" @change="page = 0; load()">
         <option value="">全部状态</option>
         <option value="DRAFT">草稿</option>
         <option value="PUBLISHED">已发布</option>
         <option value="OFFLINE">已下架</option>
       </select>
-      <input v-model="query" class="sl-field__control" style="width: min(320px, 100%)" placeholder="搜索课程名" @keyup.enter="load" />
-      <button class="sl-button sl-button--secondary" type="button" @click="load">搜索</button>
+      <input v-model="query" class="sl-field__control" style="width: min(320px, 100%)" placeholder="搜索课程名" @keyup.enter="page = 0; load()" />
+      <button class="sl-button sl-button--secondary" type="button" @click="page = 0; load()">搜索</button>
     </div>
     <p v-if="error" class="inline-error">{{ error }}</p>
     <div class="admin-card">
@@ -98,6 +128,12 @@ onMounted(load)
         </tbody>
       </table>
       <p v-if="!courses.length" style="padding: 24px; color: var(--color-text-tertiary)">暂无课程</p>
+    </div>
+
+    <div class="admin-pagination">
+      <button class="sl-button sl-button--secondary sl-button--sm" type="button" :disabled="page === 0" @click="goPage(page - 1)">上一页</button>
+      <span>第 {{ page + 1 }} / {{ totalPages }} 页 · 共 {{ totalElements }} 个</span>
+      <button class="sl-button sl-button--secondary sl-button--sm" type="button" :disabled="page >= totalPages - 1" @click="goPage(page + 1)">下一页</button>
     </div>
   </section>
 </template>

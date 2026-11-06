@@ -8,6 +8,9 @@ import type { AdminCategory } from '@/api/types'
 import { resolveContentType } from '@/utils/uploadContentType'
 
 const categories = ref<AdminCategory[]>([])
+const page = ref(0)
+const totalPages = ref(1)
+const totalElements = ref(0)
 const editingId = ref<number | null>(null)
 const formOpen = ref(false)
 const error = ref('')
@@ -16,29 +19,82 @@ const form = reactive({
   name: '',
   description: '',
   coverObjectKey: '',
-  themeColorPrimary: '#4f5b47',
-  themeColorSecondary: '#d9b56e',
+  themeColorPrimary: '#425c51',
+  themeColorSecondary: '#a6c4b8',
   sortOrder: 0,
   visible: true,
 })
 
+interface CategoryColor {
+  primary: string
+  secondary: string
+  label: string
+}
+
+const categoryPalette: CategoryColor[] = [
+  { primary: '#425c51', secondary: '#a6c4b8', label: '墨青' },
+  { primary: '#8a4e38', secondary: '#d7a593', label: '陶土' },
+  { primary: '#546543', secondary: '#b5c7a3', label: '苔绿' },
+  { primary: '#7f6539', secondary: '#d4bd96', label: '赭金' },
+  { primary: '#704259', secondary: '#cb9fb5', label: '李子' },
+  { primary: '#7d553b', secondary: '#d3af97', label: '锈橙' },
+  { primary: '#6c6d40', secondary: '#cacb9f', label: '橄榄' },
+  { primary: '#456346', secondary: '#a5c5a6', label: '松绿' },
+]
+
+function hslToHex(h: number, s: number, l: number) {
+  s /= 100
+  l /= 100
+  const k = (n: number) => (n + h / 30) % 12
+  const a = s * Math.min(l, 1 - l)
+  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
+  const toHex = (x: number) => Math.round(255 * x).toString(16).padStart(2, '0')
+  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`
+}
+
+function nextAvailableColor(): CategoryColor {
+  const used = new Set(categories.value.map((c) => (c.themeColorPrimary || '').toUpperCase()))
+  for (const preset of categoryPalette) {
+    if (!used.has(preset.primary.toUpperCase())) return preset
+  }
+  // 8 个预设用完：黄金角分布在暖色弧 [330°,160°] 内，避开冷色，20+ 也不出暖色域
+  const warmStart = 330
+  const warmSpan = 190 // 330° -> 160°（经 0°）
+  const offset = Math.round(((categories.value.length - categoryPalette.length) * 137.5) % warmSpan)
+  const hue = (warmStart + offset) % 360
+  return {
+    primary: hslToHex(hue, 30, 34),
+    secondary: hslToHex(hue, 34, 71),
+    label: '自动',
+  }
+}
+
 async function load() {
   try {
-    categories.value = await adminApi.categories()
+    const response = await adminApi.categories(page.value)
+    categories.value = response.content
+    totalPages.value = response.totalPages
+    totalElements.value = response.totalElements
   } catch (reason) {
     error.value = apiErrorMessage(reason)
   }
 }
 
+function goPage(next: number) {
+  page.value = next
+  load()
+}
+
 function openCreate() {
   editingId.value = null
+  const color = nextAvailableColor()
   Object.assign(form, {
     name: '',
     description: '',
     coverObjectKey: '',
-    themeColorPrimary: '#4f5b47',
-    themeColorSecondary: '#d9b56e',
-    sortOrder: categories.value.length,
+    themeColorPrimary: color.primary,
+    themeColorSecondary: color.secondary,
+    sortOrder: totalElements.value,
     visible: true,
   })
   formOpen.value = true
@@ -136,6 +192,12 @@ onMounted(load)
       </table>
     </div>
 
+    <div class="admin-pagination">
+      <button class="sl-button sl-button--secondary sl-button--sm" type="button" :disabled="page === 0" @click="goPage(page - 1)">上一页</button>
+      <span>第 {{ page + 1 }} / {{ totalPages }} 页 · 共 {{ totalElements }} 个</span>
+      <button class="sl-button sl-button--secondary sl-button--sm" type="button" :disabled="page >= totalPages - 1" @click="goPage(page + 1)">下一页</button>
+    </div>
+
     <div v-if="formOpen" class="sl-dialog-backdrop" @click.self="formOpen = false">
       <form class="sl-dialog" @submit.prevent="save">
         <p class="sl-dialog__eyebrow">{{ editingId ? 'EDIT CATEGORY' : 'NEW CATEGORY' }}</p>
@@ -148,6 +210,19 @@ onMounted(load)
             <input type="file" accept="image/jpeg,image/png,image/webp" @change="uploadCover" />
             <span>{{ uploading ? '上传中…' : form.coverObjectKey || 'JPG / PNG / WebP，最大 5 MB（可选，用作课程封面背景）' }}</span>
           </label>
+          <div class="category-palette">
+            <button
+              v-for="preset in categoryPalette"
+              :key="preset.primary"
+              type="button"
+              class="category-palette__swatch"
+              :class="{ 'is-active': form.themeColorPrimary === preset.primary }"
+              :style="{ background: `linear-gradient(90deg, ${preset.primary}, ${preset.secondary})` }"
+              :title="preset.label"
+              :aria-label="`选择 ${preset.label} 配色`"
+              @click="form.themeColorPrimary = preset.primary; form.themeColorSecondary = preset.secondary"
+            />
+          </div>
           <div class="admin-form-grid">
             <label class="sl-field"><span class="sl-field__label">主色</span><input v-model="form.themeColorPrimary" class="sl-field__control" type="color" /></label>
             <label class="sl-field"><span class="sl-field__label">辅助色</span><input v-model="form.themeColorSecondary" class="sl-field__control" type="color" /></label>

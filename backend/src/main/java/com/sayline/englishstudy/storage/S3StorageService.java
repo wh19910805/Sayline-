@@ -2,6 +2,8 @@ package com.sayline.englishstudy.storage;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,8 @@ public class S3StorageService implements StorageService {
     private final S3Client client;
     private final S3Presigner presigner;
     private final String bucket;
+    private final Map<String, CachedUrl> downloadCache = new ConcurrentHashMap<>();
+    private static final long DOWNLOAD_CACHE_TTL_MILLIS = Duration.ofMinutes(14).toMillis();
 
     public S3StorageService(
         @Value("${app.storage.endpoint}") String endpoint,
@@ -66,16 +70,26 @@ public class S3StorageService implements StorageService {
 
     @Override
     public String presignDownload(String objectKey) {
+        long now = System.currentTimeMillis();
+        CachedUrl cached = downloadCache.get(objectKey);
+        if (cached != null && cached.expiresAt() > now) {
+            return cached.url();
+        }
         GetObjectRequest request = GetObjectRequest.builder()
             .bucket(bucket)
             .key(objectKey)
             .build();
-        return presigner.presignGetObject(GetObjectPresignRequest.builder()
+        String url = presigner.presignGetObject(GetObjectPresignRequest.builder()
                 .signatureDuration(Duration.ofMinutes(15))
                 .getObjectRequest(request)
                 .build())
             .url()
             .toString();
+        downloadCache.put(objectKey, new CachedUrl(url, now + DOWNLOAD_CACHE_TTL_MILLIS));
+        return url;
+    }
+
+    private record CachedUrl(String url, long expiresAt) {
     }
 
     @Override

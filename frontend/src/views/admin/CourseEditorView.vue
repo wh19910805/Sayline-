@@ -45,7 +45,8 @@ const coverHint = computed(() => {
 
 onMounted(async () => {
   try {
-    categories.value = await adminApi.categories()
+    const categoryPage = await adminApi.categories(0, 100)
+    categories.value = categoryPage.content
     if (!editing) {
       form.categoryId = categories.value[0]?.id ?? 0
       applyCategoryColors()
@@ -67,6 +68,8 @@ onMounted(async () => {
       durationMs: course.durationMs,
       sortOrder: course.sortOrder,
     })
+    // 已有封面（无论自动生成还是手动上传）视为「已设置」，打开编辑时不自动重新生成、不覆盖
+    manualCover.value = Boolean(course.coverObjectKey)
     redrawPreview()
   } catch (reason) {
     error.value = apiErrorMessage(reason)
@@ -86,7 +89,6 @@ function applyCategoryColors() {
 function coverSpec() {
   return {
     title: form.title,
-    categoryName: currentCategory.value?.name,
     colorA: form.themeColorPrimary,
     colorB: form.themeColorSecondary,
     coverImageUrl: currentCategory.value?.coverUrl ?? undefined,

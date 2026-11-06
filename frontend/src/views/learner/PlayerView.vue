@@ -104,10 +104,6 @@ const modeProgress = computed(() => {
   return learning.value?.modes[key] ?? { progress: 0, confirmed: false }
 })
 const canConfirm = computed(() => modeProgress.value.progress >= 100)
-const currentCueProgress = computed(() => {
-  const cueId = activeCue.value?.id
-  return learning.value?.cues.find((cue) => cue.cueId === cueId)
-})
 const showChinese = computed(() => {
   const override = chineseOverrides.value[mode.value]
   if (override !== null) return override
@@ -348,9 +344,13 @@ function savePosition() {
     .catch(() => undefined)
 }
 
-function submitWriting(answer: string) {
+function recordWriting(cueId: number, answer: string) {
+  markCue(cueId, 'WRITE', answer)
+}
+
+function submitWriting(cueId: number, answer: string) {
   writeSubmitted.value = true
-  markCurrentCue('WRITE', answer)
+  markCue(cueId, 'WRITE', answer)
 }
 
 function selectCue(index: number) {
@@ -360,9 +360,9 @@ function selectCue(index: number) {
   nextTick(scrollWriteToCurrent)
 }
 
-function handleDictationComplete(answer: string) {
+function handleDictationComplete(cueId: number, answer: string) {
   if (writeSubmitted.value) return
-  submitWriting(answer)
+  submitWriting(cueId, answer)
   if (activeCueIndex.value < (course.value?.cues.length ?? 0) - 1) {
     writeSubmitted.value = false
     moveCue(1)
@@ -648,7 +648,13 @@ watch(activeCueIndex, () => {
   }
 })
 
+function setThemeColor(color: string) {
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (meta) meta.setAttribute('content', color)
+}
+
 onMounted(async () => {
+  setThemeColor('#1d221c')
   await loadCourse()
   heartbeatTimer = setInterval(() => {
     if (document.visibilityState === 'visible') {
@@ -660,6 +666,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  setThemeColor('#f4f0e8')
   clearInterval(heartbeatTimer)
   clearInterval(progressTimer)
   clearInterval(positionTimer)
@@ -841,9 +848,9 @@ onBeforeUnmount(() => {
                   <WordDictation
                     :key="cue.id"
                     :sentence="cue.englishText"
-                    :submitted="writeSubmitted || Boolean(currentCueProgress?.written)"
-                    @submit="submitWriting"
-                    @complete="handleDictationComplete"
+                    :submitted="writeSubmitted"
+                    @submit="(answer) => recordWriting(cue.id, answer)"
+                    @complete="(answer) => handleDictationComplete(cue.id, answer)"
                   />
                 </div>
                 <button
