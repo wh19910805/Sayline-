@@ -7,4 +7,8 @@ public interface StorageService {
     String presignDownload(String objectKey);
 
     String readText(String objectKey);
+
+    byte[] readBytes(String objectKey);
+
+    void uploadBytes(String objectKey, String contentType, byte[] bytes);
 }

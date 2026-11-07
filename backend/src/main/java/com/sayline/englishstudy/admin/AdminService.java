@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 
+import com.sayline.englishstudy.admin.AdminDtos.BookAdminView;
+import com.sayline.englishstudy.admin.AdminDtos.BookRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CourseAdminView;
@@ -13,6 +15,8 @@ import com.sayline.englishstudy.admin.AdminDtos.DashboardView;
 import com.sayline.englishstudy.admin.AdminDtos.UserAdminView;
 import com.sayline.englishstudy.auth.AuthenticatedUser;
 import com.sayline.englishstudy.auth.RefreshSessionRepository;
+import com.sayline.englishstudy.catalog.Book;
+import com.sayline.englishstudy.catalog.BookRepository;
 import com.sayline.englishstudy.catalog.Course;
 import com.sayline.englishstudy.catalog.CourseCategory;
 import com.sayline.englishstudy.catalog.CourseCategoryRepository;
@@ -31,11 +35,13 @@ import com.sayline.englishstudy.learning.LearningDailyStatRepository;
 import com.sayline.englishstudy.learning.LearningRecord;
 import com.sayline.englishstudy.learning.LearningRecordRepository;
 import com.sayline.englishstudy.learning.StudySessionRepository;
+import com.sayline.englishstudy.storage.CoverImageService;
 import com.sayline.englishstudy.storage.StorageService;
 import com.sayline.englishstudy.user.User;
 import com.sayline.englishstudy.user.UserRepository;
 import com.sayline.englishstudy.user.UserRole;
 import com.sayline.englishstudy.user.UserStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -49,8 +55,10 @@ public class AdminService {
 
     private final CourseCategoryRepository categoryRepository;
     private final CourseRepository courseRepository;
+    private final BookRepository bookRepository;
     private final SubtitleCueRepository cueRepository;
     private final SubtitleParser subtitleParser;
+    private final CoverImageService coverImageService;
     private final StorageService storageService;
     private final UserRepository userRepository;
     private final RefreshSessionRepository refreshSessionRepository;
@@ -63,8 +71,10 @@ public class AdminService {
     public AdminService(
         CourseCategoryRepository categoryRepository,
         CourseRepository courseRepository,
+        BookRepository bookRepository,
         SubtitleCueRepository cueRepository,
         SubtitleParser subtitleParser,
+        CoverImageService coverImageService,
         StorageService storageService,
         UserRepository userRepository,
         RefreshSessionRepository refreshSessionRepository,
@@ -76,8 +86,10 @@ public class AdminService {
     ) {
         this.categoryRepository = categoryRepository;
         this.courseRepository = courseRepository;
+        this.bookRepository = bookRepository;
         this.cueRepository = cueRepository;
         this.subtitleParser = subtitleParser;
+        this.coverImageService = coverImageService;
         this.storageService = storageService;
         this.userRepository = userRepository;
         this.refreshSessionRepository = refreshSessionRepository;
@@ -114,15 +126,57 @@ public class AdminService {
 
     @Transactional
     public void deleteCategory(Long categoryId) {
-        if (courseRepository.existsByCategoryId(categoryId)) {
-            throw new ApiException("CATEGORY_HAS_COURSES", HttpStatus.CONFLICT, "该分类下仍有课程，只能隐藏");
+        if (bookRepository.existsByCategoryId(categoryId)) {
+            throw new ApiException("CATEGORY_HAS_BOOKS", HttpStatus.CONFLICT, "该分类下仍有书籍，只能隐藏");
         }
         categoryRepository.deleteById(categoryId);
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<BookAdminView> books(Long categoryId, int page, int size) {
+        PageRequest pageable = PageRequest.of(
+            Math.max(0, page),
+            Math.min(50, Math.max(1, size)),
+            Sort.by("sortOrder", "id"));
+        Page<Book> books = categoryId == null
+            ? bookRepository.findAll(pageable)
+            : bookRepository.findByCategoryId(categoryId, pageable);
+        return PageResponse.from(books.map(this::toView));
+    }
+
+    @Transactional
+    public BookAdminView createBook(BookRequest request) {
+        Book book = new Book();
+        apply(book, request);
+        coverImageService.process(book);
+        return toView(bookRepository.save(book));
+    }
+
+    @Transactional
+    public BookAdminView updateBook(Long bookId, BookRequest request) {
+        Book book = bookRepository.findById(bookId)
+            .orElseThrow(() -> notFound("书籍不存在"));
+        String previousCoverKey = book.getCoverObjectKey();
+        apply(book, request);
+        if (!equalsNullable(previousCoverKey, book.getCoverObjectKey())) {
+            coverImageService.process(book);
+        }
+        return toView(book);
+    }
+
+    @Transactional
+    public void deleteBook(Long bookId) {
+        Book book = bookRepository.findById(bookId)
+            .orElseThrow(() -> notFound("书籍不存在"));
+        if (courseRepository.existsByBookId(bookId)) {
+            throw new ApiException("BOOK_HAS_LESSONS", HttpStatus.CONFLICT, "该书下仍有课时，只能隐藏");
+        }
+        bookRepository.delete(book);
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<CourseAdminView> courses(
-        Long categoryId,
+        Long bookId,
         CourseStatus status,
         String query,
         int page,
@@ -133,11 +187,16 @@ public class AdminService {
             Math.max(0, page),
             Math.min(50, Math.max(1, size)),
             Sort.by(
-                Sort.Order.asc("category.sortOrder"),
+                Sort.Order.asc("book.sortOrder"),
                 Sort.Order.asc("sortOrder"),
                 Sort.Order.asc("id")));
-        return PageResponse.from(courseRepository.searchAdmin(categoryId, status, normalizedQuery, pageable)
+        return PageResponse.from(courseRepository.searchAdmin(bookId, status, normalizedQuery, pageable)
             .map(this::toView));
+    }
+
+    @Transactional(readOnly = true)
+    public CourseAdminView course(Long courseId) {
+        return toView(requiredCourse(courseId));
     }
 
     @Transactional
@@ -176,9 +235,9 @@ public class AdminService {
     @Transactional
     public CourseAdminView publish(Long courseId) {
         Course course = requiredCourse(courseId);
-        if (isBlank(course.getCoverObjectKey()) || isBlank(course.getAudioObjectKey())
+        if (isBlank(course.getBook().getCoverObjectKey()) || isBlank(course.getAudioObjectKey())
             || isBlank(course.getSubtitleObjectKey())) {
-            throw new ApiException("MEDIA_REQUIRED", HttpStatus.CONFLICT, "封面、音频和字幕必须全部上传");
+            throw new ApiException("MEDIA_REQUIRED", HttpStatus.CONFLICT, "书籍封面、音频和字幕必须全部上传");
         }
         if (cueRepository.countByCourseId(courseId) == 0) {
             replaceCues(course, course.getSubtitleObjectKey());
@@ -255,10 +314,24 @@ public class AdminService {
         category.setVisible(request.visible());
     }
 
-    private void apply(Course course, CourseRequest request, boolean reset) {
+    private void apply(Book book, BookRequest request) {
         CourseCategory category = categoryRepository.findById(request.categoryId())
             .orElseThrow(() -> notFound("课程分类不存在"));
-        course.setCategory(category);
+        book.setCategory(category);
+        book.setTitle(request.title().trim());
+        book.setDescription(request.description());
+        book.setCoverObjectKey(request.coverObjectKey());
+        book.setThemeColorPrimary(request.themeColorPrimary());
+        book.setThemeColorSecondary(request.themeColorSecondary());
+        book.setSortOrder(request.sortOrder());
+        book.setVisible(request.visible());
+    }
+
+    private void apply(Course course, CourseRequest request, boolean reset) {
+        Book book = bookRepository.findById(request.bookId())
+            .orElseThrow(() -> notFound("书籍不存在"));
+        course.setBook(book);
+        course.setCategory(book.getCategory());
         course.setTitle(request.title().trim());
         course.setDescription(request.description());
         course.setCoverObjectKey(request.coverObjectKey());
@@ -332,9 +405,26 @@ public class AdminService {
         return isBlank(objectKey) ? null : storageService.presignDownload(objectKey);
     }
 
+    private BookAdminView toView(Book book) {
+        return new BookAdminView(
+            book.getId(),
+            book.getCategory().getId(),
+            book.getCategory().getName(),
+            book.getTitle(),
+            book.getDescription(),
+            book.getCoverObjectKey(),
+            coverUrl(book.getCoverObjectKey()),
+            book.getThemeColorPrimary(),
+            book.getThemeColorSecondary(),
+            book.getSortOrder(),
+            book.isVisible());
+    }
+
     private CourseAdminView toView(Course course) {
         return new CourseAdminView(
             course.getId(),
+            course.getBook().getId(),
+            course.getBook().getTitle(),
             course.getCategory().getId(),
             course.getCategory().getName(),
             course.getTitle(),

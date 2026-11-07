@@ -1,9 +1,12 @@
 import { http } from './index'
 import type {
+  AdminBook,
   AdminCategory,
   AdminCourse,
   AdminUser,
   AuthResponse,
+  BookDetail,
+  BookSummary,
   Category,
   CourseDetail,
   CourseStatus,
@@ -15,6 +18,7 @@ import type {
   PageResponse,
   PresignResponse,
   Profile,
+  RecentLesson,
   StatsResponse,
 } from './types'
 
@@ -35,6 +39,17 @@ export const learnerApi = {
     if (q) params.set('q', q)
     return http.get<PageResponse<CourseSummary>>(`/api/v1/courses?${params}`)
   },
+  books: (categoryId?: number) => {
+    const params = new URLSearchParams()
+    if (categoryId) params.set('categoryId', String(categoryId))
+    const query = params.toString()
+    return http.get<BookSummary[]>(`/api/v1/books${query ? `?${query}` : ''}`)
+  },
+  book: (bookId: number) => http.get<BookDetail>(`/api/v1/books/${bookId}`),
+  favoriteBooks: () => http.get<BookSummary[]>('/api/v1/favorite-books'),
+  recentLessons: () => http.get<RecentLesson[]>('/api/v1/recent-lessons'),
+  favoriteBook: (bookId: number) => http.post<{ favorited: boolean }>(`/api/v1/books/${bookId}/favorite`),
+  unfavoriteBook: (bookId: number) => http.delete(`/api/v1/books/${bookId}/favorite`),
   favorites: () => http.get<PageResponse<CourseSummary>>('/api/v1/favorites?size=50'),
   course: (courseId: number) => http.get<CourseDetail>(`/api/v1/courses/${courseId}`),
   favorite: (courseId: number) => http.post<{ favorited: boolean }>(`/api/v1/courses/${courseId}/favorite`),
@@ -87,13 +102,24 @@ export const adminApi = {
       ? http.patch<AdminCategory>(`/api/v1/admin/categories/${id}`, payload)
       : http.post<AdminCategory>('/api/v1/admin/categories', payload),
   deleteCategory: (id: number) => http.delete(`/api/v1/admin/categories/${id}`),
-  courses: (filters: { categoryId?: number; status?: CourseStatus; q?: string; page?: number }) => {
+  books: (categoryId?: number) => {
+    const params = new URLSearchParams({ size: '50' })
+    if (categoryId) params.set('categoryId', String(categoryId))
+    return http.get<PageResponse<AdminBook>>(`/api/v1/admin/books?${params}`)
+  },
+  saveBook: (payload: Record<string, unknown>, id?: number) =>
+    id
+      ? http.patch<AdminBook>(`/api/v1/admin/books/${id}`, payload)
+      : http.post<AdminBook>('/api/v1/admin/books', payload),
+  deleteBook: (id: number) => http.delete(`/api/v1/admin/books/${id}`),
+  courses: (filters: { bookId?: number; status?: CourseStatus; q?: string; page?: number }) => {
     const params = new URLSearchParams({ size: '20', page: String(filters.page ?? 0) })
-    if (filters.categoryId) params.set('categoryId', String(filters.categoryId))
+    if (filters.bookId) params.set('bookId', String(filters.bookId))
     if (filters.status) params.set('status', filters.status)
     if (filters.q) params.set('q', filters.q)
     return http.get<PageResponse<AdminCourse>>(`/api/v1/admin/courses?${params}`)
   },
+  course: (courseId: number) => http.get<AdminCourse>(`/api/v1/admin/courses/${courseId}`),
   createCourse: (payload: Record<string, unknown>) =>
     http.post<AdminCourse>('/api/v1/admin/courses', payload),
   updateCourse: (id: number, payload: Record<string, unknown>) =>

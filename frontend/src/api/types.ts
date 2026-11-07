@@ -55,6 +55,37 @@ export interface CourseDetail extends Omit<CourseSummary, 'description'> {
   cues: Cue[]
 }
 
+export interface BookSummary {
+  id: number
+  title: string
+  description?: string | null
+  categoryId: number
+  categoryName: string
+  coverUrl?: string | null
+  themeColorPrimary?: string | null
+  themeColorSecondary?: string | null
+  spineColor?: string | null
+  lessonCount: number
+  progress: number
+  favorite: boolean
+}
+
+export interface BookDetail extends BookSummary {
+  lessons: CourseSummary[]
+}
+
+export interface RecentLesson {
+  id: number
+  bookId: number
+  title: string
+  bookTitle: string
+  coverUrl?: string | null
+  themeColorPrimary?: string | null
+  themeColorSecondary?: string | null
+  progress: number
+  lastStudiedAt: string
+}
+
 export interface PageResponse<T> {
   content: T[]
   page: number
@@ -127,8 +158,24 @@ export interface AdminCategory extends Category {
   visible: boolean
 }
 
+export interface AdminBook {
+  id: number
+  categoryId: number
+  categoryName: string
+  title: string
+  description?: string | null
+  coverObjectKey?: string | null
+  coverUrl?: string | null
+  themeColorPrimary?: string | null
+  themeColorSecondary?: string | null
+  sortOrder: number
+  visible: boolean
+}
+
 export interface AdminCourse {
   id: number
+  bookId: number
+  bookName: string
   categoryId: number
   categoryName: string
   title: string

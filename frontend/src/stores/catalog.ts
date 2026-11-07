@@ -2,18 +2,18 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { learnerApi } from '@/api/services'
-import type { Category, CourseSummary } from '@/api/types'
+import type { BookSummary, Category, CourseSummary } from '@/api/types'
 
 export const useCatalogStore = defineStore('catalog', () => {
   const interests = ref<Category[]>([])
   const allCategories = ref<Category[]>([])
-  const courses = ref<CourseSummary[]>([])
+  const books = ref<BookSummary[]>([])
   const selectedCategoryId = ref<number | 'favorite'>('favorite')
-  const currentListIds = ref<number[]>([])
+  const currentBookId = ref<number | null>(null)
+  const currentLessonIds = ref<number[]>([])
   const loading = ref(false)
   let interestsResolved = false
 
-  const favoriteCount = computed(() => courses.value.filter((course) => course.favorite).length)
   const selectedCategory = computed(() =>
     interests.value.find((category) => category.id === selectedCategoryId.value),
   )
@@ -38,26 +38,12 @@ export const useCatalogStore = defineStore('catalog', () => {
     return saved
   }
 
-  async function loadCourses(query = '') {
+  async function loadBooks() {
     loading.value = true
     try {
-      const response =
-        selectedCategoryId.value === 'favorite'
-          ? await learnerApi.favorites()
-          : await learnerApi.courses(
-              selectedCategoryId.value,
-              query || undefined,
-            )
-      if (selectedCategoryId.value === 'favorite') {
-        const favoriteIds = new Set(response.content.map((course) => course.id))
-        courses.value = courses.value.map((course) => ({
-          ...course,
-          favorite: favoriteIds.has(course.id) || course.favorite,
-        }))
-      } else {
-        courses.value = response.content
-      }
-      currentListIds.value = response.content.map((course) => course.id)
+      books.value = selectedCategoryId.value === 'favorite'
+        ? await learnerApi.favoriteBooks()
+        : await learnerApi.books(selectedCategoryId.value)
     } finally {
       loading.value = false
     }
@@ -65,35 +51,41 @@ export const useCatalogStore = defineStore('catalog', () => {
 
   async function selectCategory(value: number | 'favorite') {
     selectedCategoryId.value = value
-    await loadCourses()
+    await loadBooks()
   }
 
-  async function toggleFavorite(courseId: number) {
-    const course = courses.value.find((item) => item.id === courseId)
-    if (!course) return
-    if (course.favorite) {
-      await learnerApi.unfavorite(courseId)
+  async function toggleBookFavorite(bookId: number) {
+    const book = books.value.find((item) => item.id === bookId)
+    if (!book) return
+    if (book.favorite) {
+      await learnerApi.unfavoriteBook(bookId)
     } else {
-      await learnerApi.favorite(courseId)
+      await learnerApi.favoriteBook(bookId)
     }
-    course.favorite = !course.favorite
-    if (selectedCategoryId.value === 'favorite' && !course.favorite) {
-      courses.value = courses.value.filter((item) => item.id !== courseId)
+    book.favorite = !book.favorite
+    if (selectedCategoryId.value === 'favorite' && !book.favorite) {
+      books.value = books.value.filter((item) => item.id !== bookId)
     }
+  }
+
+  function enterBook(book: BookSummary, lessons: CourseSummary[]) {
+    currentBookId.value = book.id
+    currentLessonIds.value = lessons.map((lesson) => lesson.id)
   }
 
   return {
     interests,
     allCategories,
-    courses,
+    books,
     selectedCategoryId,
     selectedCategory,
-    currentListIds,
-    favoriteCount,
+    currentBookId,
+    currentLessonIds,
     loading,
     loadInterests,
-    loadCourses,
+    loadBooks,
     selectCategory,
-    toggleFavorite,
+    toggleBookFavorite,
+    enterBook,
   }
 })

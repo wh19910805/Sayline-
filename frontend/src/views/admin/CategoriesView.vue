@@ -5,6 +5,11 @@ import { Pencil, Plus, Trash2, Upload } from 'lucide-vue-next'
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
 import type { AdminCategory } from '@/api/types'
+import SlButton from '@/components/ui/SlButton.vue'
+import SlDialog from '@/components/ui/SlDialog.vue'
+import SlField from '@/components/ui/SlField.vue'
+import SlSwitch from '@/components/ui/SlSwitch.vue'
+import SlTable from '@/components/ui/SlTable.vue'
 import { resolveContentType } from '@/utils/uploadContentType'
 
 const categories = ref<AdminCategory[]>([])
@@ -14,6 +19,7 @@ const totalElements = ref(0)
 const editingId = ref<number | null>(null)
 const formOpen = ref(false)
 const error = ref('')
+const loading = ref(false)
 const uploading = ref(false)
 const form = reactive({
   name: '',
@@ -70,6 +76,7 @@ function nextAvailableColor(): CategoryColor {
 }
 
 async function load() {
+  loading.value = true
   try {
     const response = await adminApi.categories(page.value)
     categories.value = response.content
@@ -77,6 +84,8 @@ async function load() {
     totalElements.value = response.totalElements
   } catch (reason) {
     error.value = apiErrorMessage(reason)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -173,23 +182,21 @@ onMounted(load)
     </header>
     <p v-if="error" class="inline-error">{{ error }}</p>
     <div class="admin-card">
-      <table class="admin-table">
-        <thead><tr><th>排序</th><th>分类</th><th>颜色</th><th>状态</th><th>操作</th></tr></thead>
-        <tbody>
-          <tr v-for="category in categories" :key="category.id">
-            <td>{{ category.sortOrder }}</td>
-            <td><strong>{{ category.name }}</strong><br /><small>{{ category.description }}</small></td>
-            <td>
-              <span :style="{ display: 'inline-block', width: '28px', height: '18px', borderRadius: '6px', background: `linear-gradient(90deg, ${category.themeColorPrimary}, ${category.themeColorSecondary})` }" />
-            </td>
-            <td><span class="sl-badge" :class="{ 'sl-badge--success': category.visible }">{{ category.visible ? '显示' : '隐藏' }}</span></td>
-            <td>
-              <button class="sl-icon-button" type="button" aria-label="编辑" @click="openEdit(category)"><Pencil :size="16" /></button>
-              <button class="sl-icon-button" type="button" aria-label="删除" @click="remove(category)"><Trash2 :size="16" /></button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <SlTable :loading="loading" :empty="!categories.length" empty-title="暂无分类" empty-description="还没有分类，点右上角新建">
+        <template #head><tr><th>排序</th><th>分类</th><th>颜色</th><th>状态</th><th>操作</th></tr></template>
+        <tr v-for="category in categories" :key="category.id">
+          <td>{{ category.sortOrder }}</td>
+          <td><strong>{{ category.name }}</strong><br /><small>{{ category.description }}</small></td>
+          <td>
+            <span :style="{ display: 'inline-block', width: '28px', height: '18px', borderRadius: '6px', background: `linear-gradient(90deg, ${category.themeColorPrimary}, ${category.themeColorSecondary})` }" />
+          </td>
+          <td><span class="sl-badge" :class="{ 'sl-badge--success': category.visible }">{{ category.visible ? '显示' : '隐藏' }}</span></td>
+          <td>
+            <button class="sl-icon-button" type="button" aria-label="编辑" @click="openEdit(category)"><Pencil :size="16" /></button>
+            <button class="sl-icon-button" type="button" aria-label="删除" @click="remove(category)"><Trash2 :size="16" /></button>
+          </td>
+        </tr>
+      </SlTable>
     </div>
 
     <div class="admin-pagination">
@@ -198,45 +205,41 @@ onMounted(load)
       <button class="sl-button sl-button--secondary sl-button--sm" type="button" :disabled="page >= totalPages - 1" @click="goPage(page + 1)">下一页</button>
     </div>
 
-    <div v-if="formOpen" class="sl-dialog-backdrop" @click.self="formOpen = false">
-      <form class="sl-dialog" @submit.prevent="save">
-        <p class="sl-dialog__eyebrow">{{ editingId ? 'EDIT CATEGORY' : 'NEW CATEGORY' }}</p>
-        <h2 class="sl-dialog__title">{{ editingId ? '编辑分类' : '新建分类' }}</h2>
-        <div class="sl-dialog__body admin-form">
-          <label class="sl-field"><span class="sl-field__label">分类名称</span><input v-model="form.name" class="sl-field__control" required /></label>
-          <label class="sl-field"><span class="sl-field__label">简介</span><input v-model="form.description" class="sl-field__control" /></label>
-          <label class="admin-upload">
-            <strong><Upload :size="15" /> 分类封面</strong>
-            <input type="file" accept="image/jpeg,image/png,image/webp" @change="uploadCover" />
-            <span>{{ uploading ? '上传中…' : form.coverObjectKey || 'JPG / PNG / WebP，最大 5 MB（可选，用作课程封面背景）' }}</span>
-          </label>
-          <div class="category-palette">
-            <button
-              v-for="preset in categoryPalette"
-              :key="preset.primary"
-              type="button"
-              class="category-palette__swatch"
-              :class="{ 'is-active': form.themeColorPrimary === preset.primary }"
-              :style="{ background: `linear-gradient(90deg, ${preset.primary}, ${preset.secondary})` }"
-              :title="preset.label"
-              :aria-label="`选择 ${preset.label} 配色`"
-              @click="form.themeColorPrimary = preset.primary; form.themeColorSecondary = preset.secondary"
-            />
-          </div>
-          <div class="admin-form-grid">
-            <label class="sl-field"><span class="sl-field__label">主色</span><input v-model="form.themeColorPrimary" class="sl-field__control" type="color" /></label>
-            <label class="sl-field"><span class="sl-field__label">辅助色</span><input v-model="form.themeColorSecondary" class="sl-field__control" type="color" /></label>
-          </div>
-          <div class="admin-form-grid">
-            <label class="sl-field"><span class="sl-field__label">排序</span><input v-model.number="form.sortOrder" class="sl-field__control" type="number" min="0" /></label>
-            <label class="sl-switch"><span class="sl-switch__label">在首页显示</span><input v-model="form.visible" type="checkbox" /><span class="sl-switch__track"><span class="sl-switch__thumb" /></span></label>
-          </div>
+    <SlDialog :open="formOpen" :title="editingId ? '编辑分类' : '新建分类'" :eyebrow="editingId ? 'EDIT CATEGORY' : 'NEW CATEGORY'" @close="formOpen = false">
+      <form class="admin-form" id="category-form" @submit.prevent="save">
+        <SlField label="分类名称"><input v-model="form.name" class="sl-field__control" required /></SlField>
+        <SlField label="简介"><input v-model="form.description" class="sl-field__control" /></SlField>
+        <label class="admin-upload">
+          <strong><Upload :size="15" /> 分类封面</strong>
+          <input type="file" accept="image/jpeg,image/png,image/webp" @change="uploadCover" />
+          <span>{{ uploading ? '上传中…' : form.coverObjectKey || 'JPG / PNG / WebP，最大 5 MB（可选，用作课程封面背景）' }}</span>
+        </label>
+        <div class="category-palette">
+          <button
+            v-for="preset in categoryPalette"
+            :key="preset.primary"
+            type="button"
+            class="category-palette__swatch"
+            :class="{ 'is-active': form.themeColorPrimary === preset.primary }"
+            :style="{ background: `linear-gradient(90deg, ${preset.primary}, ${preset.secondary})` }"
+            :title="preset.label"
+            :aria-label="`选择 ${preset.label} 配色`"
+            @click="form.themeColorPrimary = preset.primary; form.themeColorSecondary = preset.secondary"
+          />
         </div>
-        <div class="sl-dialog__actions">
-          <button class="sl-button sl-button--ghost" type="button" @click="formOpen = false">取消</button>
-          <button class="sl-button sl-button--accent" type="submit">保存</button>
+        <div class="admin-form-grid">
+          <SlField label="主色"><input v-model="form.themeColorPrimary" class="sl-field__control" type="color" /></SlField>
+          <SlField label="辅助色"><input v-model="form.themeColorSecondary" class="sl-field__control" type="color" /></SlField>
+        </div>
+        <div class="admin-form-grid">
+          <SlField label="排序"><input v-model.number="form.sortOrder" class="sl-field__control" type="number" min="0" /></SlField>
+          <SlSwitch v-model="form.visible" label="在首页显示" />
         </div>
       </form>
-    </div>
+      <template #actions>
+        <SlButton variant="ghost" @click="formOpen = false">取消</SlButton>
+        <SlButton variant="accent" type="submit" form="category-form">保存</SlButton>
+      </template>
+    </SlDialog>
   </section>
 </template>

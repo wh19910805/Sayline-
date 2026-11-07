@@ -1,19 +1,28 @@
 package com.sayline.englishstudy.catalog;
 
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.sayline.englishstudy.auth.AuthenticatedUser;
+import com.sayline.englishstudy.catalog.CatalogDtos.BookDetail;
+import com.sayline.englishstudy.catalog.CatalogDtos.BookSummary;
 import com.sayline.englishstudy.catalog.CatalogDtos.CategoryView;
 import com.sayline.englishstudy.catalog.CatalogDtos.CourseDetail;
 import com.sayline.englishstudy.catalog.CatalogDtos.CourseSummary;
 import com.sayline.englishstudy.catalog.CatalogDtos.CueView;
+import com.sayline.englishstudy.catalog.CatalogDtos.RecentLesson;
 import com.sayline.englishstudy.common.ApiException;
 import com.sayline.englishstudy.common.PageResponse;
+import com.sayline.englishstudy.learning.BookFavorite;
+import com.sayline.englishstudy.learning.BookFavoriteRepository;
 import com.sayline.englishstudy.learning.CourseFavorite;
 import com.sayline.englishstudy.learning.CourseFavoriteRepository;
+import com.sayline.englishstudy.learning.LearningRecord;
 import com.sayline.englishstudy.learning.LearningRecordRepository;
 import com.sayline.englishstudy.storage.StorageService;
 import com.sayline.englishstudy.user.UserRepository;
@@ -31,6 +40,8 @@ public class CourseCatalogService {
     private final CourseRepository courseRepository;
     private final SubtitleCueRepository cueRepository;
     private final CourseFavoriteRepository favoriteRepository;
+    private final BookRepository bookRepository;
+    private final BookFavoriteRepository bookFavoriteRepository;
     private final UserRepository userRepository;
     private final StorageService storageService;
     private final LearningRecordRepository learningRecordRepository;
@@ -40,6 +51,8 @@ public class CourseCatalogService {
         CourseRepository courseRepository,
         SubtitleCueRepository cueRepository,
         CourseFavoriteRepository favoriteRepository,
+        BookRepository bookRepository,
+        BookFavoriteRepository bookFavoriteRepository,
         UserRepository userRepository,
         StorageService storageService,
         LearningRecordRepository learningRecordRepository
@@ -48,6 +61,8 @@ public class CourseCatalogService {
         this.courseRepository = courseRepository;
         this.cueRepository = cueRepository;
         this.favoriteRepository = favoriteRepository;
+        this.bookRepository = bookRepository;
+        this.bookFavoriteRepository = bookFavoriteRepository;
         this.userRepository = userRepository;
         this.storageService = storageService;
         this.learningRecordRepository = learningRecordRepository;
@@ -57,6 +72,74 @@ public class CourseCatalogService {
     public List<CategoryView> categories() {
         return categoryRepository.findByVisibleTrueOrderBySortOrderAscNameAsc().stream()
             .map(this::toCategoryView)
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookSummary> books(Long userId, Long categoryId) {
+        List<Book> books = categoryId == null
+            ? bookRepository.findByVisibleTrueOrderBySortOrderAscIdAsc()
+            : bookRepository.findByCategoryIdAndVisibleTrueOrderBySortOrderAscIdAsc(categoryId);
+        return toBookSummaries(userId, books);
+    }
+
+    @Transactional(readOnly = true)
+    public BookDetail book(Long userId, Long bookId) {
+        Book book = bookRepository.findById(bookId)
+            .filter(Book::isVisible)
+            .orElseThrow(() -> new ApiException("BOOK_NOT_FOUND", HttpStatus.NOT_FOUND, "书籍不存在或已隐藏"));
+        List<Course> lessons = courseRepository.findByBookIdAndStatusOrderBySortOrderAscIdAsc(
+            bookId, CourseStatus.PUBLISHED);
+        Map<Long, Integer> progress = progressByCourse(userId, lessons);
+        Set<Long> favoriteIds = favoriteIds(userId, lessons);
+        List<CourseSummary> lessonViews = lessons.stream()
+            .map(lesson -> toSummary(
+                lesson,
+                progress.getOrDefault(lesson.getId(), 0),
+                favoriteIds.contains(lesson.getId())))
+            .toList();
+        int lessonCount = lessons.size();
+        Set<Long> completedIds = lessons.isEmpty()
+            ? Set.of()
+            : Set.copyOf(learningRecordRepository.findCompletedCourseIds(
+                userId, lessons.stream().map(Course::getId).toList()));
+        int bookProgress = lessonCount == 0
+            ? 0
+            : (int) Math.round(completedIds.size() * 100.0 / lessonCount);
+        return new BookDetail(
+            book.getId(),
+            book.getTitle(),
+            book.getDescription(),
+            book.getCategory().getId(),
+            book.getCategory().getName(),
+            mediaUrl(coverKey(book)),
+            book.getThemeColorPrimary(),
+            book.getThemeColorSecondary(),
+            book.getSpineColor(),
+            lessonCount,
+            bookProgress,
+            bookFavoriteRepository.existsByUserIdAndBookId(userId, bookId),
+            lessonViews);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookSummary> favoriteBooks(Long userId) {
+        Set<Long> ids = new LinkedHashSet<>(bookFavoriteRepository.findFavoriteBookIds(userId));
+        ids.addAll(favoriteRepository.findFavoriteBookIdsViaLessons(userId));
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        List<Book> books = bookRepository.findAllById(ids).stream()
+            .filter(Book::isVisible)
+            .sorted(Comparator.comparingInt(Book::getSortOrder).thenComparing(Book::getId))
+            .toList();
+        return toBookSummaries(userId, books);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RecentLesson> recentLessons(Long userId) {
+        return learningRecordRepository.findRecentByUserId(userId).stream()
+            .map(this::toRecentLesson)
             .toList();
     }
 
@@ -136,6 +219,54 @@ public class CourseCatalogService {
         favoriteRepository.deleteByUserIdAndCourseId(userId, courseId);
     }
 
+    @Transactional
+    public boolean addFavoriteBook(AuthenticatedUser user, Long bookId) {
+        bookRepository.findById(bookId)
+            .filter(Book::isVisible)
+            .orElseThrow(() -> new ApiException("BOOK_NOT_FOUND", HttpStatus.NOT_FOUND, "书籍不存在或已隐藏"));
+        if (!bookFavoriteRepository.existsByUserIdAndBookId(user.id(), bookId)) {
+            BookFavorite favorite = new BookFavorite();
+            favorite.setUser(userRepository.getReferenceById(user.id()));
+            favorite.setBook(bookRepository.getReferenceById(bookId));
+            bookFavoriteRepository.save(favorite);
+        }
+        return true;
+    }
+
+    @Transactional
+    public void removeFavoriteBook(Long userId, Long bookId) {
+        bookFavoriteRepository.deleteByUserIdAndBookId(userId, bookId);
+    }
+
+    private List<BookSummary> toBookSummaries(Long userId, List<Book> books) {
+        if (books.isEmpty()) {
+            return List.of();
+        }
+        List<Long> bookIds = books.stream().map(Book::getId).toList();
+        List<Course> lessons = courseRepository.findByBookIdInAndStatusOrderBySortOrderAscIdAsc(
+            bookIds, CourseStatus.PUBLISHED);
+        Map<Long, Long> lessonCountByBook = lessons.stream().collect(Collectors.groupingBy(
+            lesson -> lesson.getBook().getId(), Collectors.counting()));
+        List<Long> lessonIds = lessons.stream().map(Course::getId).toList();
+        Set<Long> completedIds = lessonIds.isEmpty()
+            ? Set.of()
+            : Set.copyOf(learningRecordRepository.findCompletedCourseIds(userId, lessonIds));
+        Map<Long, Long> completedByBook = lessons.stream()
+            .filter(lesson -> completedIds.contains(lesson.getId()))
+            .collect(Collectors.groupingBy(
+                lesson -> lesson.getBook().getId(), Collectors.counting()));
+        Set<Long> bookFavoriteIds = Set.copyOf(bookFavoriteRepository.findFavoriteBookIds(userId, bookIds));
+        Set<Long> lessonFavoriteBookIds = Set.copyOf(favoriteRepository.findFavoriteBookIdsViaLessons(userId));
+        return books.stream().map(book -> {
+            long count = lessonCountByBook.getOrDefault(book.getId(), 0L);
+            long completed = completedByBook.getOrDefault(book.getId(), 0L);
+            int progress = count == 0 ? 0 : (int) Math.round(completed * 100.0 / count);
+            boolean favorite = bookFavoriteIds.contains(book.getId())
+                || lessonFavoriteBookIds.contains(book.getId());
+            return toBookSummary(book, (int) count, progress, favorite);
+        }).toList();
+    }
+
     private Set<Long> favoriteIds(Long userId, List<Course> courses) {
         if (courses.isEmpty()) {
             return Set.of();
@@ -176,6 +307,39 @@ public class CourseCatalogService {
             category.getThemeColorSecondary());
     }
 
+    private BookSummary toBookSummary(Book book, int lessonCount, int progress, boolean favorite) {
+        return new BookSummary(
+            book.getId(),
+            book.getTitle(),
+            book.getDescription(),
+            book.getCategory().getId(),
+            book.getCategory().getName(),
+            mediaUrl(coverKey(book)),
+            book.getThemeColorPrimary(),
+            book.getThemeColorSecondary(),
+            book.getSpineColor(),
+            lessonCount,
+            progress,
+            favorite);
+    }
+
+    private RecentLesson toRecentLesson(LearningRecord record) {
+        Course course = record.getCourse();
+        Book book = course.getBook();
+        int progress = Math.round((record.getListenProgress() + record.getReadProgress()
+            + record.getWriteProgress() + record.getSpeakProgress()) / 4.0f);
+        return new RecentLesson(
+            course.getId(),
+            book.getId(),
+            course.getTitle(),
+            book.getTitle(),
+            mediaUrl(course.getCoverObjectKey()),
+            book.getThemeColorPrimary(),
+            book.getThemeColorSecondary(),
+            progress,
+            record.getLastStudiedAt());
+    }
+
     private CourseSummary toSummary(Course course, int progress, boolean favorite) {
         return new CourseSummary(
             course.getId(),
@@ -209,5 +373,11 @@ public class CourseCatalogService {
             return objectKey;
         }
         return storageService.presignDownload(objectKey);
+    }
+
+    private String coverKey(Book book) {
+        return book.getCoverThumbnailObjectKey() != null
+            ? book.getCoverThumbnailObjectKey()
+            : book.getCoverObjectKey();
     }
 }

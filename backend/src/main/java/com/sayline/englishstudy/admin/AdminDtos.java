@@ -40,8 +40,35 @@ public final class AdminDtos {
     ) {
     }
 
-    public record CourseRequest(
+    public record BookRequest(
         @NotNull Long categoryId,
+        @NotBlank @Size(max = 120) String title,
+        @Size(max = 1000) String description,
+        @Size(max = 255) String coverObjectKey,
+        @Pattern(regexp = "^#[0-9A-Fa-f]{6}$") String themeColorPrimary,
+        @Pattern(regexp = "^#[0-9A-Fa-f]{6}$") String themeColorSecondary,
+        @Min(0) int sortOrder,
+        boolean visible
+    ) {
+    }
+
+    public record BookAdminView(
+        Long id,
+        Long categoryId,
+        String categoryName,
+        String title,
+        String description,
+        String coverObjectKey,
+        String coverUrl,
+        String themeColorPrimary,
+        String themeColorSecondary,
+        int sortOrder,
+        boolean visible
+    ) {
+    }
+
+    public record CourseRequest(
+        @NotNull Long bookId,
         @NotBlank @Size(max = 120) String title,
         @Size(max = 1000) String description,
         @Size(max = 255) String coverObjectKey,
@@ -57,6 +84,8 @@ public final class AdminDtos {
 
     public record CourseAdminView(
         Long id,
+        Long bookId,
+        String bookName,
         Long categoryId,
         String categoryName,
         String title,

@@ -1,32 +1,40 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { Search, Play, X } from 'lucide-vue-next'
+import { Heart, Search, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
 import AppBottomNav from '@/components/AppBottomNav.vue'
-import HomeFeed from '@/components/course/HomeFeed.vue'
+import BookShelf from '@/components/course/BookShelf.vue'
+import SlEmpty from '@/components/ui/SlEmpty.vue'
 import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
-import type { CourseSummary } from '@/api/types'
+import type { BookSummary } from '@/api/types'
 import { useCatalogStore } from '@/stores/catalog'
-import { formatDuration } from '@/utils/format'
 
 const router = useRouter()
 const catalog = useCatalogStore()
 const searchOpen = ref(false)
 const searchTerm = ref('')
-const searchResults = ref<CourseSummary[] | null>(null)
+const searchResults = ref<BookSummary[] | null>(null)
 const error = ref('')
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
-const startCourse = computed(
-  () => catalog.courses.find((course) => course.progress > 0) ?? catalog.courses[0] ?? null,
-)
+const visibleBooks = computed(() => searchResults.value ?? catalog.books)
+
+const emptyState = computed(() => {
+  if (searchResults.value) {
+    return { title: '没有找到相关书籍', description: '换一个关键词试试，或关闭搜索返回分类。' }
+  }
+  if (catalog.selectedCategoryId === 'favorite') {
+    return { title: '还没有收藏的书', description: '点亮书上的爱心，喜欢的书会留在这里。' }
+  }
+  return { title: '这个分类还在准备中', description: '管理员发布书籍后会出现在这里。' }
+})
 
 onMounted(async () => {
   try {
     await catalog.loadInterests()
-    await catalog.loadCourses()
+    await catalog.loadBooks()
   } catch (reason) {
     error.value = apiErrorMessage(reason)
   }
@@ -40,8 +48,7 @@ watch(searchTerm, (value) => {
   }
   searchTimer = setTimeout(async () => {
     try {
-      const response = await learnerApi.courses(undefined, value.trim())
-      searchResults.value = response.content
+      searchResults.value = await learnerApi.books()
     } catch (reason) {
       error.value = apiErrorMessage(reason)
     }
@@ -56,95 +63,206 @@ function toggleSearch() {
   }
 }
 
-function openCourse(course: CourseSummary) {
-  catalog.currentListIds = searchResults.value
-    ? searchResults.value.map((item) => item.id)
-    : catalog.courses
-        .filter((item) =>
-          catalog.selectedCategoryId === 'favorite'
-            ? item.favorite
-            : item.categoryId === catalog.selectedCategoryId,
-        )
-        .map((item) => item.id)
-  router.push(`/learn/${course.id}`)
+function openBook(book: BookSummary) {
+  router.push(`/learn/${book.id}`)
 }
 
-function startStyle(course: CourseSummary) {
-  const category = catalog.selectedCategory
-  const primary = category?.themeColorPrimary || course.themeColorPrimary || '#53634e'
-  const secondary = category?.themeColorSecondary || course.themeColorSecondary || '#263128'
+function goTab(value: 'home' | 'recent' | 'me') {
+  router.push(value === 'home' ? '/' : value === 'recent' ? '/recent' : '/me')
+}
+
+function bookStyle(book: BookSummary) {
   return {
-    '--card-a': primary,
-    '--card-b': secondary,
-    '--cover-a': primary,
-    '--cover-b': secondary,
+    '--book-a': book.themeColorPrimary || '#53634e',
+    '--book-b': book.themeColorSecondary || '#263128',
   }
 }
 
-function coverImageStyle(course: CourseSummary) {
-  return {
-    backgroundImage: course.coverUrl ? `url("${course.coverUrl}")` : undefined,
-    backgroundPosition: 'center',
-    backgroundSize: 'cover',
-  }
+function coverImageStyle(book: BookSummary) {
+  return book.coverUrl
+    ? { backgroundImage: `url("${book.coverUrl}")`, backgroundPosition: 'center', backgroundSize: 'cover' }
+    : undefined
+}
+
+function tabLabel(name: string) {
+  return name.replace(/日常|英语|训练/g, '') || name
 }
 </script>
 
 <template>
   <main class="app-screen home-screen">
     <div class="home-scroll learner-home-scroll">
-      <HomeFeed
-        :categories="catalog.interests"
-        :courses="catalog.courses"
-        :selected-category-id="catalog.selectedCategoryId"
-        :favorite-count="catalog.favoriteCount"
-        :search-results="searchResults"
-        @select="catalog.selectCategory"
-        @open-course="openCourse"
-        @toggle-favorite="catalog.toggleFavorite"
-      >
-        <template #action>
-          <button class="sl-icon-button home-search-toggle" type="button" :aria-label="searchOpen ? '关闭搜索' : '搜索课程'" @click="toggleSearch">
-            <X v-if="searchOpen" :size="20" />
-            <Search v-else :size="20" />
-          </button>
-        </template>
-        <template #lead>
-          <label v-if="searchOpen" class="home-search-bar">
-            <Search :size="18" />
-            <input v-model="searchTerm" autofocus type="search" placeholder="搜索课程或分类" />
-            <span>{{ searchResults ? `${searchResults.length} 个结果` : '键入关键词' }}</span>
-          </label>
-
-          <p v-if="error" class="inline-error">{{ error }}</p>
-
+      <div class="home-tabs-row">
+        <div class="sl-tabs home-tabs" role="tablist" aria-label="课程分类">
           <button
-            v-if="startCourse && !searchOpen && catalog.selectedCategoryId !== 'favorite'"
-            class="continue-card"
+            v-for="category in catalog.interests"
+            :key="category.id"
+            class="sl-tab"
             type="button"
-            :style="startStyle(startCourse)"
-            @click="openCourse(startCourse)"
+            role="tab"
+            data-test="category-tab"
+            :aria-selected="catalog.selectedCategoryId === category.id"
+            @click="catalog.selectCategory(category.id)"
           >
-            <span class="continue-card__cover cover-art" :style="coverImageStyle(startCourse)" />
-            <span class="continue-card__body">
-              <span class="continue-card__head">
-                <span>{{ startCourse.progress > 0 ? '继续上次学习' : '开始第一课' }}</span>
-                <span>{{ formatDuration(startCourse.durationMs) }}</span>
-              </span>
-              <h2>{{ startCourse.title }}</h2>
-              <p>{{ startCourse.categoryName }} · {{ startCourse.description || '逐句听、读、写、说' }}</p>
-              <span class="sl-progress sl-progress--light continue-card__progress">
-                <span class="sl-progress__track">
-                  <span class="sl-progress__value" :style="{ width: `${startCourse.progress}%` }" />
-                </span>
-              </span>
-              <span class="continue-card__play"><Play :size="17" fill="currentColor" /></span>
-            </span>
+            {{ tabLabel(category.name) }}
           </button>
-        </template>
-      </HomeFeed>
+          <button
+            class="sl-tab"
+            type="button"
+            role="tab"
+            :aria-selected="catalog.selectedCategoryId === 'favorite'"
+            @click="catalog.selectCategory('favorite')"
+          >
+            我喜欢
+          </button>
+        </div>
+        <button class="sl-icon-button home-search-toggle" type="button" :aria-label="searchOpen ? '关闭搜索' : '搜索课程'" @click="toggleSearch">
+          <X v-if="searchOpen" :size="20" />
+          <Search v-else :size="20" />
+        </button>
+      </div>
+
+      <label v-if="searchOpen" class="home-search-bar">
+        <Search :size="18" />
+        <input v-model="searchTerm" autofocus type="search" placeholder="搜索书籍或分类" />
+        <span>{{ searchResults ? `${searchResults.length} 本` : '键入关键词' }}</span>
+      </label>
+
+      <p v-if="error" class="inline-error">{{ error }}</p>
+
+      <BookShelf
+        v-if="visibleBooks.length"
+        :books="visibleBooks"
+        @open="openBook"
+      />
+
+      <div v-else>
+        <SlEmpty :title="emptyState.title" :description="emptyState.description">
+          <template #icon><Heart :size="24" /></template>
+        </SlEmpty>
+      </div>
     </div>
 
-    <AppBottomNav value="home" @navigate="(value) => router.push(value === 'home' ? '/' : '/me')" />
+    <AppBottomNav value="home" @navigate="goTab" />
   </main>
 </template>
+
+<style scoped>
+.home-tabs-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -20px;
+  padding: calc(18px + var(--safe-top)) 20px 0;
+  border-bottom: 1px solid var(--color-border);
+  z-index: 1000;
+}
+
+.home-tabs {
+  min-width: 0;
+  flex: 1;
+}
+
+.home-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg-elevated);
+}
+
+.home-search-bar input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 14px;
+  outline: none;
+}
+
+.home-search-bar span {
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  padding-top: 18px;
+}
+
+.book-card {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 0 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-bg-elevated);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-float);
+}
+
+.book-card__cover {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 4;
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(135deg, var(--book-a), var(--book-b));
+  color: rgba(255, 250, 240, .7);
+}
+
+.book-card__body {
+  display: grid;
+  gap: 5px;
+  padding: 0 12px;
+}
+
+.book-card__title {
+  font-size: 14px;
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+}
+
+.book-card__meta {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.book-card__progress {
+  margin-top: 2px;
+}
+
+.book-card__heart {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: rgba(255, 250, 240, .9);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .4));
+}
+
+@media (min-width: 768px) {
+  .home-tabs-row {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  .book-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .home-tabs-row {
+    width: min(calc(100% - 96px), 1180px);
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+}
+</style>

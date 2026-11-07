@@ -3,10 +3,13 @@ package com.sayline.englishstudy.catalog;
 import java.util.List;
 
 import com.sayline.englishstudy.auth.AuthenticatedUser;
+import com.sayline.englishstudy.catalog.CatalogDtos.BookDetail;
+import com.sayline.englishstudy.catalog.CatalogDtos.BookSummary;
 import com.sayline.englishstudy.catalog.CatalogDtos.CategoryView;
 import com.sayline.englishstudy.catalog.CatalogDtos.CourseDetail;
 import com.sayline.englishstudy.catalog.CatalogDtos.CourseSummary;
 import com.sayline.englishstudy.catalog.CatalogDtos.FavoriteState;
+import com.sayline.englishstudy.catalog.CatalogDtos.RecentLesson;
 import com.sayline.englishstudy.common.PageResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,6 +34,49 @@ public class CatalogController {
     @GetMapping("/categories")
     public List<CategoryView> categories() {
         return catalogService.categories();
+    }
+
+    @GetMapping("/books")
+    public List<BookSummary> books(
+        @AuthenticationPrincipal AuthenticatedUser user,
+        @RequestParam(required = false) Long categoryId
+    ) {
+        return catalogService.books(user.id(), categoryId);
+    }
+
+    @GetMapping("/books/{bookId}")
+    public BookDetail book(
+        @AuthenticationPrincipal AuthenticatedUser user,
+        @PathVariable Long bookId
+    ) {
+        return catalogService.book(user.id(), bookId);
+    }
+
+    @GetMapping("/favorite-books")
+    public List<BookSummary> favoriteBooks(@AuthenticationPrincipal AuthenticatedUser user) {
+        return catalogService.favoriteBooks(user.id());
+    }
+
+    @GetMapping("/recent-lessons")
+    public List<RecentLesson> recentLessons(@AuthenticationPrincipal AuthenticatedUser user) {
+        return catalogService.recentLessons(user.id());
+    }
+
+    @PostMapping("/books/{bookId}/favorite")
+    public FavoriteState favoriteBook(
+        @AuthenticationPrincipal AuthenticatedUser user,
+        @PathVariable Long bookId
+    ) {
+        return new FavoriteState(catalogService.addFavoriteBook(user, bookId));
+    }
+
+    @DeleteMapping("/books/{bookId}/favorite")
+    public ResponseEntity<Void> unfavoriteBook(
+        @AuthenticationPrincipal AuthenticatedUser user,
+        @PathVariable Long bookId
+    ) {
+        catalogService.removeFavoriteBook(user.id(), bookId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/courses")

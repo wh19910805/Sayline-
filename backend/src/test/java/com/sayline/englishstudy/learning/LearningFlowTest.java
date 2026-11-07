@@ -4,6 +4,8 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sayline.englishstudy.catalog.Book;
+import com.sayline.englishstudy.catalog.BookRepository;
 import com.sayline.englishstudy.catalog.Course;
 import com.sayline.englishstudy.catalog.CourseCategory;
 import com.sayline.englishstudy.catalog.CourseCategoryRepository;
@@ -53,6 +55,9 @@ class LearningFlowTest {
     private CourseCategoryRepository categoryRepository;
 
     @Autowired
+    private BookRepository bookRepository;
+
+    @Autowired
     private CourseRepository courseRepository;
 
     @Autowired
@@ -71,8 +76,8 @@ class LearningFlowTest {
         for (String table : new String[] {
             "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
             "study_sessions", "learning_records", "course_favorites", "refresh_sessions",
-            "subtitle_cues", "courses", "user_settings", "user_interests",
-            "course_categories", "users"
+            "subtitle_cues", "courses", "book_favorites", "books", "user_settings",
+            "user_interests", "course_categories", "users"
         }) {
             jdbcTemplate.update("delete from " + table);
         }
@@ -91,7 +96,15 @@ class LearningFlowTest {
         category.setSortOrder(1);
         categoryRepository.save(category);
 
+        Book book = new Book();
+        book.setCategory(category);
+        book.setTitle("Listening");
+        book.setSortOrder(1);
+        book.setVisible(true);
+        bookRepository.save(book);
+
         course = new Course();
+        course.setBook(book);
         course.setCategory(category);
         course.setTitle("Mini Dialogue");
         course.setStatus(CourseStatus.PUBLISHED);

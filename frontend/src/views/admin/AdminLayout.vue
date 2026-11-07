@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BookOpen, FolderTree, GraduationCap, LayoutDashboard, LogOut, UsersRound } from 'lucide-vue-next'
+import { BookOpen, FolderTree, GraduationCap, LayoutDashboard, ListChecks, LogOut, UsersRound } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
 import BrandLogo from '@/components/BrandLogo.vue'
@@ -11,7 +11,8 @@ const auth = useAuthStore()
 const navItems = [
   { to: '/admin', label: '数据看板', icon: LayoutDashboard },
   { to: '/admin/categories', label: '分类管理', icon: FolderTree },
-  { to: '/admin/courses', label: '课程管理', icon: BookOpen },
+  { to: '/admin/books', label: '课程管理', icon: BookOpen },
+  { to: '/admin/courses', label: '课时管理', icon: ListChecks },
   { to: '/admin/users', label: '用户管理', icon: UsersRound },
 ]
 

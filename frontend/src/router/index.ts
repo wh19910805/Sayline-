@@ -21,7 +21,12 @@ const routes = [
     component: () => import('@/views/learner/HomeView.vue'),
   },
   {
-    path: '/learn/:courseId',
+    path: '/learn/:bookId',
+    name: 'lessons',
+    component: () => import('@/views/learner/LessonListView.vue'),
+  },
+  {
+    path: '/learn/:bookId/:lessonId',
     name: 'player',
     component: () => import('@/views/learner/PlayerView.vue'),
   },
@@ -29,6 +34,11 @@ const routes = [
     path: '/me',
     name: 'me',
     component: () => import('@/views/learner/MyView.vue'),
+  },
+  {
+    path: '/recent',
+    name: 'recent',
+    component: () => import('@/views/learner/RecentView.vue'),
   },
   {
     path: '/me/profile',
@@ -65,6 +75,11 @@ const routes = [
         path: 'categories',
         name: 'admin-categories',
         component: () => import('@/views/admin/CategoriesView.vue'),
+      },
+      {
+        path: 'books',
+        name: 'admin-books',
+        component: () => import('@/views/admin/BooksView.vue'),
       },
       {
         path: 'courses',

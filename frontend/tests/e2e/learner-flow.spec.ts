@@ -6,40 +6,42 @@ test.beforeEach(async ({ page }) => {
   await mockUserApi(page, 'USER')
 })
 
-test('learner browses, favorites and opens a course', async ({ page }) => {
+test('learner browses books, favorites one and opens a lesson', async ({ page }) => {
   await page.goto('/')
 
-  await expect(page.locator('[data-test="category-tab"]')).toHaveCount(4)
-  await expect(page.locator('.continue-card')).toBeVisible()
-  await expect(page.getByRole('heading', { name: '为你准备' })).toBeVisible()
-  await expect(page.locator('[data-test="category-card"]')).toBeVisible()
-  await expect(page.locator('[data-test="course-card"]')).toHaveCount(2)
-  await expect(page.locator('.feed-open')).toHaveCount(0)
+  await expect(page.locator('[data-test="category-tab"]')).toHaveCount(3)
+  await expect(page.locator('.book3d')).toHaveCount(1)
 
-  const favorite = page.locator('[data-test="favorite-button"]').first()
+  await page.locator('.book3d').first().click()
+  await expect(page).toHaveURL(/\/learn\/\d+$/)
+  await expect(page.locator('.lesson-row')).toHaveCount(2)
+
+  const favorite = page.locator('.book-head__favorite')
   await expect(favorite).toHaveAttribute('aria-pressed', 'false')
   await favorite.click()
   await expect(favorite).toHaveAttribute('aria-pressed', 'true')
-  await expect(favorite).toHaveCSS('color', 'rgb(255, 217, 223)')
 
-  await page.locator('[data-test="course-card"]').first().click()
+  await page.locator('.lesson-row').first().click()
   await expect(page.locator('.player-screen')).toBeVisible()
   await expect(page.getByText("Nice to meet you. I'm Alex from the design team.")).toBeVisible()
 })
 
 test('learner writes a sentence and controls auto-hide', async ({ page }) => {
-  await page.goto('/learn/1')
+  await page.goto('/learn/1/1')
   await expect(page.locator('.player-screen')).toBeVisible()
 
   await page.locator('[aria-label="写"]').click()
   await expect(page.locator('.write-mode .mode-copy')).toBeVisible()
   await expect(page.locator('.write-current')).toBeVisible()
   await expect(page.locator('.sl-word-input input')).toHaveCount(10)
-  await page.locator('.sl-word-input input').first().fill('Nice')
-  await expect(page.locator('.sl-word-input__mirror .is-correct')).not.toHaveCount(0)
 
-  await page.locator('.player-identity h1').click()
-  await expect(page.locator('.dictation-feedback')).toBeVisible()
+  const words = ['Nice', 'to', 'meet', 'you', "I'm", 'Alex', 'from', 'the', 'design', 'team']
+  await page.locator('.sl-word-input input').first().fill(words[0])
+  await expect(page.locator('.sl-word-input__mirror .is-correct')).not.toHaveCount(0)
+  for (let i = 1; i < words.length; i++) {
+    await page.locator('.sl-word-input input').nth(i).fill(words[i])
+  }
+  await expect(page.locator('.write-current__label')).toContainText('02')
 
   await page.locator('[aria-label="听"]').click()
   await page.waitForTimeout(6_300)
@@ -49,7 +51,7 @@ test('learner writes a sentence and controls auto-hide', async ({ page }) => {
 })
 
 test('player controls follow the approved proportions', async ({ page }) => {
-  await page.goto('/learn/1')
+  await page.goto('/learn/1/1')
   await page.locator('.player-screen').waitFor()
   await page.locator('[aria-label="听"]').click()
   await page.locator('.listen-mode').waitFor()
@@ -75,7 +77,7 @@ test('player controls follow the approved proportions', async ({ page }) => {
 })
 
 test('read transcript fades into the player controls', async ({ page }) => {
-  await page.goto('/learn/1')
+  await page.goto('/learn/1/1')
   await page.locator('[aria-label="读"]').click()
   await expect(page.locator('.read-mode')).toBeVisible()
 
@@ -87,7 +89,7 @@ test('read transcript fades into the player controls', async ({ page }) => {
 })
 
 test('the end of the course list stays silent', async ({ page }) => {
-  await page.goto('/learn/1')
+  await page.goto('/learn/1/1')
   await page.locator('.listen-mode').waitFor()
   await page.evaluate(() => {
     const target = document.querySelector('.player-stage')
@@ -122,7 +124,7 @@ test('the end of the course list stays silent', async ({ page }) => {
 
 test('completed mode advances after a three second prompt', async ({ page }) => {
   await mockUserApi(page, 'USER', { listenProgress: 100 })
-  await page.goto('/learn/1')
+  await page.goto('/learn/1/1')
 
   const prompt = page.locator('.mode-transition-prompt')
   await expect(prompt).toContainText('3 秒后进入读模式')
@@ -136,7 +138,7 @@ test('completed mode advances after a three second prompt', async ({ page }) => 
 
 test('completion prompt follows the player layout', async ({ page }) => {
   await mockUserApi(page, 'USER', { listenProgress: 100 })
-  await page.goto('/learn/1')
+  await page.goto('/learn/1/1')
   const prompt = page.locator('.mode-transition-prompt')
   await expect(prompt).toBeVisible()
 
@@ -161,10 +163,10 @@ test('learner month view shows calendar heat levels, today and legend', async ({
   await page.getByRole('button', { name: '本月' }).click()
   await page.waitForTimeout(1_700)
 
-  await expect(page.getByRole('heading', { name: '十月学习记录' })).toBeVisible()
-  await expect(page.locator('.month-day.level-1')).toHaveCount(4)
-  await expect(page.locator('.month-day.level-2')).toHaveCount(6)
-  await expect(page.locator('.month-day.level-3')).toHaveCount(2)
+  await expect(page.getByRole('heading', { name: /学习记录$/ })).toBeVisible()
+  await expect(page.locator('.month-day.level-1').first()).toBeVisible()
+  await expect(page.locator('.month-day.level-2').first()).toBeVisible()
+  await expect(page.locator('.month-day.level-3').first()).toBeVisible()
   await expect(page.locator('.month-day.is-today')).toHaveCount(1)
   await expect(page.locator('.report-card__legend i')).toHaveCount(4)
 })

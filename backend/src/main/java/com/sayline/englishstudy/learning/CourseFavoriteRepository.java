@@ -31,4 +31,10 @@ public interface CourseFavoriteRepository extends JpaRepository<CourseFavorite, 
           and favorite.course.status = com.sayline.englishstudy.catalog.CourseStatus.PUBLISHED
         """)
     Page<CourseFavorite> findPublishedFavorites(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("""
+        select distinct favorite.course.book.id from CourseFavorite favorite
+        where favorite.user.id = :userId
+        """)
+    List<Long> findFavoriteBookIdsViaLessons(@Param("userId") Long userId);
 }

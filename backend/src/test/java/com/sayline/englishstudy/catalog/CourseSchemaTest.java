@@ -17,6 +17,9 @@ class CourseSchemaTest {
     private CourseCategoryRepository categoryRepository;
 
     @Autowired
+    private BookRepository bookRepository;
+
+    @Autowired
     private CourseRepository courseRepository;
 
     @Autowired
@@ -30,7 +33,15 @@ class CourseSchemaTest {
         category.setVisible(true);
         category = categoryRepository.save(category);
 
+        Book book = new Book();
+        book.setCategory(category);
+        book.setTitle("Daily Listening");
+        book.setSortOrder(1);
+        book.setVisible(true);
+        book = bookRepository.save(book);
+
         Course course = new Course();
+        course.setBook(book);
         course.setCategory(category);
         course.setTitle("Coffee Shop Small Talk");
         course.setDescription("Order naturally and keep the conversation going.");

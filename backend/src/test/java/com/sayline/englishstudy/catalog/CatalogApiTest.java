@@ -48,6 +48,9 @@ class CatalogApiTest {
     private CourseCategoryRepository categoryRepository;
 
     @Autowired
+    private BookRepository bookRepository;
+
+    @Autowired
     private CourseRepository courseRepository;
 
     @Autowired
@@ -64,8 +67,8 @@ class CatalogApiTest {
         for (String table : new String[] {
             "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
             "study_sessions", "learning_records", "course_favorites", "refresh_sessions",
-            "subtitle_cues", "courses", "user_settings", "user_interests",
-            "course_categories", "users"
+            "subtitle_cues", "courses", "book_favorites", "books", "user_settings",
+            "user_interests", "course_categories", "users"
         }) {
             jdbcTemplate.update("delete from " + table);
         }
@@ -205,8 +208,23 @@ class CatalogApiTest {
         return categoryRepository.save(category);
     }
 
+    private Book createBook(CourseCategory category) {
+        Book book = new Book();
+        book.setCategory(category);
+        book.setTitle(category.getName());
+        book.setDescription(category.getName() + " description");
+        book.setCoverObjectKey("covers/" + category.getName() + ".jpg");
+        book.setThemeColorPrimary("#2D5C4D");
+        book.setThemeColorSecondary("#E8C99B");
+        book.setSortOrder(1);
+        book.setVisible(true);
+        return bookRepository.save(book);
+    }
+
     private Course createCourse(CourseCategory category, String title, CourseStatus status) {
+        Book book = createBook(category);
         Course course = new Course();
+        course.setBook(book);
         course.setCategory(category);
         course.setTitle(title);
         course.setDescription(title + " description");

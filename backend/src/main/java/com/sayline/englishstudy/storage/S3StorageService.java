@@ -101,4 +101,23 @@ public class S3StorageService implements StorageService {
             .asByteArray();
         return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
     }
+
+    @Override
+    public byte[] readBytes(String objectKey) {
+        return client.getObjectAsBytes(GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(objectKey)
+                .build())
+            .asByteArray();
+    }
+
+    @Override
+    public void uploadBytes(String objectKey, String contentType, byte[] bytes) {
+        client.putObject(PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(objectKey)
+                .contentType(contentType)
+                .build(),
+            RequestBody.fromBytes(bytes));
+    }
 }

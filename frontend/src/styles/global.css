@@ -18,6 +18,31 @@ body {
   min-width: 320px;
 }
 
+/* 让播放器氛围主色可平滑过渡（音乐 App 式动态背景） */
+@property --player-course-a {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #53634e;
+}
+
+@property --player-course-b {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1f2a22;
+}
+
+@property --ambient {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f4f0e8;
+}
+
+@property --ambient-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ead5aa;
+}
+
 button,
 input,
 textarea,
@@ -152,7 +177,11 @@ a {
 
 .settings-screen,
 .preferences-screen {
-  background: var(--color-bg);
+  background:
+    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #ead5aa) 30%, transparent), transparent 55%),
+    linear-gradient(165deg,
+      color-mix(in srgb, var(--ambient, #f4f0e8) 28%, #fffdfa),
+      color-mix(in srgb, var(--ambient-2, #ead5aa) 30%, #fffdfa));
 }
 
 .settings-scroll {

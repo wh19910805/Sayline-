@@ -11,3 +11,7 @@ test-results/
 .vscode/
 *.log
 
+
+# 调试截图与预览配置
+frontend/artifacts/
+frontend/.claude/

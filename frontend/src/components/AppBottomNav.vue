@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { House, UserRound } from 'lucide-vue-next'
+import { History, House, UserRound } from 'lucide-vue-next'
 
-defineProps<{ value: 'home' | 'me' }>()
-const emit = defineEmits<{ navigate: [value: 'home' | 'me'] }>()
+defineProps<{ value: 'home' | 'recent' | 'me' }>()
+const emit = defineEmits<{ navigate: [value: 'home' | 'recent' | 'me'] }>()
 </script>
 
 <template>
@@ -16,6 +16,15 @@ const emit = defineEmits<{ navigate: [value: 'home' | 'me'] }>()
       >
         <House :size="20" />
         学习
+      </button>
+      <button
+        class="sl-bottom-nav__item"
+        type="button"
+        :aria-current="value === 'recent' ? 'page' : undefined"
+        @click="emit('navigate', 'recent')"
+      >
+        <History :size="20" />
+        最近学习
       </button>
       <button
         class="sl-bottom-nav__item"

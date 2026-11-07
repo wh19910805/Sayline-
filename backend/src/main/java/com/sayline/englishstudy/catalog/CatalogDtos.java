@@ -1,5 +1,6 @@
 package com.sayline.englishstudy.catalog;
 
+import java.time.Instant;
 import java.util.List;
 
 public final class CatalogDtos {
@@ -32,6 +33,39 @@ public final class CatalogDtos {
     ) {
     }
 
+    public record BookSummary(
+        Long id,
+        String title,
+        String description,
+        Long categoryId,
+        String categoryName,
+        String coverUrl,
+        String themeColorPrimary,
+        String themeColorSecondary,
+        String spineColor,
+        int lessonCount,
+        int progress,
+        boolean favorite
+    ) {
+    }
+
+    public record BookDetail(
+        Long id,
+        String title,
+        String description,
+        Long categoryId,
+        String categoryName,
+        String coverUrl,
+        String themeColorPrimary,
+        String themeColorSecondary,
+        String spineColor,
+        int lessonCount,
+        int progress,
+        boolean favorite,
+        List<CourseSummary> lessons
+    ) {
+    }
+
     public record CueView(
         Long id,
         int sequenceNo,
@@ -55,6 +89,19 @@ public final class CatalogDtos {
         long durationMs,
         boolean favorite,
         List<CueView> cues
+    ) {
+    }
+
+    public record RecentLesson(
+        Long id,
+        Long bookId,
+        String title,
+        String bookTitle,
+        String coverUrl,
+        String themeColorPrimary,
+        String themeColorSecondary,
+        int progress,
+        Instant lastStudiedAt
     ) {
     }
 

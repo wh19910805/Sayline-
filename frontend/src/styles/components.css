@@ -901,7 +901,7 @@ textarea.sl-field__control {
 
 .sl-bottom-nav {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   padding: 7px 22px calc(7px + var(--safe-bottom));
   border-top: 1px solid var(--color-border);
@@ -1016,4 +1016,72 @@ textarea.sl-field__control {
   color: inherit;
   cursor: pointer;
   opacity: .8;
+}
+
+.sl-empty {
+  padding: 44px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.sl-empty__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-tertiary);
+}
+
+.sl-empty__title {
+  margin: 0;
+  font-size: var(--text-body-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.sl-empty__description {
+  margin: 0;
+  max-width: 300px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-cjk);
+}
+
+.sl-skeleton {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.sl-skeleton__row {
+  height: 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+  animation: sl-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.sl-skeleton__row:nth-child(even) {
+  width: 82%;
+}
+
+@keyframes sl-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: .45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-skeleton__row {
+    animation: none;
+  }
 }

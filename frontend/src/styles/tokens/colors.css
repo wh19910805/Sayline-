@@ -65,19 +65,3 @@
   --course-color-a: #6c7350;
   --course-color-b: #9f5f31;
 }
-
-[data-theme="night"] {
-  --color-bg: #1d221c;
-  --color-bg-elevated: #252b24;
-  --color-bg-subtle: #2e352d;
-  --color-surface: #252b24;
-  --color-surface-muted: #31382f;
-  --color-text: #f6f0e5;
-  --color-text-secondary: #c4c9bf;
-  --color-text-tertiary: #929a90;
-  --color-border: rgba(255, 255, 255, .12);
-  --color-border-strong: rgba(255, 255, 255, .24);
-  --color-action: #e47b57;
-  --color-action-hover: #ef906e;
-  --color-action-soft: rgba(228, 123, 87, .16);
-}

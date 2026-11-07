@@ -2,6 +2,8 @@ package com.sayline.englishstudy.admin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sayline.englishstudy.catalog.Book;
+import com.sayline.englishstudy.catalog.BookRepository;
 import com.sayline.englishstudy.catalog.CourseCategory;
 import com.sayline.englishstudy.catalog.CourseCategoryRepository;
 import com.sayline.englishstudy.catalog.CourseRepository;
@@ -53,6 +55,9 @@ class AdminApiTest {
     private CourseCategoryRepository categoryRepository;
 
     @Autowired
+    private BookRepository bookRepository;
+
+    @Autowired
     private CourseRepository courseRepository;
 
     @Autowired
@@ -66,8 +71,8 @@ class AdminApiTest {
         for (String table : new String[] {
             "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
             "study_sessions", "learning_records", "course_favorites", "refresh_sessions",
-            "subtitle_cues", "courses", "user_settings", "user_interests",
-            "course_categories", "users"
+            "subtitle_cues", "courses", "book_favorites", "books", "user_settings",
+            "user_interests", "course_categories", "users"
         }) {
             jdbcTemplate.update("delete from " + table);
         }
@@ -89,7 +94,7 @@ class AdminApiTest {
     }
 
     @Test
-    void createsCategoryAndRejectsDeletingCategoryWithCourses() throws Exception {
+    void createsCategoryAndRejectsDeletingCategoryWithBooks() throws Exception {
         String adminToken = createUserAndLogin("13800138501", UserRole.ADMIN);
 
         MvcResult created = mockMvc.perform(post("/api/v1/admin/categories")
@@ -102,17 +107,19 @@ class AdminApiTest {
             .andReturn();
         long categoryId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
 
+        long bookId = createBookViaApi(adminToken, categoryId);
+
         mockMvc.perform(post("/api/v1/admin/courses")
                 .header("Authorization", bearer(adminToken))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(courseBody(categoryId)))
+                .content(courseBody(bookId)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.status").value("DRAFT"));
 
         mockMvc.perform(delete("/api/v1/admin/categories/{id}", categoryId)
                 .header("Authorization", bearer(adminToken)))
             .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.code").value("CATEGORY_HAS_COURSES"));
+            .andExpect(jsonPath("$.code").value("CATEGORY_HAS_BOOKS"));
     }
 
     @Test
@@ -120,11 +127,12 @@ class AdminApiTest {
         String adminToken = createUserAndLogin("13800138502", UserRole.ADMIN);
         String learnerToken = createUserAndLogin("13800138503", UserRole.USER);
         CourseCategory category = createCategory("Work");
+        long bookId = createBookViaApi(adminToken, category.getId());
 
         MvcResult created = mockMvc.perform(post("/api/v1/admin/courses")
                 .header("Authorization", bearer(adminToken))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(courseBody(category.getId())))
+                .content(courseBody(bookId)))
             .andExpect(status().isCreated())
             .andReturn();
         long courseId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
@@ -178,10 +186,10 @@ class AdminApiTest {
             .andExpect(jsonPath("$.completedCourses").value(0));
     }
 
-    private String courseBody(long categoryId) {
+    private String courseBody(long bookId) {
         return """
             {
-              "categoryId":%d,
+              "bookId":%d,
               "title":"Office Small Talk",
               "description":"Start a friendly conversation at work.",
               "coverObjectKey":"covers/office.jpg",
@@ -191,7 +199,19 @@ class AdminApiTest {
               "themeColorSecondary":"#D7B78B",
               "sortOrder":1
             }
-            """.formatted(categoryId);
+            """.formatted(bookId);
+    }
+
+    private long createBookViaApi(String adminToken, long categoryId) throws Exception {
+        MvcResult created = mockMvc.perform(post("/api/v1/admin/books")
+                .header("Authorization", bearer(adminToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"categoryId":%d,"title":"Work","coverObjectKey":"covers/work.jpg","sortOrder":1,"visible":true}
+                    """.formatted(categoryId)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
     }
 
     private CourseCategory createCategory(String name) {

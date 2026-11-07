@@ -69,6 +69,48 @@ const courses = [
   },
 ]
 
+const books = [
+  {
+    id: 1,
+    title: '职场英语',
+    description: '会议、协作与真实职场表达',
+    categoryId: 1,
+    categoryName: '职场英语',
+    coverUrl: '/covers/work.jpg',
+    themeColorPrimary: '#65734f',
+    themeColorSecondary: '#9f5e31',
+    lessonCount: 2,
+    progress: 58,
+    favorite: false,
+  },
+  {
+    id: 2,
+    title: '日常口语',
+    description: '闲聊、社交与自然开口',
+    categoryId: 2,
+    categoryName: '日常口语',
+    coverUrl: '/covers/spoken.jpg',
+    themeColorPrimary: '#8b6651',
+    themeColorSecondary: '#42271f',
+    lessonCount: 2,
+    progress: 24,
+    favorite: true,
+  },
+  {
+    id: 3,
+    title: '听力训练',
+    description: '抓住重点，适应真实语速',
+    categoryId: 3,
+    categoryName: '听力训练',
+    coverUrl: '/covers/listening.jpg',
+    themeColorPrimary: '#517671',
+    themeColorSecondary: '#243a38',
+    lessonCount: 1,
+    progress: 0,
+    favorite: false,
+  },
+]
+
 const cues = [
   [1, 0, 3_000, "Nice to meet you. I'm Alex from the design team.", '很高兴认识你，我是设计团队的 Alex。'],
   [2, 3_000, 7_000, 'Nice to meet you too. I just joined this week.', '我也很高兴认识你，我这周刚入职。'],
@@ -134,6 +176,24 @@ export async function mockUserApi(
     }
     if (path === '/api/v1/me/interests') return json(route, categories)
     if (path === '/api/v1/categories') return json(route, categories)
+    if (path === '/api/v1/books') {
+      const categoryId = Number(url.searchParams.get('categoryId'))
+      const content = categoryId
+        ? books.filter((book) => book.categoryId === categoryId)
+        : books
+      return json(route, content)
+    }
+    if (/^\/api\/v1\/books\/\d+$/.test(path)) {
+      const id = Number(path.split('/').at(-1))
+      const book = books.find((b) => b.id === id) ?? books[0]
+      const lessons = courses
+        .filter((c) => c.categoryId === book.categoryId)
+        .map((c) => ({ ...c, bookId: book.id, bookName: book.title }))
+      return json(route, { ...book, lessons })
+    }
+    if (path === '/api/v1/favorite-books') {
+      return json(route, books.filter((book) => book.favorite))
+    }
     if (path === '/api/v1/courses') {
       const q = url.searchParams.get('q')?.toLowerCase()
       const categoryId = Number(url.searchParams.get('categoryId'))
@@ -172,22 +232,28 @@ export async function mockUserApi(
     }
     if (path === '/api/v1/learning/stats') {
       if (url.searchParams.get('period') === 'MONTH') {
+        const now = new Date()
+        const year = now.getFullYear()
+        const month = now.getMonth() + 1
+        const daysInMonth = new Date(year, month, 0).getDate()
+        const pad = (n: number) => String(n).padStart(2, '0')
         const activeMinutes: Record<number, number> = {
-          1: 8, 3: 16, 6: 42, 7: 25, 10: 64, 11: 19, 14: 48, 17: 31, 18: 12, 20: 39, 21: 58, 22: 26,
+          1: 8, 3: 16, 6: 42, 10: 64, 14: 48, 18: 12, 20: 39, 22: 58,
         }
-        const days = Array.from({ length: 31 }, (_, index) => {
+        activeMinutes[now.getDate()] = 30
+        const days = Array.from({ length: daysInMonth }, (_, index) => {
           const day = index + 1
           const minutes = activeMinutes[day] ?? 0
           return {
-            date: `2026-10-${String(day).padStart(2, '0')}`,
+            date: `${year}-${pad(month)}-${pad(day)}`,
             active: minutes > 0,
             sessions: minutes > 0 ? (minutes >= 40 ? 2 : 1) : 0,
             studyMs: minutes * 60_000,
           }
         })
         return json(route, {
-          rangeStart: '2026-10-01',
-          rangeEnd: '2026-10-31',
+          rangeStart: `${year}-${pad(month)}-01`,
+          rangeEnd: `${year}-${pad(month)}-${pad(daysInMonth)}`,
           days,
           summary: {
             studyDays: 12,
@@ -239,6 +305,15 @@ export async function mockUserApi(
       })
     }
     if (path === '/api/v1/admin/categories') return json(route, categories)
+    if (path === '/api/v1/admin/books') {
+      const content = books.map((book, index) => ({
+        ...book,
+        coverObjectKey: book.coverUrl,
+        sortOrder: index + 1,
+        visible: true,
+      }))
+      return json(route, { content, page: 0, size: 50, totalElements: content.length, totalPages: 1 })
+    }
     if (path === '/api/v1/admin/courses') {
       const content = courses.map((course) => ({
         ...course,

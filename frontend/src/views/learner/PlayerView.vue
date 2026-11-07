@@ -30,6 +30,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
 import type {
+  BookDetail,
   CourseDetail,
   Cue,
   LearningMode,
@@ -48,6 +49,7 @@ const router = useRouter()
 const catalog = useCatalogStore()
 const audio = ref<HTMLAudioElement | null>(null)
 const course = ref<CourseDetail | null>(null)
+const bookInfo = ref<BookDetail | null>(null)
 const learning = ref<LearningState | null>(null)
 const settings = ref<LearningSettings | null>(null)
 const mode = ref<LearningMode>('LISTEN')
@@ -97,7 +99,7 @@ const readTimers = createVisibleCueTimers({
 const autoHide = ref(true)
 const visibility = useControlVisibility({ autoHide, delay: 6_000 })
 
-const courseId = computed(() => Number(route.params.courseId))
+const courseId = computed(() => Number(route.params.lessonId))
 const activeCue = computed<Cue | null>(() => course.value?.cues[activeCueIndex.value] ?? null)
 const modeProgress = computed(() => {
   const key = mode.value.toLowerCase() as 'listen' | 'read' | 'write' | 'speak'
@@ -132,6 +134,9 @@ const playerCoverStyle = computed(() => {
       : gradient,
   }
 })
+const coverBackdropStyle = computed(() => ({
+  backgroundImage: course.value?.coverUrl ? `url("${course.value.coverUrl}")` : undefined,
+}))
 const modes = [
   { value: 'LISTEN' as const, label: '听', icon: Headphones },
   { value: 'READ' as const, label: '读', icon: BookOpen },
@@ -146,12 +151,21 @@ async function loadCourse(showLoader = true) {
   if (showLoader) loading.value = true
   error.value = ''
   try {
-    const [detail, state, userSettings] = await Promise.all([
+    const [detail, state, userSettings, book] = await Promise.all([
       learnerApi.course(courseId.value),
       learnerApi.learningState(courseId.value),
       learnerApi.settings(),
+      learnerApi.book(Number(route.params.bookId)).catch(() => null),
     ])
+    bookInfo.value = book
     course.value = detail
+    if (detail.themeColorPrimary) {
+      document.documentElement.style.setProperty('--ambient', detail.themeColorPrimary)
+      document.documentElement.style.setProperty('--ambient-2', detail.themeColorSecondary || detail.themeColorPrimary)
+      const cover = book?.coverUrl || detail.coverUrl
+      document.documentElement.style.setProperty('--ambient-cover', cover ? `url("${cover}")` : 'none')
+      setThemeColor(detail.themeColorPrimary)
+    }
     learning.value = state
     settings.value = userSettings
     playbackRate.value = userSettings.playbackRate ?? 1
@@ -486,8 +500,8 @@ function cancelAutoNext() {
 }
 
 function moveCourse(direction: 1 | -1) {
-  const ids = catalog.currentListIds.length
-    ? catalog.currentListIds
+  const ids = catalog.currentLessonIds.length
+    ? catalog.currentLessonIds
     : course.value
       ? [course.value.id]
       : []
@@ -602,7 +616,7 @@ function touchEnd(event: TouchEvent) {
 }
 
 watch(
-  () => route.params.courseId,
+  () => route.params.lessonId,
   () => loadCourse(),
 )
 
@@ -653,6 +667,16 @@ function setThemeColor(color: string) {
   if (meta) meta.setAttribute('content', color)
 }
 
+watch(
+  () => course.value?.themeColorPrimary,
+  (color) => {
+    if (!color) return
+    setThemeColor(color)
+    document.documentElement.style.setProperty('--ambient', color)
+    document.documentElement.style.setProperty('--ambient-2', course.value?.themeColorSecondary || color)
+  },
+)
+
 onMounted(async () => {
   setThemeColor('#1d221c')
   await loadCourse()
@@ -666,7 +690,6 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  setThemeColor('#f4f0e8')
   clearInterval(heartbeatTimer)
   clearInterval(progressTimer)
   clearInterval(positionTimer)
@@ -685,6 +708,7 @@ onBeforeUnmount(() => {
     :style="backgroundStyle"
     @click="handleSurfaceClick"
   >
+    <div v-if="course?.coverUrl" class="player-cover-backdrop" :key="course.id" :style="coverBackdropStyle" aria-hidden="true" />
     <div class="player-atmosphere" aria-hidden="true" />
     <div class="player-overlay" aria-hidden="true" />
 
@@ -700,8 +724,8 @@ onBeforeUnmount(() => {
           <ChevronDown :size="22" />
         </button>
         <div class="player-header__title">
-          <span>NOW LEARNING</span>
-          <strong>逐句播放</strong>
+          <span>{{ bookInfo?.title || course.categoryName || 'NOW LEARNING' }}</span>
+          <strong>{{ course.title }}</strong>
         </div>
         <button class="sl-icon-button" :class="{ 'sl-icon-button--active': course.favorite }" type="button" aria-label="收藏课程" @click.stop="toggleFavorite">
           <Heart :size="20" :fill="course.favorite ? 'currentColor' : 'none'" />
@@ -711,7 +735,7 @@ onBeforeUnmount(() => {
       <section class="player-identity" @click.stop>
         <div class="player-identity__cover" :style="playerCoverStyle" />
         <div class="player-identity__copy">
-          <p class="player-identity__meta">{{ course.categoryName }} · {{ formatDuration(course.durationMs) }}</p>
+          <p class="player-identity__meta">{{ bookInfo?.title || course.categoryName }} · {{ formatDuration(course.durationMs) }}</p>
           <h1>{{ course.title }}</h1>
           <p>{{ course.description || '逐句听、读、写、说' }}</p>
         </div>
@@ -1066,6 +1090,27 @@ onBeforeUnmount(() => {
 <style scoped>
 .player-screen {
   overflow: clip;
+  transition: --player-course-a 700ms var(--ease-out), --player-course-b 700ms var(--ease-out);
+}
+
+.player-cover-backdrop {
+  position: absolute;
+  inset: -10%;
+  background-position: center;
+  background-size: cover;
+  filter: blur(48px) saturate(1.15);
+  opacity: 0;
+  pointer-events: none;
+  animation: cover-backdrop-in 900ms var(--ease-out) forwards;
+}
+
+@keyframes cover-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: .55;
+  }
 }
 
 .player-loading-skeleton {
@@ -1095,9 +1140,8 @@ onBeforeUnmount(() => {
 
 .player-atmosphere {
   background:
-    radial-gradient(circle at 26% 8%, color-mix(in srgb, var(--player-course-a) 86%, transparent), transparent 38%),
-    radial-gradient(circle at 82% 38%, color-mix(in srgb, var(--player-course-b) 78%, transparent), transparent 48%),
-    linear-gradient(170deg, #20261e, #111510);
+    radial-gradient(circle at 82% 22%, color-mix(in srgb, var(--player-course-b) 45%, transparent), transparent 55%),
+    linear-gradient(165deg, color-mix(in srgb, var(--player-course-a) 65%, transparent), color-mix(in srgb, var(--player-course-b) 40%, transparent));
 }
 
 .player-identity__cover {

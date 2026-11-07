@@ -2,6 +2,8 @@ package com.sayline.englishstudy.admin;
 
 import java.util.List;
 
+import com.sayline.englishstudy.admin.AdminDtos.BookAdminView;
+import com.sayline.englishstudy.admin.AdminDtos.BookRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CourseAdminView;
@@ -70,15 +72,48 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/books")
+    public PageResponse<BookAdminView> books(
+        @RequestParam(required = false) Long categoryId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        return adminService.books(categoryId, page, size);
+    }
+
+    @PostMapping("/books")
+    public ResponseEntity<BookAdminView> createBook(@Valid @RequestBody BookRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createBook(request));
+    }
+
+    @PatchMapping("/books/{bookId}")
+    public BookAdminView updateBook(
+        @PathVariable Long bookId,
+        @Valid @RequestBody BookRequest request
+    ) {
+        return adminService.updateBook(bookId, request);
+    }
+
+    @DeleteMapping("/books/{bookId}")
+    public ResponseEntity<Void> deleteBook(@PathVariable Long bookId) {
+        adminService.deleteBook(bookId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/courses")
     public PageResponse<CourseAdminView> courses(
-        @RequestParam(required = false) Long categoryId,
+        @RequestParam(required = false) Long bookId,
         @RequestParam(required = false) CourseStatus status,
         @RequestParam(required = false) String q,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size
     ) {
-        return adminService.courses(categoryId, status, q, page, size);
+        return adminService.courses(bookId, status, q, page, size);
+    }
+
+    @GetMapping("/courses/{courseId}")
+    public CourseAdminView course(@PathVariable Long courseId) {
+        return adminService.course(courseId);
     }
 
     @PostMapping("/courses")

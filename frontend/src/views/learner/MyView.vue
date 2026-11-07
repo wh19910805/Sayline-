@@ -118,6 +118,10 @@ onMounted(async () => {
   }
 })
 
+function goTab(value: 'home' | 'recent' | 'me') {
+  router.push(value === 'home' ? '/' : value === 'recent' ? '/recent' : '/me')
+}
+
 async function changePeriod(next: 'WEEK' | 'MONTH') {
   if (next === period.value && stats.value) return
   period.value = next
@@ -266,7 +270,7 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
         </article>
       </section>
     </div>
-    <AppBottomNav value="me" @navigate="(value) => router.push(value === 'home' ? '/' : '/me')" />
+    <AppBottomNav value="me" @navigate="goTab" />
   </main>
 </template>
 

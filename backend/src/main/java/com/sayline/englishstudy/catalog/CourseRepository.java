@@ -1,5 +1,6 @@
 package com.sayline.englishstudy.catalog;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -14,19 +15,27 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     boolean existsByCategoryId(Long categoryId);
 
+    boolean existsByBookId(Long bookId);
+
     long countByStatus(CourseStatus status);
+
+    List<Course> findByBookIdAndStatusOrderBySortOrderAscIdAsc(Long bookId, CourseStatus status);
+
+    long countByBookIdAndStatus(Long bookId, CourseStatus status);
+
+    List<Course> findByBookIdInAndStatusOrderBySortOrderAscIdAsc(List<Long> bookIds, CourseStatus status);
 
     @Query("""
         select c from Course c
-        join c.category category
-        where (:categoryId is null or category.id = :categoryId)
+        join c.book book
+        where (:bookId is null or book.id = :bookId)
           and (:status is null or c.status = :status)
           and (:query is null
             or lower(c.title) like lower(concat('%', :query, '%'))
-            or lower(category.name) like lower(concat('%', :query, '%')))
+            or lower(book.title) like lower(concat('%', :query, '%')))
         """)
     Page<Course> searchAdmin(
-        @Param("categoryId") Long categoryId,
+        @Param("bookId") Long bookId,
         @Param("status") CourseStatus status,
         @Param("query") String query,
         Pageable pageable);
