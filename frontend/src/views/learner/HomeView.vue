@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router'
 import AppBottomNav from '@/components/AppBottomNav.vue'
 import BookShelf from '@/components/course/BookShelf.vue'
 import SlEmpty from '@/components/ui/SlEmpty.vue'
+import SlSkeleton from '@/components/ui/SlSkeleton.vue'
 import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
 import type { BookSummary } from '@/api/types'
@@ -130,8 +131,10 @@ function tabLabel(name: string) {
 
       <p v-if="error" class="inline-error">{{ error }}</p>
 
+      <SlSkeleton v-if="catalog.loading" :rows="6" />
+
       <BookShelf
-        v-if="visibleBooks.length"
+        v-else-if="visibleBooks.length"
         :books="visibleBooks"
         @open="openBook"
       />

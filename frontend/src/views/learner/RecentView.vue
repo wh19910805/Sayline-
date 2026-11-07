@@ -4,6 +4,7 @@ import { ChevronRight, History } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
 import AppBottomNav from '@/components/AppBottomNav.vue'
+import SlSkeleton from '@/components/ui/SlSkeleton.vue'
 import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
 import type { RecentLesson } from '@/api/types'
@@ -71,7 +72,7 @@ onMounted(async () => {
 
       <p v-if="error" class="inline-error">{{ error }}</p>
 
-      <p v-if="loading" class="recent-loading">正在整理学习记录…</p>
+      <SlSkeleton v-if="loading" :rows="6" />
 
       <ul v-else-if="lessons.length" class="recent-list">
         <li v-for="lesson in lessons" :key="lesson.id">

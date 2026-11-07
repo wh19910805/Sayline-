@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { ArrowLeft, Check, Heart, Play } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 
+import SlSkeleton from '@/components/ui/SlSkeleton.vue'
 import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
 import type { BookDetail } from '@/api/types'
@@ -16,6 +17,7 @@ const catalog = useCatalogStore()
 const bookId = computed(() => Number(route.params.bookId))
 const book = ref<BookDetail | null>(null)
 const error = ref('')
+const loading = ref(true)
 
 onMounted(async () => {
   try {
@@ -23,6 +25,8 @@ onMounted(async () => {
     catalog.enterBook(book.value, book.value.lessons)
   } catch (reason) {
     error.value = apiErrorMessage(reason)
+  } finally {
+    loading.value = false
   }
 })
 
@@ -73,6 +77,10 @@ function lessonState(progress: number) {
     </header>
 
     <div v-if="error" class="inline-error lesson-error">{{ error }}</div>
+
+    <div v-else-if="loading" class="lesson-scroll">
+      <SlSkeleton :rows="6" />
+    </div>
 
     <div v-else-if="book" class="lesson-scroll">
       <section class="book-head" :style="coverStyle()">
@@ -128,8 +136,10 @@ function lessonState(progress: number) {
 <style scoped>
 .lesson-screen {
   background:
-    radial-gradient(circle at 88% 5%, rgba(217, 181, 110, .14), transparent 27%),
-    var(--color-bg);
+    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #ead5aa) 30%, transparent), transparent 55%),
+    linear-gradient(165deg,
+      color-mix(in srgb, var(--ambient, #f4f0e8) 28%, #fffdfa),
+      color-mix(in srgb, var(--ambient-2, #ead5aa) 30%, #fffdfa));
 }
 
 .lesson-scroll {
