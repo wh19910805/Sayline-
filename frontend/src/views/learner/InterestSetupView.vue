@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { Headphones, Mic, PenLine } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRouter } from 'vue-router'
 
 import BrandLogo from '@/components/BrandLogo.vue'
@@ -27,9 +27,9 @@ function toggle(categoryId: number) {
 }
 
 function categoryIcon(name: string) {
-  if (name.includes('口语')) return Mic
-  if (name.includes('听力')) return Headphones
-  return PenLine
+  if (name.includes('口语')) return 'chat-3'
+  if (name.includes('听力')) return 'headphone'
+  return 'pencil'
 }
 
 async function finish() {
@@ -75,7 +75,7 @@ async function finish() {
       >
         <span class="interest-option__number">{{ String(index + 1).padStart(2, '0') }}</span>
         <span class="interest-option__icon">
-          <component :is="categoryIcon(item.name)" :size="22" />
+          <SlIcon :name="categoryIcon(item.name)" :size="22" />
         </span>
         <span class="interest-option__copy">
           <strong>{{ item.name }}</strong>

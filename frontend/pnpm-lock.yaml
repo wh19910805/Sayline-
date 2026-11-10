@@ -8,12 +8,12 @@ importers:
 
   .:
     dependencies:
-      lucide-vue-next:
-        specifier: ^0.468.0
-        version: 0.468.0(vue@3.5.44(typescript@5.7.2))
       pinia:
         specifier: ^2.3.0
         version: 2.3.0(typescript@5.7.2)(vue@3.5.44(typescript@5.7.2))
+      remixicon:
+        specifier: ^4.9.1
+        version: 4.9.1
       vue:
         specifier: ^3.5.13
         version: 3.5.44(typescript@5.7.2)
@@ -867,11 +867,6 @@ packages:
     resolution: {integrity: sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==}
     engines: {node: 20 || >=22}
 
-  lucide-vue-next@0.468.0:
-    resolution: {integrity: sha512-quV/6T8YB1XK0VOEnebg3Byd8Rsan5/m95cvjnuHV4vcS3qEnLAybkrSh0hk3ppavx+V7R1PjNW+mGDvcBdz4A==}
-    peerDependencies:
-      vue: '>=3.0.1'
-
   magic-string@0.30.12:
     resolution: {integrity: sha512-Ea8I3sQMVXr8JhN4z+H/d8zwo+tYDgHE9+5G4Wnrwhs0gaK9fXTKx0Tw5Xwsd/bCPTTZNRAdpyzvoeORe9LYpw==}
 
@@ -974,6 +969,9 @@ packages:
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
+
+  remixicon@4.9.1:
+    resolution: {integrity: sha512-36gLSoujkabnCFZFDyP17VNh9piuBA/rsXUb4auSJWLGsHVXtmxLj/EM5FjaEAGnk8oIAj1Azob/DZ2N+90lAQ==}
 
   rollup@4.64.12:
     resolution: {integrity: sha512-GhAu8ZglZ61VWSX/ZW3K/qkazgURBIQL0/Yy51QsS8DPyebR5Cf/Z2PANJFpTU0aVZ9byJcyqR6xvBbkXhdGYQ==}
@@ -1926,10 +1924,6 @@ snapshots:
 
   lru-cache@11.5.3: {}
 
-  lucide-vue-next@0.468.0(vue@3.5.44(typescript@5.7.2)):
-    dependencies:
-      vue: 3.5.44(typescript@5.7.2)
-
   magic-string@0.30.12:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
@@ -2012,6 +2006,8 @@ snapshots:
   proto-list@1.2.4: {}
 
   punycode@2.3.1: {}
+
+  remixicon@4.9.1: {}
 
   rollup@4.64.12:
     dependencies:

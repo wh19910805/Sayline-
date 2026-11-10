@@ -333,7 +333,7 @@ public class CourseCatalogService {
             book.getId(),
             course.getTitle(),
             book.getTitle(),
-            mediaUrl(course.getCoverObjectKey()),
+            mediaUrl(coverKey(book)),
             book.getThemeColorPrimary(),
             book.getThemeColorSecondary(),
             progress,

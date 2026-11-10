@@ -1,4 +1,5 @@
 import { http } from './index'
+import { cacheDelete, cacheDeletePrefix, cacheGet, cacheSet } from './cache'
 import type {
   AdminBook,
   AdminCategory,
@@ -22,6 +23,35 @@ import type {
   StatsResponse,
 } from './types'
 
+const TTL_CATALOG = 2 * 60_000
+const TTL_DETAIL = 60_000
+const TTL_RECENT = 45_000
+
+function withCache<T>(key: string, loader: () => Promise<T>, ttlMs: number): Promise<T> {
+  const hit = cacheGet<T>(key)
+  if (hit !== undefined) return Promise.resolve(hit)
+  return loader().then((data) => {
+    cacheSet(key, data, ttlMs)
+    return data
+  })
+}
+
+function invalidateBookCaches(bookId: number) {
+  cacheDeletePrefix('books:')
+  cacheDelete('favoriteBooks')
+  cacheDelete(`book:${bookId}`)
+}
+
+// 管理端增删改封面/课程/分类后，清空学习端目录缓存，让重新上传的封面立即生效
+function invalidateCatalogCache() {
+  cacheDeletePrefix('books:')
+  cacheDeletePrefix('book:')
+  cacheDelete('categories')
+  cacheDelete('favoriteBooks')
+  cacheDelete('recentLessons')
+  cacheDelete('interests')
+}
+
 export const authApi = {
   login: (phone: string, password: string) =>
     http.post<AuthResponse>('/api/v1/auth/login', { phone, password }),
@@ -32,31 +62,46 @@ export const authApi = {
 }
 
 export const learnerApi = {
-  categories: () => http.get<Category[]>('/api/v1/categories'),
+  categories: () => withCache('categories', () => http.get<Category[]>('/api/v1/categories'), TTL_CATALOG),
   courses: (categoryId?: number, q?: string) => {
     const params = new URLSearchParams({ size: '200' })
     if (categoryId) params.set('categoryId', String(categoryId))
     if (q) params.set('q', q)
     return http.get<PageResponse<CourseSummary>>(`/api/v1/courses?${params}`)
   },
-  books: (categoryId?: number) => {
-    const params = new URLSearchParams()
-    if (categoryId) params.set('categoryId', String(categoryId))
-    const query = params.toString()
-    return http.get<BookSummary[]>(`/api/v1/books${query ? `?${query}` : ''}`)
+  books: (categoryId?: number) =>
+    withCache(
+      `books:${categoryId ?? 'all'}`,
+      () => {
+        const params = new URLSearchParams()
+        if (categoryId) params.set('categoryId', String(categoryId))
+        const query = params.toString()
+        return http.get<BookSummary[]>(`/api/v1/books${query ? `?${query}` : ''}`)
+      },
+      TTL_CATALOG,
+    ),
+  book: (bookId: number) => withCache(`book:${bookId}`, () => http.get<BookDetail>(`/api/v1/books/${bookId}`), TTL_DETAIL),
+  favoriteBooks: () => withCache('favoriteBooks', () => http.get<BookSummary[]>('/api/v1/favorite-books'), TTL_CATALOG),
+  recentLessons: () => withCache('recentLessons', () => http.get<RecentLesson[]>('/api/v1/recent-lessons'), TTL_RECENT),
+  favoriteBook: async (bookId: number) => {
+    const result = await http.post<{ favorited: boolean }>(`/api/v1/books/${bookId}/favorite`)
+    invalidateBookCaches(bookId)
+    return result
   },
-  book: (bookId: number) => http.get<BookDetail>(`/api/v1/books/${bookId}`),
-  favoriteBooks: () => http.get<BookSummary[]>('/api/v1/favorite-books'),
-  recentLessons: () => http.get<RecentLesson[]>('/api/v1/recent-lessons'),
-  favoriteBook: (bookId: number) => http.post<{ favorited: boolean }>(`/api/v1/books/${bookId}/favorite`),
-  unfavoriteBook: (bookId: number) => http.delete(`/api/v1/books/${bookId}/favorite`),
+  unfavoriteBook: async (bookId: number) => {
+    await http.delete(`/api/v1/books/${bookId}/favorite`)
+    invalidateBookCaches(bookId)
+  },
   favorites: () => http.get<PageResponse<CourseSummary>>('/api/v1/favorites?size=50'),
   course: (courseId: number) => http.get<CourseDetail>(`/api/v1/courses/${courseId}`),
   favorite: (courseId: number) => http.post<{ favorited: boolean }>(`/api/v1/courses/${courseId}/favorite`),
   unfavorite: (courseId: number) => http.delete(`/api/v1/courses/${courseId}/favorite`),
-  interests: () => http.get<Category[]>('/api/v1/me/interests'),
-  updateInterests: (categoryIds: number[]) =>
-    http.put<Category[]>('/api/v1/me/interests', { categoryIds }),
+  interests: () => withCache('interests', () => http.get<Category[]>('/api/v1/me/interests'), TTL_CATALOG),
+  updateInterests: async (categoryIds: number[]) => {
+    const result = await http.put<Category[]>('/api/v1/me/interests', { categoryIds })
+    cacheDelete('interests')
+    return result
+  },
   profile: () => http.get<Profile>('/api/v1/me/profile'),
   updateProfile: (payload: { nickname: string; avatarObjectKey?: string | null }) =>
     http.patch<Profile>('/api/v1/me/profile', payload),
@@ -97,20 +142,26 @@ export const adminApi = {
     const params = new URLSearchParams({ page: String(page), size: String(size) })
     return http.get<PageResponse<AdminCategory>>(`/api/v1/admin/categories?${params}`)
   },
-  saveCategory: (payload: Record<string, unknown>, id?: number) =>
-    id
-      ? http.patch<AdminCategory>(`/api/v1/admin/categories/${id}`, payload)
-      : http.post<AdminCategory>('/api/v1/admin/categories', payload),
+  saveCategory: async (payload: Record<string, unknown>, id?: number) => {
+    const result = id
+      ? await http.patch<AdminCategory>(`/api/v1/admin/categories/${id}`, payload)
+      : await http.post<AdminCategory>('/api/v1/admin/categories', payload)
+    invalidateCatalogCache()
+    return result
+  },
   deleteCategory: (id: number) => http.delete(`/api/v1/admin/categories/${id}`),
   books: (categoryId?: number) => {
     const params = new URLSearchParams({ size: '50' })
     if (categoryId) params.set('categoryId', String(categoryId))
     return http.get<PageResponse<AdminBook>>(`/api/v1/admin/books?${params}`)
   },
-  saveBook: (payload: Record<string, unknown>, id?: number) =>
-    id
-      ? http.patch<AdminBook>(`/api/v1/admin/books/${id}`, payload)
-      : http.post<AdminBook>('/api/v1/admin/books', payload),
+  saveBook: async (payload: Record<string, unknown>, id?: number) => {
+    const result = id
+      ? await http.patch<AdminBook>(`/api/v1/admin/books/${id}`, payload)
+      : await http.post<AdminBook>('/api/v1/admin/books', payload)
+    invalidateCatalogCache()
+    return result
+  },
   deleteBook: (id: number) => http.delete(`/api/v1/admin/books/${id}`),
   courses: (filters: { bookId?: number; status?: CourseStatus; q?: string; page?: number }) => {
     const params = new URLSearchParams({ size: '20', page: String(filters.page ?? 0) })
@@ -120,10 +171,16 @@ export const adminApi = {
     return http.get<PageResponse<AdminCourse>>(`/api/v1/admin/courses?${params}`)
   },
   course: (courseId: number) => http.get<AdminCourse>(`/api/v1/admin/courses/${courseId}`),
-  createCourse: (payload: Record<string, unknown>) =>
-    http.post<AdminCourse>('/api/v1/admin/courses', payload),
-  updateCourse: (id: number, payload: Record<string, unknown>) =>
-    http.patch<AdminCourse>(`/api/v1/admin/courses/${id}`, payload),
+  createCourse: async (payload: Record<string, unknown>) => {
+    const result = await http.post<AdminCourse>('/api/v1/admin/courses', payload)
+    invalidateCatalogCache()
+    return result
+  },
+  updateCourse: async (id: number, payload: Record<string, unknown>) => {
+    const result = await http.patch<AdminCourse>(`/api/v1/admin/courses/${id}`, payload)
+    invalidateCatalogCache()
+    return result
+  },
   publishCourse: (id: number) => http.post<AdminCourse>(`/api/v1/admin/courses/${id}/publish`),
   offlineCourse: (id: number) => http.post<AdminCourse>(`/api/v1/admin/courses/${id}/offline`),
   deleteCourse: (id: number) => http.delete<void>(`/api/v1/admin/courses/${id}`),

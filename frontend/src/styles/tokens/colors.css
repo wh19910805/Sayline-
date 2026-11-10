@@ -1,67 +1,74 @@
 :root {
-  --color-ink-900: #171a16;
-  --color-ink-800: #20251f;
-  --color-ink-700: #30362f;
-  --color-ink-600: #4c534b;
+  /* 暖中性 · 墨（近黑微暖） */
+  --color-ink-900: #1a1a18;
+  --color-ink-800: #2a2a27;
+  --color-ink-700: #3f3f3b;
+  --color-ink-600: #555550;
 
-  --color-paper-50: #fffdfa;
-  --color-paper-100: #f4f0e8;
-  --color-paper-200: #eae4d9;
-  --color-paper-300: #ddd6c9;
+  /* 暖中性 · 纸（暖白） */
+  --color-paper-50: #ffffff;
+  --color-paper-100: #f6f5f2;
+  --color-paper-200: #efeeea;
+  --color-paper-300: #e3e2dd;
 
-  --color-ember-700: #a84624;
-  --color-ember-600: #b9502a;
-  --color-ember-500: #c85d36;
-  --color-ember-200: #e9bda8;
-  --color-ember-100: #f4dfd4;
+  /* 原暖色强调 → 中性灰阶（保留 token 名，值中性化） */
+  --color-ember-700: #000000;
+  --color-ember-600: #1a1a18;
+  --color-ember-500: #3f3f3b;
+  --color-ember-200: #e0dfda;
+  --color-ember-100: #ececea;
 
-  --color-moss-700: #4f5b47;
-  --color-moss-500: #68745a;
-  --color-moss-200: #c7d0bb;
-  --color-moss-100: #e4e8dc;
+  --color-moss-700: #3f3f3b;
+  --color-moss-500: #8f8e88;
+  --color-moss-200: #e0dfda;
+  --color-moss-100: #efeeea;
 
-  --color-oat-500: #d9b56e;
-  --color-oat-200: #ead5aa;
-  --color-oat-100: #f3e7c9;
+  --color-oat-500: #c9c8c2;
+  --color-oat-200: #e0dfda;
+  --color-oat-100: #efeeea;
 
-  --color-blush-200: #ffd9df;
+  --color-blush-200: #d98a8a; /* 收藏心：保留语义的收敛红 */
 
-  --color-silver-500: #8d948b;
-  --color-silver-300: #c9c8c1;
-  --color-silver-200: #dddcd6;
+  --color-silver-500: #8f8e88;
+  --color-silver-300: #c9c8c2;
+  --color-silver-200: #e0dfda;
 
-  --color-success: #4f6d51;
-  --color-success-soft: #e1e9de;
-  --color-warning: #976a2f;
-  --color-warning-soft: #f3e4c8;
-  --color-danger: #a74137;
-  --color-danger-soft: #f2ded9;
-  --color-info: #426970;
-  --color-info-soft: #dce9e9;
+  /* 语义色：收敛、低饱和 */
+  --color-success: #4a6a4a;
+  --color-success-soft: #e7ece4;
+  --color-warning: #8a6a3a;
+  --color-warning-soft: #efe7d8;
+  --color-danger: #9a4444;
+  --color-danger-soft: #f0e2e2;
+  --color-info: #4a6878;
+  --color-info-soft: #e4ebee;
 
   --color-bg: var(--color-paper-100);
   --color-bg-elevated: var(--color-paper-50);
   --color-bg-subtle: var(--color-paper-200);
   --color-surface: var(--color-paper-50);
-  --color-surface-muted: #f0ece4;
+  --color-surface-muted: #f1f0ec;
   --color-text: var(--color-ink-900);
-  --color-text-secondary: #62685f;
-  --color-text-tertiary: #858b82;
+  --color-text-secondary: #5f5e59;
+  --color-text-tertiary: #8f8e88;
   --color-text-inverse: var(--color-paper-50);
-  --color-border: rgba(23, 26, 22, .12);
-  --color-border-strong: rgba(23, 26, 22, .24);
+  --color-border: rgba(26, 26, 24, .1);
+  --color-border-strong: rgba(26, 26, 24, .22);
+
+  /* 功能性主色：近黑（纯中性） */
   --color-action: var(--color-ember-600);
   --color-action-hover: var(--color-ember-700);
   --color-action-soft: var(--color-ember-100);
   --color-focus: var(--color-ember-500);
   --color-favorite: var(--color-blush-200);
 
-  --player-base: #1d221c;
-  --player-overlay: rgba(10, 13, 9, .52);
-  --player-text: #fffaf0;
-  --player-text-muted: rgba(255, 250, 240, .62);
-  --player-border: rgba(255, 255, 255, .18);
+  /* 播放器（暗色，中性化） */
+  --player-base: #1a1a18;
+  --player-overlay: rgba(10, 10, 9, .52);
+  --player-text: #fafaf8;
+  --player-text-muted: rgba(250, 250, 248, .6);
+  --player-border: rgba(255, 255, 255, .16);
   --player-active: var(--color-oat-500);
-  --course-color-a: #6c7350;
-  --course-color-b: #9f5f31;
+  --course-color-a: #555550;
+  --course-color-b: #8f8e88;
 }

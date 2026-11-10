@@ -34,13 +34,13 @@ body {
 @property --ambient {
   syntax: '<color>';
   inherits: true;
-  initial-value: #f4f0e8;
+  initial-value: #f6f5f2;
 }
 
 @property --ambient-2 {
   syntax: '<color>';
   inherits: true;
-  initial-value: #ead5aa;
+  initial-value: #efeeea;
 }
 
 button,
@@ -128,7 +128,7 @@ a {
 }
 
 .learner-home-scroll {
-  padding: 0 20px 104px;
+  padding: 0 20px calc(168px + var(--safe-bottom));
 }
 
 .home-tabs-row {
@@ -138,8 +138,6 @@ a {
   flex: 0 0 auto;
   margin: 0 -20px;
   padding: calc(18px + var(--safe-top)) 20px 0;
-  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-  backdrop-filter: blur(18px);
 }
 
 .home-search-toggle {
@@ -178,10 +176,10 @@ a {
 .settings-screen,
 .preferences-screen {
   background:
-    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #ead5aa) 30%, transparent), transparent 55%),
+    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #efeeea) 32%, transparent), transparent 55%),
     linear-gradient(165deg,
-      color-mix(in srgb, var(--ambient, #f4f0e8) 28%, #fffdfa),
-      color-mix(in srgb, var(--ambient-2, #ead5aa) 30%, #fffdfa));
+      color-mix(in srgb, var(--ambient, #f6f5f2) 30%, #ffffff),
+      color-mix(in srgb, var(--ambient-2, #efeeea) 32%, #ffffff));
 }
 
 .settings-scroll {

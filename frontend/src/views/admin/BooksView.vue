@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { Plus, Upload } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
@@ -22,7 +22,7 @@ const form = reactive({
   description: '',
   coverObjectKey: '',
   themeColorPrimary: '#4f5b47',
-  themeColorSecondary: '#d9b56e',
+  themeColorSecondary: '#8f8e88',
   sortOrder: 0,
   visible: true,
 })
@@ -51,7 +51,7 @@ function openCreate() {
     description: '',
     coverObjectKey: '',
     themeColorPrimary: '#4f5b47',
-    themeColorSecondary: '#d9b56e',
+    themeColorSecondary: '#8f8e88',
     sortOrder: 0,
     visible: true,
   })
@@ -66,7 +66,7 @@ function openEdit(book: AdminBook) {
     description: book.description || '',
     coverObjectKey: book.coverObjectKey || '',
     themeColorPrimary: book.themeColorPrimary || '#4f5b47',
-    themeColorSecondary: book.themeColorSecondary || '#d9b56e',
+    themeColorSecondary: book.themeColorSecondary || '#8f8e88',
     sortOrder: book.sortOrder,
     visible: book.visible,
   })
@@ -130,7 +130,7 @@ onMounted(load)
   <section>
     <header class="admin-page-head">
       <div><p class="eyebrow">CONTENT LIBRARY</p><h1>课程管理</h1></div>
-      <button class="sl-button sl-button--accent" type="button" @click="openCreate"><Plus :size="17" /> 新建课程</button>
+      <button class="sl-button sl-button--accent" type="button" @click="openCreate"><SlIcon name="add" :size="17" /> 新建课程</button>
     </header>
     <p v-if="error" class="inline-error">{{ error }}</p>
     <div class="admin-card">
@@ -178,8 +178,8 @@ onMounted(load)
             <label class="sl-checkbox" style="align-self: end"><input v-model="form.visible" type="checkbox" /> 可见</label>
           </div>
           <label class="admin-upload">
-            <strong><Upload :size="15" /> 封面</strong>
-            <input type="file" accept="image/jpeg,image/png,image/webp" @change="upload" />
+            <strong><SlIcon name="upload-2" :size="15" /> 封面</strong>
+            <input type="file" accept="image/jpeg,image/png,image/webp" hidden @change="upload" />
             <span>{{ uploading ? '上传中…' : form.coverObjectKey || 'JPG / PNG / WebP' }}</span>
           </label>
           <div class="admin-actions">

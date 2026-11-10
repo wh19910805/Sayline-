@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ArrowLeft, ChevronRight } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRouter } from 'vue-router'
 
 import { apiErrorMessage } from '@/api/http'
@@ -49,7 +49,7 @@ async function save() {
 <template>
   <main class="app-screen settings-screen">
     <header class="settings-header">
-      <button class="sl-icon-button" type="button" aria-label="返回" @click="router.back()"><ArrowLeft :size="21" /></button>
+      <button class="sl-icon-button" type="button" aria-label="返回" @click="router.back()"><SlIcon name="arrow-left" :size="21" /></button>
       <h1>学习设置</h1>
       <span />
     </header>
@@ -134,7 +134,7 @@ async function save() {
 
         <button class="settings-link-row" type="button" @click="router.push('/preferences')">
           <span><strong>学习偏好</strong><small>兴趣分类和默认 Tab</small></span>
-          <ChevronRight :size="18" />
+          <SlIcon name="arrow-right-s" :size="18" />
         </button>
         <p v-if="error" class="inline-error">{{ error }}</p>
         <p v-if="saved" class="inline-success">学习设置已保存</p>
@@ -151,7 +151,7 @@ async function save() {
 <style scoped>
 .settings-screen {
   background:
-    radial-gradient(circle at 88% 5%, rgba(217, 181, 110, .14), transparent 27%),
+    radial-gradient(circle at 88% 5%, rgba(140, 140, 135, .14), transparent 27%),
     var(--color-bg);
 }
 

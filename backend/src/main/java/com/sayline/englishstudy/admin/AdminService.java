@@ -159,6 +159,8 @@ public class AdminService {
         String previousCoverKey = book.getCoverObjectKey();
         apply(book, request);
         if (!equalsNullable(previousCoverKey, book.getCoverObjectKey())) {
+            book.setCoverThumbnailObjectKey(null);
+            book.setSpineColor(null);
             coverImageService.process(book);
         }
         return toView(book);

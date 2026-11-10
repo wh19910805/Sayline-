@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Captions, ChevronRight, Mic, PenLine, Settings2, UserRound } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRouter } from 'vue-router'
 
 import AppBottomNav from '@/components/AppBottomNav.vue'
@@ -118,8 +118,8 @@ onMounted(async () => {
   }
 })
 
-function goTab(value: 'home' | 'recent' | 'me') {
-  router.push(value === 'home' ? '/' : value === 'recent' ? '/recent' : '/me')
+function goTab(value: 'home' | 'me') {
+  router.push(value === 'home' ? '/' : '/me')
 }
 
 async function changePeriod(next: 'WEEK' | 'MONTH') {
@@ -154,35 +154,35 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
           <template v-else>{{ profile?.nickname?.slice(0, 1) || 'S' }}</template>
         </span>
         <span class="profile-card__copy">
-          <span>PERSONAL PROFILE</span>
+          <span>个人资料</span>
           <h2>{{ profile?.nickname || '学习者' }}</h2>
           <p>{{ profile ? maskPhone(profile.phone) : '' }}</p>
         </span>
         <span class="profile-card__edit">
-          <PenLine :size="14" />
+          <SlIcon name="pen-nib" :size="14" />
           编辑资料
         </span>
       </button>
 
       <section class="settings-shortcuts">
         <button type="button" @click="router.push('/me/profile')">
-          <span class="settings-shortcuts__icon"><UserRound :size="18" /></span>
+          <span class="settings-shortcuts__icon"><SlIcon name="user" :size="18" /></span>
           <span><strong>个人资料</strong><small>头像、昵称和手机号</small></span>
-          <ChevronRight :size="18" />
+          <SlIcon name="arrow-right-s" :size="18" />
         </button>
         <button type="button" @click="router.push('/me/learning')">
-          <span class="settings-shortcuts__icon"><Captions :size="18" /></span>
+          <span class="settings-shortcuts__icon"><SlIcon name="closed-captioning" :size="18" /></span>
           <span><strong>学习设置</strong><small>字幕字号、颜色、翻译显示</small></span>
           <span class="settings-shortcuts__meta">{{ translationCount }}/4 中文</span>
-          <ChevronRight :size="18" />
+          <SlIcon name="arrow-right-s" :size="18" />
         </button>
         <button type="button" @click="router.push('/preferences')">
-          <span class="settings-shortcuts__icon"><Settings2 :size="18" /></span>
+          <span class="settings-shortcuts__icon"><SlIcon name="settings-3" :size="18" /></span>
           <span>
             <strong>学习偏好</strong>
             <small>{{ catalog.interests.length }} 个兴趣分类 · 默认：{{ catalog.interests[0]?.name || '待设置' }}</small>
           </span>
-          <ChevronRight :size="18" />
+          <SlIcon name="arrow-right-s" :size="18" />
         </button>
       </section>
 
@@ -209,7 +209,7 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
       <section class="report-card">
         <div class="report-card__head">
           <div>
-            <p class="eyebrow">{{ period === 'WEEK' ? 'THIS WEEK' : 'THIS MONTH' }}</p>
+            <p class="eyebrow">{{ period === 'WEEK' ? '本周' : '本月' }}</p>
             <h2>{{ period === 'WEEK' ? '本周学习节奏' : `${monthTitle}学习记录` }}</h2>
           </div>
           <span
@@ -259,12 +259,12 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
 
       <section class="skill-summary">
         <article>
-          <span class="skill-summary__icon"><PenLine :size="19" /></span>
+          <span class="skill-summary__icon"><SlIcon name="pencil" :size="19" /></span>
           <div><strong>{{ stats?.summary.dictationAccuracy || 0 }}%</strong><span>听写正确率</span></div>
           <p>按全部听写尝试计算</p>
         </article>
         <article>
-          <span class="skill-summary__icon"><Mic :size="19" /></span>
+          <span class="skill-summary__icon"><SlIcon name="chat-3" :size="19" /></span>
           <div><strong>{{ stats?.summary.speakingCount || 0 }}</strong><span>跟读次数</span></div>
           <p>每次至少 1 秒</p>
         </article>

@@ -79,13 +79,29 @@ function snapToNearest() {
 
 function bookStyle(book: BookSummary) {
   const primary = book.themeColorPrimary || '#53634e'
-  const spineColor = book.spineColor || primary
+  const spine = book.spineColor ? spinePalette(book.spineColor) : null
   return {
     '--book-a': primary,
     '--book-b': book.themeColorSecondary || '#263128',
-    '--spine-color': spineColor,
-    '--spine-dark': shade(spineColor, 0.25),
-    '--spine-text': textColorFor(spineColor),
+    '--spine-color': spine?.color ?? primary,
+    '--spine-dark': spine?.dark ?? shade(primary, 0.32),
+    '--spine-text': spine ? '#fffaf0' : textColorFor(primary),
+  }
+}
+
+/** 从封面主色提取书脊色：提饱和 + 压暗，得到深邃且贴合封面的颜色。 */
+function spinePalette(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)))
+  const mean = (r + g + b) / 3
+  const sr = clamp(mean + (r - mean) * 1.8)
+  const sg = clamp(mean + (g - mean) * 1.8)
+  const sb = clamp(mean + (b - mean) * 1.8)
+  return {
+    color: `rgb(${clamp(sr * 0.5)}, ${clamp(sg * 0.5)}, ${clamp(sb * 0.5)})`,
+    dark: `rgb(${clamp(sr * 0.34)}, ${clamp(sg * 0.34)}, ${clamp(sb * 0.34)})`,
   }
 }
 
@@ -199,7 +215,7 @@ onBeforeUnmount(() => {
   height: 26px;
   margin-top: -4px;
   border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(23, 26, 22, .45) 0%, rgba(23, 26, 22, 0) 70%);
+  background: radial-gradient(ellipse, rgba(26, 26, 24, .45) 0%, rgba(26, 26, 24, 0) 70%);
   filter: blur(4px);
   transition: opacity .2s ease, transform .2s ease;
 }
@@ -247,9 +263,10 @@ onBeforeUnmount(() => {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 15px;
-  font-weight: normal;
-  letter-spacing: normal;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: .05em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .22);
 }
 
 .book3d__top {

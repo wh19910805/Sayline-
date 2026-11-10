@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArrowLeft, Check, Heart, Play } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import SlSkeleton from '@/components/ui/SlSkeleton.vue'
@@ -8,6 +8,7 @@ import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
 import type { BookDetail } from '@/api/types'
 import { useCatalogStore } from '@/stores/catalog'
+import { setAmbient } from '@/composables/useAmbient'
 import { formatDuration } from '@/utils/format'
 
 const route = useRoute()
@@ -21,14 +22,21 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    book.value = await learnerApi.book(bookId.value)
-    catalog.enterBook(book.value, book.value.lessons)
+    const detail = await learnerApi.book(bookId.value)
+    book.value = detail
+    catalog.enterBook(detail, detail.lessons)
+    applyAmbient(detail)
   } catch (reason) {
     error.value = apiErrorMessage(reason)
   } finally {
     loading.value = false
   }
 })
+
+function applyAmbient(book: BookDetail) {
+  if (!book.themeColorPrimary) return
+  setAmbient(book.themeColorPrimary, book.themeColorSecondary || book.themeColorPrimary, book.coverUrl || null)
+}
 
 async function toggleFavorite() {
   if (!book.value) return
@@ -70,7 +78,7 @@ function lessonState(progress: number) {
   <main class="app-screen lesson-screen">
     <header class="settings-header">
       <button class="sl-icon-button" type="button" aria-label="返回" @click="router.back()">
-        <ArrowLeft :size="21" />
+        <SlIcon name="arrow-left" :size="21" />
       </button>
       <h1>课时</h1>
       <span />
@@ -106,7 +114,7 @@ function lessonState(progress: number) {
           :aria-label="book.favorite ? '取消收藏' : '收藏这本书'"
           @click="toggleFavorite"
         >
-          <Heart :size="20" :fill="book.favorite ? 'currentColor' : 'none'" />
+          <SlIcon name="heart" :size="20" :weight="book.favorite ? 'fill' : 'line'" />
         </button>
       </section>
 
@@ -124,8 +132,8 @@ function lessonState(progress: number) {
             <strong>{{ lesson.title }}</strong>
             <span>{{ formatDuration(lesson.durationMs) }} · {{ lessonState(lesson.progress) === 'done' ? '已完成' : lessonState(lesson.progress) === 'ongoing' ? '进行中' : '未开始' }}</span>
           </span>
-          <Check v-if="lessonState(lesson.progress) === 'done'" :size="18" class="lesson-row__check" />
-          <Play v-else :size="16" class="lesson-row__play" />
+          <SlIcon name="check" v-if="lessonState(lesson.progress) === 'done'" :size="18" class="lesson-row__check" />
+          <SlIcon name="play" v-else :size="16" class="lesson-row__play" />
         </button>
         <p v-if="!book.lessons.length" class="lesson-empty">这本书还没有课时。</p>
       </section>
@@ -136,10 +144,10 @@ function lessonState(progress: number) {
 <style scoped>
 .lesson-screen {
   background:
-    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #ead5aa) 30%, transparent), transparent 55%),
+    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #efeeea) 32%, transparent), transparent 55%),
     linear-gradient(165deg,
-      color-mix(in srgb, var(--ambient, #f4f0e8) 28%, #fffdfa),
-      color-mix(in srgb, var(--ambient-2, #ead5aa) 30%, #fffdfa));
+      color-mix(in srgb, var(--ambient, #f6f5f2) 30%, #ffffff),
+      color-mix(in srgb, var(--ambient-2, #efeeea) 32%, #ffffff));
 }
 
 .lesson-scroll {
@@ -157,17 +165,17 @@ function lessonState(progress: number) {
   position: relative;
   display: flex;
   gap: 16px;
-  align-items: flex-start;
-  padding: 18px;
+  align-items: center;
+  padding: 16px;
   border-radius: 16px;
-  background: linear-gradient(135deg, var(--cover-a), var(--cover-b));
+  background: linear-gradient(135deg, var(--cover-a), color-mix(in srgb, var(--cover-a) 52%, #000));
   color: var(--color-paper-50);
   box-shadow: var(--shadow-float);
 }
 
 .book-head__cover {
-  width: 88px;
-  height: 118px;
+  width: 96px;
+  aspect-ratio: 1.4 / 1;
   flex: 0 0 auto;
   border-radius: 6px;
   background: rgba(0, 0, 0, .22);
@@ -191,6 +199,10 @@ function lessonState(progress: number) {
   opacity: .8;
   font-size: 13px;
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .book-head__meta {
@@ -227,46 +239,63 @@ function lessonState(progress: number) {
 
 .lesson-list {
   display: grid;
-  gap: 8px;
-  margin-top: 22px;
+  margin-top: 12px;
 }
 
 .lesson-row {
   display: grid;
-  grid-template-columns: 28px 1fr 22px;
+  grid-template-columns: 32px 1fr 24px;
   align-items: center;
-  gap: 10px;
-  padding: 13px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-bg-elevated);
+  gap: 12px;
+  padding: 15px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
-.lesson-row.is-done {
-  border-left: 3px solid var(--color-success);
+.lesson-row:last-child {
+  border-bottom: 0;
 }
 
-.lesson-row.is-ongoing {
-  border-left: 3px solid var(--color-action);
+.lesson-row:active {
+  background: var(--color-surface-muted);
 }
 
 .lesson-row__index {
   color: var(--color-text-tertiary);
-  font-size: 11px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.lesson-row.is-done .lesson-row__index {
+  color: var(--color-success);
+}
+
+.lesson-row.is-ongoing .lesson-row__index {
+  color: var(--color-action);
 }
 
 .lesson-row__copy {
+  min-width: 0;
   display: grid;
-  gap: 2px;
+  gap: 3px;
 }
 
 .lesson-row__copy strong {
+  overflow: hidden;
   font-size: 15px;
   font-weight: var(--weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lesson-row.is-done .lesson-row__copy strong {
+  color: var(--color-text-secondary);
 }
 
 .lesson-row__copy span {
@@ -280,6 +309,10 @@ function lessonState(progress: number) {
 
 .lesson-row__play {
   color: var(--color-text-tertiary);
+}
+
+.lesson-row.is-ongoing .lesson-row__play {
+  color: var(--color-action);
 }
 
 .lesson-empty {

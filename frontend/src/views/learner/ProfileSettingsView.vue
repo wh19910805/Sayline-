@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ArrowLeft, Upload } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRouter } from 'vue-router'
 
 import { apiErrorMessage } from '@/api/http'
@@ -69,7 +69,7 @@ async function uploadAvatar(event: Event) {
 <template>
   <main class="app-screen settings-screen">
     <header class="settings-header">
-      <button class="sl-icon-button" type="button" aria-label="返回" @click="router.back()"><ArrowLeft :size="21" /></button>
+      <button class="sl-icon-button" type="button" aria-label="返回" @click="router.back()"><SlIcon name="arrow-left" :size="21" /></button>
       <h1>个人资料</h1>
       <span />
     </header>
@@ -82,13 +82,13 @@ async function uploadAvatar(event: Event) {
           </span>
           <span>{{ profile ? maskPhone(profile.phone) : '' }}</span>
           <label class="sl-button sl-button--secondary sl-button--sm">
-            <Upload :size="15" />
+            <SlIcon name="upload-2" :size="15" />
             {{ uploading ? '上传中…' : '更换头像' }}
             <input type="file" accept="image/jpeg,image/png,image/webp" hidden @change="uploadAvatar" />
           </label>
         </div>
         <section class="settings-section">
-          <span class="eyebrow settings-section__eyebrow">PERSONAL PROFILE</span>
+          <span class="eyebrow settings-section__eyebrow">个人资料</span>
           <h2>个人信息</h2>
           <label class="sl-field">
             <span class="sl-field__label">昵称</span>
@@ -111,7 +111,7 @@ async function uploadAvatar(event: Event) {
 <style scoped>
 .settings-screen {
   background:
-    radial-gradient(circle at 88% 5%, rgba(217, 181, 110, .14), transparent 27%),
+    radial-gradient(circle at 88% 5%, rgba(140, 140, 135, .14), transparent 27%),
     var(--color-bg);
 }
 

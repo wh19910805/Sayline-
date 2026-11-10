@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { Heart, Search, X } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRouter } from 'vue-router'
 
 import AppBottomNav from '@/components/AppBottomNav.vue'
@@ -11,9 +11,11 @@ import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
 import type { BookSummary } from '@/api/types'
 import { useCatalogStore } from '@/stores/catalog'
+import { useBookEnter } from '@/composables/useBookEnter'
 
 const router = useRouter()
 const catalog = useCatalogStore()
+const { enter } = useBookEnter()
 const searchOpen = ref(false)
 const searchTerm = ref('')
 const searchResults = ref<BookSummary[] | null>(null)
@@ -65,11 +67,18 @@ function toggleSearch() {
 }
 
 function openBook(book: BookSummary) {
-  router.push(`/learn/${book.id}`)
+  enter(
+    {
+      coverUrl: book.coverUrl || null,
+      primary: book.themeColorPrimary || '#53634e',
+      secondary: book.themeColorSecondary || '#263128',
+    },
+    () => router.push(`/learn/${book.id}`),
+  )
 }
 
-function goTab(value: 'home' | 'recent' | 'me') {
-  router.push(value === 'home' ? '/' : value === 'recent' ? '/recent' : '/me')
+function goTab(value: 'home' | 'me') {
+  router.push(value === 'home' ? '/' : '/me')
 }
 
 function bookStyle(book: BookSummary) {
@@ -119,12 +128,12 @@ function tabLabel(name: string) {
         </div>
         <button class="sl-icon-button home-search-toggle" type="button" :aria-label="searchOpen ? '关闭搜索' : '搜索课程'" @click="toggleSearch">
           <X v-if="searchOpen" :size="20" />
-          <Search v-else :size="20" />
+          <SlIcon name="search" v-else :size="20" />
         </button>
       </div>
 
       <label v-if="searchOpen" class="home-search-bar">
-        <Search :size="18" />
+        <SlIcon name="search" :size="18" />
         <input v-model="searchTerm" autofocus type="search" placeholder="搜索书籍或分类" />
         <span>{{ searchResults ? `${searchResults.length} 本` : '键入关键词' }}</span>
       </label>
@@ -141,7 +150,7 @@ function tabLabel(name: string) {
 
       <div v-else>
         <SlEmpty :title="emptyState.title" :description="emptyState.description">
-          <template #icon><Heart :size="24" /></template>
+          <template #icon><SlIcon name="heart" :size="24" /></template>
         </SlEmpty>
       </div>
     </div>
@@ -157,8 +166,17 @@ function tabLabel(name: string) {
   gap: 12px;
   margin: 0 -20px;
   padding: calc(18px + var(--safe-top)) 20px 0;
-  border-bottom: 1px solid var(--color-border);
   z-index: 1000;
+}
+
+/* 透明顶栏 + 封面滚动时，给 Tab 文字铺一层很淡的暖白渐变遮罩，保证可读又不破坏沉浸感 */
+.home-tabs-row::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -32px;
+  z-index: -1;
+  background: linear-gradient(to bottom, rgba(246, 245, 242, .96), rgba(246, 245, 242, .74) 62%, rgba(246, 245, 242, .3) 88%, transparent);
+  pointer-events: none;
 }
 
 .home-tabs {

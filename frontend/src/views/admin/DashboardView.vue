@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { Activity, BookOpenCheck, Clock3, UsersRound } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
@@ -31,22 +31,22 @@ onMounted(async () => {
     <p v-if="error" class="inline-error">{{ error }}</p>
     <div v-if="dashboard" class="admin-metrics">
       <article class="admin-metric">
-        <UsersRound :size="21" />
+        <SlIcon name="group" :size="21" />
         <strong>{{ dashboard.totalLearners }}</strong>
         <span>学习者总数 · 今日活跃 {{ dashboard.activeToday }}</span>
       </article>
       <article class="admin-metric">
-        <BookOpenCheck :size="21" />
+        <SlIcon name="book-2" :size="21" />
         <strong>{{ dashboard.totalPublishedCourses }}</strong>
         <span>已发布课程 · {{ dashboard.courseStarts }} 次开始学习</span>
       </article>
       <article class="admin-metric">
-        <Activity :size="21" />
+        <SlIcon name="line-chart" :size="21" />
         <strong>{{ dashboard.completionRate }}%</strong>
         <span>课程完成率 · {{ dashboard.completedCourses }} 门完成</span>
       </article>
       <article class="admin-metric">
-        <Clock3 :size="21" />
+        <SlIcon name="time" :size="21" />
         <strong>{{ formatStudyDuration(dashboard.totalStudyMs) }}</strong>
         <span>累计学习时长</span>
       </article>

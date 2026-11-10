@@ -1,7 +1,7 @@
 :root {
   --shadow-none: none; /* @kind shadow */
-  --shadow-card: 0 8px 24px rgba(35, 39, 29, .055);
-  --shadow-float: 0 18px 50px rgba(25, 31, 25, .11);
-  --shadow-player: 0 24px 70px rgba(5, 8, 4, .32);
+  --shadow-card: 0 8px 24px rgba(26, 26, 24, .05);
+  --shadow-float: 0 18px 50px rgba(26, 26, 24, .1);
+  --shadow-player: 0 24px 70px rgba(0, 0, 0, .32);
   --blur-glass: blur(18px); /* @kind other */
 }

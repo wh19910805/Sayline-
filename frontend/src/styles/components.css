@@ -1,8 +1,3 @@
-.sl-icon {
-  display: block;
-  flex: 0 0 auto;
-}
-
 .sl-button {
   min-height: var(--touch-target);
   display: inline-flex;
@@ -336,10 +331,12 @@ textarea.sl-field__control {
   position: relative;
   flex: 0 0 auto;
   min-height: 44px;
-  padding: 0 0 12px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
   border: 0;
   background: transparent;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font: var(--weight-medium) var(--text-body-sm)/1 var(--font-ui);
   cursor: pointer;
   transition: color var(--duration-fast) var(--ease-out);
@@ -523,7 +520,7 @@ textarea.sl-field__control {
   padding: 5px;
   border: 1px solid var(--player-border);
   border-radius: var(--radius-md);
-  background: rgba(20, 24, 18, .32);
+  background: rgba(26, 26, 24, .32);
   backdrop-filter: var(--blur-glass);
   font-family: var(--font-ui);
 }
@@ -696,10 +693,10 @@ textarea.sl-field__control {
   display: block;
   padding: 0;
   overflow: hidden;
-  border: 1px solid rgba(23, 26, 22, .08);
+  border: 1px solid rgba(26, 26, 24, .08);
   border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
-  box-shadow: 0 6px 18px rgba(35, 39, 29, .045);
+  box-shadow: 0 6px 18px rgba(26, 26, 24, .045);
   break-inside: avoid;
   margin-bottom: 18px;
   content-visibility: auto;
@@ -708,7 +705,7 @@ textarea.sl-field__control {
 
 .sl-course-card--feed:hover {
   border-color: var(--color-border-strong);
-  box-shadow: 0 12px 28px rgba(35, 39, 29, .075);
+  box-shadow: 0 12px 28px rgba(26, 26, 24, .075);
   transform: translateY(-1px);
 }
 
@@ -740,7 +737,7 @@ textarea.sl-field__control {
   top: 9px;
   padding: 5px 7px;
   border-radius: 6px;
-  background: rgba(17, 22, 16, .56);
+  background: rgba(26, 26, 24, .56);
   color: rgba(255, 250, 240, .9);
   font: var(--weight-semibold) var(--text-micro)/1 var(--font-ui);
   backdrop-filter: blur(8px);
@@ -752,17 +749,17 @@ textarea.sl-field__control {
   right: 7px;
   margin: 0;
   color: rgba(255, 250, 240, .8);
-  background: rgba(17, 22, 16, .24);
+  background: rgba(26, 26, 24, .24);
   backdrop-filter: blur(8px);
 }
 
 .sl-course-card__favorite--feed:hover {
-  background: rgba(17, 22, 16, .46);
+  background: rgba(26, 26, 24, .46);
 }
 
 .sl-course-card__favorite--feed[aria-pressed="true"] {
   color: var(--color-favorite);
-  background: rgba(17, 22, 16, .38);
+  background: rgba(26, 26, 24, .38);
 }
 
 .sl-course-card__feed-body {
@@ -900,10 +897,10 @@ textarea.sl-field__control {
 }
 
 .sl-bottom-nav {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  padding: 7px 22px calc(7px + var(--safe-bottom));
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px calc(7px + var(--safe-bottom));
   border-top: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-bg-elevated) 94%, transparent);
   backdrop-filter: var(--blur-glass);
@@ -911,6 +908,7 @@ textarea.sl-field__control {
 }
 
 .sl-bottom-nav__item {
+  flex: 1;
   min-height: 48px;
   display: flex;
   flex-direction: column;

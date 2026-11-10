@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArrowDown, ArrowLeft, ArrowUp, Plus, X } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRouter } from 'vue-router'
 
 import { apiErrorMessage } from '@/api/http'
@@ -68,7 +68,7 @@ async function save() {
 <template>
   <main class="app-screen preferences-screen">
     <header class="settings-header">
-      <button class="sl-icon-button" type="button" aria-label="返回" @click="router.back()"><ArrowLeft :size="21" /></button>
+      <button class="sl-icon-button" type="button" aria-label="返回" @click="router.back()"><SlIcon name="arrow-left" :size="21" /></button>
       <h1>学习偏好</h1>
       <span />
     </header>
@@ -82,8 +82,8 @@ async function save() {
             <article v-for="(category, index) in selectedCategories" :key="category.id" class="interest-order-row">
               <span class="interest-order-row__index">{{ index + 1 }}</span>
               <strong>{{ category.name }}</strong>
-              <button type="button" aria-label="上移" :disabled="index === 0" @click="move(index, -1)"><ArrowUp :size="16" /></button>
-              <button type="button" aria-label="下移" :disabled="index === selectedIds.length - 1" @click="move(index, 1)"><ArrowDown :size="16" /></button>
+              <button type="button" aria-label="上移" :disabled="index === 0" @click="move(index, -1)"><SlIcon name="arrow-up" :size="16" /></button>
+              <button type="button" aria-label="下移" :disabled="index === selectedIds.length - 1" @click="move(index, 1)"><SlIcon name="arrow-down" :size="16" /></button>
               <button type="button" aria-label="移除" @click="remove(category.id)"><X :size="16" /></button>
             </article>
             <p v-if="!selectedIds.length">至少选择一个兴趣分类。</p>
@@ -95,7 +95,7 @@ async function save() {
           <h2>继续添加</h2>
           <div class="interest-pool">
             <button v-for="category in available" :key="category.id" type="button" @click="add(category.id)">
-              <Plus :size="14" />
+              <SlIcon name="add" :size="14" />
               {{ category.name }}
             </button>
             <p v-if="!available.length">全部兴趣都已添加。</p>
@@ -115,7 +115,7 @@ async function save() {
 <style scoped>
 .preferences-screen {
   background:
-    radial-gradient(circle at 88% 5%, rgba(217, 181, 110, .14), transparent 27%),
+    radial-gradient(circle at 88% 5%, rgba(140, 140, 135, .14), transparent 27%),
     var(--color-bg);
 }
 

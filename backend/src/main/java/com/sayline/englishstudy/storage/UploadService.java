@@ -17,7 +17,7 @@ public class UploadService {
 
     private static final Map<UploadKind, Policy> POLICIES = Map.of(
         UploadKind.COVER, new Policy(
-            5L * 1024 * 1024,
+            20L * 1024 * 1024,
             Set.of("image/jpeg", "image/png", "image/webp"),
             Set.of("jpg", "jpeg", "png", "webp"),
             "covers"),

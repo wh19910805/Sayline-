@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ChevronRight, History } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRouter } from 'vue-router'
 
 import AppBottomNav from '@/components/AppBottomNav.vue'
@@ -14,8 +14,8 @@ const lessons = ref<RecentLesson[]>([])
 const loading = ref(true)
 const error = ref('')
 
-function goTab(value: 'home' | 'recent' | 'me') {
-  router.push(value === 'home' ? '/' : value === 'recent' ? '/recent' : '/me')
+function goTab(value: 'home' | 'me') {
+  router.push(value === 'home' ? '/' : '/me')
 }
 
 function openLesson(lesson: RecentLesson) {
@@ -66,8 +66,7 @@ onMounted(async () => {
   <main class="app-screen recent-screen">
     <div class="mobile-scroll recent-scroll">
       <header class="recent-head">
-        <p class="eyebrow">RECENTLY LEARNED</p>
-        <h1>最近学习</h1>
+        <h1>最近</h1>
       </header>
 
       <p v-if="error" class="inline-error">{{ error }}</p>
@@ -88,34 +87,34 @@ onMounted(async () => {
               </span>
             </span>
             <span class="recent-item__time">{{ relativeTime(lesson.lastStudiedAt) }}</span>
-            <ChevronRight :size="18" class="recent-item__arrow" />
+            <SlIcon name="arrow-right-s" :size="18" class="recent-item__arrow" />
           </button>
         </li>
       </ul>
 
       <div v-else class="recent-empty">
-        <span class="recent-empty__icon"><History :size="26" /></span>
+        <span class="recent-empty__icon"><SlIcon name="history" :size="26" /></span>
         <h2>还没有学习记录</h2>
         <p>开始学习一课后，最近学过的课时会出现在这里。</p>
         <button class="sl-button sl-button--accent" type="button" @click="router.push('/')">去学习</button>
       </div>
     </div>
 
-    <AppBottomNav value="recent" @navigate="goTab" />
+    <AppBottomNav @navigate="goTab" />
   </main>
 </template>
 
 <style scoped>
 .recent-screen {
   background:
-    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #ead5aa) 30%, transparent), transparent 55%),
+    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #efeeea) 32%, transparent), transparent 55%),
     linear-gradient(165deg,
-      color-mix(in srgb, var(--ambient, #f4f0e8) 28%, #fffdfa),
-      color-mix(in srgb, var(--ambient-2, #ead5aa) 30%, #fffdfa));
+      color-mix(in srgb, var(--ambient, #f6f5f2) 30%, #ffffff),
+      color-mix(in srgb, var(--ambient-2, #efeeea) 32%, #ffffff));
 }
 
 .recent-scroll {
-  padding: calc(14px + var(--safe-top)) 20px 40px;
+  padding: calc(14px + var(--safe-top)) 20px calc(158px + var(--safe-bottom));
 }
 
 .recent-head {
@@ -148,7 +147,7 @@ onMounted(async () => {
   width: 100%;
   min-height: 88px;
   display: grid;
-  grid-template-columns: 62px minmax(0, 1fr) auto 18px;
+  grid-template-columns: 72px minmax(0, 1fr) auto 18px;
   align-items: center;
   gap: 12px;
   padding: 11px;
@@ -160,8 +159,8 @@ onMounted(async () => {
 }
 
 .recent-item__cover {
-  width: 62px;
-  height: 66px;
+  width: 72px;
+  aspect-ratio: 1.4 / 1;
   border-radius: 10px;
   background: linear-gradient(135deg, var(--lesson-a), var(--lesson-b));
 }

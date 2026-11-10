@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { Plus } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRouter } from 'vue-router'
 
 import { apiErrorMessage } from '@/api/http'
@@ -91,7 +91,7 @@ onMounted(() => {
   <section>
     <header class="admin-page-head">
       <div><p class="eyebrow">CONTENT LIBRARY</p><h1>课时管理</h1></div>
-      <button class="sl-button sl-button--accent" type="button" @click="router.push('/admin/courses/new')"><Plus :size="17" /> 新建课时</button>
+      <button class="sl-button sl-button--accent" type="button" @click="router.push('/admin/courses/new')"><SlIcon name="add" :size="17" /> 新建课时</button>
     </header>
     <div class="admin-actions" style="margin-bottom: 16px">
       <select v-model="bookFilter" class="sl-field__control" style="width: 150px" @change="page = 0; load()">

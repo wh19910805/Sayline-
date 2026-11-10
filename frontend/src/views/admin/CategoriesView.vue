@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { Pencil, Plus, Trash2, Upload } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
@@ -116,7 +116,7 @@ function openEdit(category: AdminCategory) {
     description: category.description || '',
     coverObjectKey: category.coverObjectKey || '',
     themeColorPrimary: category.themeColorPrimary || '#4f5b47',
-    themeColorSecondary: category.themeColorSecondary || '#d9b56e',
+    themeColorSecondary: category.themeColorSecondary || '#8f8e88',
     sortOrder: category.sortOrder,
     visible: category.visible,
   })
@@ -178,7 +178,7 @@ onMounted(load)
   <section>
     <header class="admin-page-head">
       <div><p class="eyebrow">CONTENT STRUCTURE</p><h1>课程分类</h1></div>
-      <button class="sl-button sl-button--accent" type="button" @click="openCreate"><Plus :size="17" /> 新建分类</button>
+      <button class="sl-button sl-button--accent" type="button" @click="openCreate"><SlIcon name="add" :size="17" /> 新建分类</button>
     </header>
     <p v-if="error" class="inline-error">{{ error }}</p>
     <div class="admin-card">
@@ -192,8 +192,8 @@ onMounted(load)
           </td>
           <td><span class="sl-badge" :class="{ 'sl-badge--success': category.visible }">{{ category.visible ? '显示' : '隐藏' }}</span></td>
           <td>
-            <button class="sl-icon-button" type="button" aria-label="编辑" @click="openEdit(category)"><Pencil :size="16" /></button>
-            <button class="sl-icon-button" type="button" aria-label="删除" @click="remove(category)"><Trash2 :size="16" /></button>
+            <button class="sl-icon-button" type="button" aria-label="编辑" @click="openEdit(category)"><SlIcon name="pencil" :size="16" /></button>
+            <button class="sl-icon-button" type="button" aria-label="删除" @click="remove(category)"><SlIcon name="delete-bin" :size="16" /></button>
           </td>
         </tr>
       </SlTable>
@@ -210,8 +210,8 @@ onMounted(load)
         <SlField label="分类名称"><input v-model="form.name" class="sl-field__control" required /></SlField>
         <SlField label="简介"><input v-model="form.description" class="sl-field__control" /></SlField>
         <label class="admin-upload">
-          <strong><Upload :size="15" /> 分类封面</strong>
-          <input type="file" accept="image/jpeg,image/png,image/webp" @change="uploadCover" />
+          <strong><SlIcon name="upload-2" :size="15" /> 分类封面</strong>
+          <input type="file" accept="image/jpeg,image/png,image/webp" hidden @change="uploadCover" />
           <span>{{ uploading ? '上传中…' : form.coverObjectKey || 'JPG / PNG / WebP，最大 5 MB（可选，用作课程封面背景）' }}</span>
         </label>
         <div class="category-palette">

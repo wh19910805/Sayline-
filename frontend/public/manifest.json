@@ -1,0 +1,16 @@
+{
+  "name": "Sayline 逐句英语",
+  "short_name": "Sayline",
+  "description": "逐句英语，用听、读、写、说学真实英语。",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f5f2",
+  "theme_color": "#1a1a18",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

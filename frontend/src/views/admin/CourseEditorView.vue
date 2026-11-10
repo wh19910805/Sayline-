@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { ArrowLeft, Upload } from 'lucide-vue-next'
+import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { apiErrorMessage } from '@/api/http'
@@ -97,7 +97,7 @@ async function save(publishAfter = false) {
   <section>
     <header class="admin-page-head">
       <div>
-        <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="router.push('/admin/courses')"><ArrowLeft :size="16" /> 返回课时</button>
+        <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="router.push('/admin/courses')"><SlIcon name="arrow-left" :size="16" /> 返回课时</button>
         <p class="eyebrow" style="margin-top: 16px">LESSON EDITOR</p>
         <h1>{{ editing ? '编辑课时' : '新建课时' }}</h1>
       </div>
@@ -118,13 +118,13 @@ async function save(publishAfter = false) {
       </div>
 
       <label class="admin-upload">
-        <strong><Upload :size="15" /> 课程音频</strong>
-        <input type="file" accept="audio/mpeg,audio/mp4,audio/aac,audio/x-m4a" @change="upload('AUDIO', $event)" />
+        <strong><SlIcon name="upload-2" :size="15" /> 课程音频</strong>
+        <input type="file" accept="audio/mpeg,audio/mp4,audio/aac,audio/x-m4a" hidden @change="upload('AUDIO', $event)" />
         <span>{{ uploading.AUDIO ? '上传中…' : form.audioObjectKey || 'MP3 / M4A / AAC，最大 100 MB' }}</span>
       </label>
       <label class="admin-upload">
-        <strong><Upload :size="15" /> 双语字幕</strong>
-        <input type="file" accept=".srt,.vtt,text/plain,text/vtt" @change="upload('SUBTITLE', $event)" />
+        <strong><SlIcon name="upload-2" :size="15" /> 双语字幕</strong>
+        <input type="file" accept=".srt,.vtt,text/plain,text/vtt" hidden @change="upload('SUBTITLE', $event)" />
         <span>{{ uploading.SUBTITLE ? '上传中…' : form.subtitleObjectKey || 'SRT / VTT，每条包含英文与中文两行' }}</span>
       </label>
 
