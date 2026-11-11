@@ -14,7 +14,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { apiErrorMessage } from '@/api/http'
 import { cacheDelete } from '@/api/cache'
 import { learnerApi } from '@/api/services'
-import { setAmbient } from '@/composables/useAmbient'
+import { setAmbient, setThemeColor, syncThemeColor } from '@/composables/useAmbient'
 import type {
   BookDetail,
   CourseDetail,
@@ -150,7 +150,6 @@ async function loadCourse(showLoader = true) {
     updateMediaSession()
     if (detail.themeColorPrimary) {
       setAmbient(detail.themeColorPrimary, detail.themeColorSecondary || detail.themeColorPrimary, book?.coverUrl || detail.coverUrl || null)
-      setThemeColor(detail.themeColorPrimary)
     }
     learning.value = state
     settings.value = userSettings
@@ -713,22 +712,16 @@ watch(activeCueIndex, () => {
   }
 })
 
-function setThemeColor(color: string) {
-  const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', color)
-}
-
 watch(
   () => course.value?.themeColorPrimary,
   (color) => {
     if (!color) return
-    setThemeColor(color)
     setAmbient(color, course.value?.themeColorSecondary || color)
   },
 )
 
 onMounted(async () => {
-  setThemeColor('#1d221c')
+  setThemeColor('#1a1a18')
   setupMediaSession()
   await loadCourse()
   heartbeatTimer = setInterval(() => {
@@ -750,7 +743,7 @@ onBeforeUnmount(() => {
   mediaRecorder?.stream?.getTracks().forEach((track) => track.stop())
   if (audioRecordingUrl.value) URL.revokeObjectURL(audioRecordingUrl.value)
   cacheDelete('recentLessons')
-  setThemeColor('#f6f5f2')
+  syncThemeColor()
 })
 </script>
 

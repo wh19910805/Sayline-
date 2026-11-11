@@ -8,7 +8,7 @@ import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
 import type { BookDetail } from '@/api/types'
 import { useCatalogStore } from '@/stores/catalog'
-import { setAmbient } from '@/composables/useAmbient'
+import { setAmbient, syncThemeColor } from '@/composables/useAmbient'
 import { useBookEnter } from '@/composables/useBookEnter'
 import { formatDuration } from '@/utils/format'
 
@@ -38,8 +38,10 @@ onMounted(async () => {
 })
 
 function applyAmbient(book: BookDetail) {
-  if (!book.themeColorPrimary) return
-  setAmbient(book.themeColorPrimary, book.themeColorSecondary || book.themeColorPrimary, book.coverUrl || null)
+  if (book.themeColorPrimary) {
+    setAmbient(book.themeColorPrimary, book.themeColorSecondary || book.themeColorPrimary, book.coverUrl || null)
+  }
+  syncThemeColor()
 }
 
 async function toggleFavorite() {
