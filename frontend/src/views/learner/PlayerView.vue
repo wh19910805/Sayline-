@@ -517,7 +517,7 @@ function moveCourse(direction: 1 | -1, fromStart = false, loop = false) {
   const nextId = ids[target]
   suppressRouteReload = true
   courseId.value = nextId
-  router.replace(`/learn/${nextId}`)
+  router.replace(`/learn/${route.params.bookId}/${nextId}`)
   void loadCourse(false).then(() => {
     if (fromStart && audio.value) {
       audio.value.currentTime = 0
@@ -528,6 +528,7 @@ function moveCourse(direction: 1 | -1, fromStart = false, loop = false) {
 
 function onEnded() {
   playing.value = false
+  if (mode.value !== 'LISTEN') return
   if (playMode.value === 'single') return
   moveCourse(1, true, playMode.value === 'loop')
 }
@@ -749,6 +750,7 @@ onBeforeUnmount(() => {
   mediaRecorder?.stream?.getTracks().forEach((track) => track.stop())
   if (audioRecordingUrl.value) URL.revokeObjectURL(audioRecordingUrl.value)
   cacheDelete('recentLessons')
+  setThemeColor('#f6f5f2')
 })
 </script>
 
@@ -771,7 +773,7 @@ onBeforeUnmount(() => {
     </div>
     <template v-else-if="course && learning && settings">
       <header class="player-header" @click.stop>
-        <button class="sl-icon-button" type="button" aria-label="返回首页" @click="router.push('/')">
+        <button class="sl-icon-button" type="button" aria-label="返回" @click="router.back()">
           <SlIcon name="arrow-down-s" :size="22" />
         </button>
         <div class="player-header__title">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -9,11 +9,13 @@ import { learnerApi } from '@/api/services'
 import type { BookDetail } from '@/api/types'
 import { useCatalogStore } from '@/stores/catalog'
 import { setAmbient } from '@/composables/useAmbient'
+import { useBookEnter } from '@/composables/useBookEnter'
 import { formatDuration } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
 const catalog = useCatalogStore()
+const { settle } = useBookEnter()
 
 const bookId = computed(() => Number(route.params.bookId))
 const book = ref<BookDetail | null>(null)
@@ -30,6 +32,8 @@ onMounted(async () => {
     error.value = apiErrorMessage(reason)
   } finally {
     loading.value = false
+    await nextTick()
+    settle()
   }
 })
 
@@ -55,8 +59,7 @@ function openLesson(lessonId: number) {
 function coverStyle() {
   const b = book.value
   return {
-    '--cover-a': b?.themeColorPrimary || '#53634e',
-    '--cover-b': b?.themeColorSecondary || '#263128',
+    '--cover-a': b?.spineColor || b?.themeColorPrimary || '#4f4e49',
   }
 }
 
@@ -168,7 +171,7 @@ function lessonState(progress: number) {
   align-items: center;
   padding: 16px;
   border-radius: 16px;
-  background: linear-gradient(135deg, var(--cover-a), color-mix(in srgb, var(--cover-a) 52%, #000));
+  background: linear-gradient(135deg, var(--cover-a), color-mix(in srgb, var(--cover-a) 42%, #0b0b0a));
   color: var(--color-paper-50);
   box-shadow: var(--shadow-float);
 }

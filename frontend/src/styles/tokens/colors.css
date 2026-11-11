@@ -34,8 +34,8 @@
   --color-silver-200: #e0dfda;
 
   /* 语义色：收敛、低饱和 */
-  --color-success: #4a6a4a;
-  --color-success-soft: #e7ece4;
+  --color-success: var(--color-ink-600);
+  --color-success-soft: var(--color-paper-200);
   --color-warning: #8a6a3a;
   --color-warning-soft: #efe7d8;
   --color-danger: #9a4444;

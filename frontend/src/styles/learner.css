@@ -1035,8 +1035,8 @@ button {
   border-radius: var(--radius-lg);
   color: var(--color-paper-50);
   background:
-    radial-gradient(circle at 92% 9%, rgba(140,140,135,.28), transparent 31%),
-    linear-gradient(145deg, #20271f, #3b3a2b 64%, #603b25);
+    radial-gradient(circle at 92% 9%, rgba(255,255,255,.07), transparent 34%),
+    linear-gradient(145deg, #1a1a18, #2a2a27 55%, #3f3f3b);
   box-shadow: 0 16px 34px rgba(47,45,31,.12);
   font-family: var(--font-ui);
   text-align: left;
@@ -1356,8 +1356,8 @@ button {
   font-size: 10px;
 }
 
-.month-day.level-1 { background: #dce4d5; color: #4b6048; }
-.month-day.level-2 { background: #93a285; color: white; }
+.month-day.level-1 { background: var(--color-moss-200); color: var(--color-ink-700); }
+.month-day.level-2 { background: var(--color-moss-500); color: white; }
 .month-day.level-3 { background: var(--color-moss-700); color: white; font-weight: var(--weight-bold); }
 .month-day.is-today { outline: 2px solid var(--color-action); outline-offset: 1px; }
 .month-day.is-empty { background: transparent; }

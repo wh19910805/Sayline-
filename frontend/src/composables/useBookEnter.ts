@@ -10,12 +10,17 @@ const state = reactive({
   active: false,
   shown: false,
   leaving: false,
+  settling: false,
   coverUrl: '',
-  primary: '#53634e',
-  secondary: '#263128',
+  primary: '#4f4e49',
+  secondary: '#8f8e88',
+  settleTx: 0,
+  settleTy: 0,
+  settleScale: 1,
 })
 
 let timers: ReturnType<typeof setTimeout>[] = []
+let settleAttempts = 0
 
 function clearTimers() {
   for (const timer of timers) clearTimeout(timer)
@@ -26,6 +31,7 @@ function reset() {
   state.active = false
   state.shown = false
   state.leaving = false
+  state.settling = false
 }
 
 export function useBookEnter() {
@@ -43,8 +49,10 @@ export function useBookEnter() {
     state.primary = payload.primary
     state.secondary = payload.secondary
     state.leaving = false
+    state.settling = false
     state.shown = false
     state.active = true
+    settleAttempts = 0
 
     // 预解码封面图，避免放大时图片解码导致的停顿
     if (payload.coverUrl) {
@@ -52,16 +60,35 @@ export function useBookEnter() {
       image.src = payload.coverUrl
     }
 
-    // 等遮罩完成首次绘制（全屏图层栅格化）后再开始放大，避免起步掉帧
+    // 等遮罩完成首次绘制后再开始放大，避免起步掉帧
     timers.push(setTimeout(() => { state.shown = true }, 50))
-    // 等封面完全铺满（放大动画结束）后再切路由，避免路由切换与放大动画叠加导致卡顿
-    timers.push(setTimeout(async () => {
-      await navigate()
-      await new Promise((resolve) => setTimeout(resolve, 30))
-      state.leaving = true
-      timers.push(setTimeout(reset, 180))
-    }, 410))
+    // 放大结束后切路由；课时列表在遮罩下加载，缩略图就位后再收进卡片
+    timers.push(setTimeout(() => { void navigate() }, 410))
   }
 
-  return { state, enter }
+  // 课时列表封面缩略图就位后调用：把全屏遮罩收进缩略图
+  function settle() {
+    if (!state.active || state.settling) return
+    const target = document.querySelector('.book-head__cover')
+    if (!target) {
+      settleAttempts += 1
+      if (settleAttempts > 20) {
+        state.leaving = true
+        timers.push(setTimeout(reset, 200))
+      } else {
+        timers.push(setTimeout(settle, 80))
+      }
+      return
+    }
+    const rect = target.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    state.settleTx = rect.left + rect.width / 2 - vw / 2
+    state.settleTy = rect.top + rect.height / 2 - vh / 2
+    state.settleScale = rect.width / vw
+    state.settling = true
+    timers.push(setTimeout(reset, 240))
+  }
+
+  return { state, enter, settle }
 }

@@ -6,11 +6,19 @@ import { useBookEnter } from '@/composables/useBookEnter'
 
 const { state } = useBookEnter()
 
-const enterStyle = computed(() => ({
-  background: state.coverUrl
-    ? `url("${state.coverUrl}") center / cover no-repeat`
-    : `linear-gradient(150deg, ${state.primary}, ${state.secondary})`,
+const fallbackStyle = computed(() => ({
+  background: `linear-gradient(150deg, ${state.primary}, ${state.secondary})`,
 }))
+
+const overlayStyle = computed(() => {
+  if (state.settling) {
+    return { transform: `translate(${state.settleTx}px, ${state.settleTy}px) scale(${state.settleScale})` }
+  }
+  if (state.shown) {
+    return { transform: 'rotate(0deg) scale(1)' }
+  }
+  return { transform: 'rotate(90deg) scale(0.55)' }
+})
 </script>
 
 <template>
@@ -19,10 +27,12 @@ const enterStyle = computed(() => ({
     <div
       v-if="state.active"
       class="book-enter"
-      :class="{ 'is-shown': state.shown, 'is-leaving': state.leaving }"
-      :style="enterStyle"
+      :class="{ 'is-shown': state.shown, 'is-settling': state.settling, 'is-leaving': state.leaving }"
+      :style="[fallbackStyle, overlayStyle]"
       aria-hidden="true"
-    />
+    >
+      <img v-if="state.coverUrl" class="book-enter__img" :src="state.coverUrl" alt="" />
+    </div>
   </div>
 </template>
 
@@ -31,21 +41,30 @@ const enterStyle = computed(() => ({
   position: fixed;
   inset: 0;
   z-index: 2000;
-  transform: scale(0.55);
   opacity: 0;
   pointer-events: none;
   will-change: transform, opacity;
   transition: transform var(--duration-slow) var(--ease-out), opacity var(--duration-slow) var(--ease-out);
 }
 
+.book-enter__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .book-enter.is-shown {
-  transform: scale(1);
   opacity: 1;
 }
 
-.book-enter.is-leaving {
-  transform: scale(1.02);
+.book-enter.is-settling {
   opacity: 0;
-  transition: transform var(--duration-fast) var(--ease-in-out), opacity var(--duration-fast) var(--ease-in-out);
+  transition: transform var(--duration-base) var(--ease-in-out), opacity var(--duration-base) var(--ease-in-out);
+}
+
+.book-enter.is-leaving {
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-in-out);
 }
 </style>

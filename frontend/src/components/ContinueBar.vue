@@ -100,6 +100,17 @@ function ringStyle(item: RecentLesson) {
   border-radius: 50%;
   background-size: cover;
   background-position: center;
+  z-index: 0;
+}
+
+.continue-dock__cover::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: rgba(26, 26, 24, .34);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .continue-dock__play {
@@ -109,6 +120,7 @@ function ringStyle(item: RecentLesson) {
   place-items: center;
   color: #fff;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .55));
+  z-index: 2;
 }
 
 .continue-dock__list {
