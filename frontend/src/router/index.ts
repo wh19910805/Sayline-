@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import { syncThemeColor } from '@/composables/useAmbient'
 import { pinia } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
 
@@ -132,4 +133,9 @@ router.beforeEach(async (to) => {
   }
   if (to.meta.admin && user.role !== 'ADMIN') return '/'
   return true
+})
+
+router.afterEach((to) => {
+  if (to.name === 'player' || to.name === 'login' || to.name === 'admin-login') return
+  syncThemeColor()
 })

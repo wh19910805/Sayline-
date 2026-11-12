@@ -330,6 +330,7 @@ textarea.sl-field__control {
 .sl-tab {
   position: relative;
   flex: 0 0 auto;
+  min-width: var(--touch-target);
   min-height: 44px;
   display: inline-flex;
   align-items: center;
@@ -351,7 +352,7 @@ textarea.sl-field__control {
   font-weight: var(--weight-bold);
 }
 
-.sl-tab[aria-selected="true"]::after {
+.sl-tab::after {
   content: "";
   position: absolute;
   left: 0;
@@ -360,6 +361,17 @@ textarea.sl-field__control {
   height: 3px;
   border-radius: 99px 99px 0 0;
   background: var(--color-action);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+
+.sl-tab[aria-selected="true"]::after {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .sl-tabs--pill {
@@ -372,7 +384,7 @@ textarea.sl-field__control {
 
 .sl-tabs--pill .sl-tab {
   flex: 1 0 auto;
-  min-height: 38px;
+  min-height: var(--touch-target);
   padding: 0 14px;
   border-radius: 7px;
   color: var(--color-text-secondary);
@@ -918,8 +930,23 @@ textarea.sl-field__control {
   border: 0;
   background: transparent;
   color: var(--color-text-tertiary);
-  font: var(--weight-medium) var(--text-micro)/1 var(--font-ui);
+  font: var(--weight-medium) var(--text-caption)/1 var(--font-ui);
   cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .sl-bottom-nav__item:hover {
+    color: var(--color-text-secondary);
+    background: var(--color-surface-muted);
+  }
+}
+
+.sl-bottom-nav__item:active {
+  transform: scale(.95);
 }
 
 .sl-bottom-nav__item[aria-current="page"] {

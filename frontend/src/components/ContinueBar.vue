@@ -84,8 +84,8 @@ function ringStyle(item: RecentLesson) {
 
 .continue-dock__cover {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: var(--touch-target);
+  height: var(--touch-target);
   flex: 0 0 auto;
   padding: 0;
   border: 0;
@@ -124,8 +124,8 @@ function ringStyle(item: RecentLesson) {
 }
 
 .continue-dock__list {
-  width: 40px;
-  height: 40px;
+  width: var(--touch-target);
+  height: var(--touch-target);
   flex: 0 0 auto;
   display: grid;
   place-items: center;

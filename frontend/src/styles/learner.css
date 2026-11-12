@@ -9,14 +9,13 @@ body,
 }
 
 html {
-  background: color-mix(in srgb, var(--color-bg) 55%, var(--ambient, #f6f5f2));
-  transition: --ambient 600ms ease, --ambient-2 600ms ease;
+  background: var(--app-bg);
 }
 
 body {
   margin: 0;
   color: var(--color-text);
-  background: color-mix(in srgb, var(--color-bg) 55%, var(--ambient, #f6f5f2));
+  background: var(--app-bg);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -221,34 +220,29 @@ button {
   flex-direction: column;
   overflow: hidden;
   isolation: isolate;
-  background:
-    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #efeeea) 32%, transparent), transparent 55%),
-    linear-gradient(165deg,
-      color-mix(in srgb, var(--ambient, #f6f5f2) 30%, #ffffff),
-      color-mix(in srgb, var(--ambient-2, #efeeea) 32%, #ffffff));
+  background: var(--app-bg);
   color: var(--color-text);
   font-family: var(--font-ui);
   transition: --ambient var(--duration-slow) var(--ease-out), --ambient-2 var(--duration-slow) var(--ease-out);
-  animation: screen-enter var(--duration-slow) var(--ease-out);
 }
 
 /* 模糊封面铺底：音乐 App 式背景 */
 .app-screen::before {
   content: "";
   position: absolute;
-  inset: -8%;
+  top: calc(var(--safe-top) + 12px);
+  right: -8%;
+  bottom: -8%;
+  left: -8%;
   z-index: -1;
   background-image: var(--ambient-cover, none);
   background-size: cover;
   background-position: center;
   filter: blur(48px) saturate(1.2);
   opacity: .45;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 64px);
+  mask-image: linear-gradient(to bottom, transparent, #000 64px);
   pointer-events: none;
-}
-
-@keyframes screen-enter {
-  from { opacity: 0; transform: translateY(7px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .eyebrow {
@@ -488,11 +482,7 @@ button {
 
 /* Home */
 .home-screen {
-  background:
-    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #efeeea) 32%, transparent), transparent 55%),
-    linear-gradient(165deg,
-      color-mix(in srgb, var(--ambient, #f6f5f2) 30%, #ffffff),
-      color-mix(in srgb, var(--ambient-2, #efeeea) 32%, #ffffff));
+  background: var(--app-bg);
 }
 
 .home-top-row {
@@ -851,9 +841,7 @@ button {
 
 /* Interest onboarding */
 .onboarding-screen {
-  background:
-    radial-gradient(circle at 94% 3%, rgba(140,140,135,.22), transparent 24%),
-    var(--color-paper-100);
+  background: var(--app-bg);
 }
 
 .onboarding-header {
@@ -1018,9 +1006,7 @@ button {
 
 /* My learning */
 .me-screen {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.46), transparent 22%),
-    var(--color-paper-100);
+  background: var(--app-bg);
 }
 
 .profile-card {
@@ -1470,9 +1456,7 @@ button {
 
 /* Settings */
 .settings-screen {
-  background:
-    radial-gradient(circle at 95% 2%, rgba(140,140,135,.14), transparent 24%),
-    var(--color-paper-100);
+  background: var(--app-bg);
 }
 
 .settings-header {
@@ -1812,7 +1796,7 @@ button {
 
 /* Learning preferences */
 .preferences-screen {
-  background: var(--color-paper-100);
+  background: var(--app-bg);
 }
 
 .preferences-header {
@@ -2042,7 +2026,10 @@ button {
 .player-atmosphere,
 .player-overlay {
   position: absolute;
-  inset: 0;
+  top: var(--safe-top);
+  right: 0;
+  bottom: 0;
+  left: 0;
   pointer-events: none;
 }
 
@@ -2178,8 +2165,8 @@ button {
 }
 
 .player-more {
-  width: 32px;
-  height: 32px;
+  width: var(--touch-target);
+  height: var(--touch-target);
   display: grid;
   place-items: center;
   border: 1px solid rgba(255,255,255,.16);
@@ -2261,7 +2248,7 @@ button {
   padding: 7px 4px;
   border: 0;
   background: transparent;
-  color: rgba(255,250,240,.28);
+  color: rgba(255,250,240,.38);
   text-align: left;
   cursor: pointer;
   transition:
@@ -2274,15 +2261,15 @@ button {
 }
 
 .lyric-line.is-far {
-  opacity: .34;
+  opacity: .44;
 }
 
 .lyric-line.is-past {
-  opacity: .5;
+  opacity: .62;
 }
 
 .lyric-line__en {
-  color: color-mix(in srgb, var(--caption-color, #fffaf0) 58%, transparent);
+  color: color-mix(in srgb, var(--caption-color, #fffaf0) 72%, transparent);
   font-family: var(--font-display);
   font-size: calc(18px * var(--caption-scale, 1));
   font-weight: var(--weight-regular);
@@ -2291,8 +2278,8 @@ button {
 }
 
 .lyric-line__zh {
-  color: var(--caption-muted, rgba(255,250,240,.4));
-  font-size: 10px;
+  color: var(--caption-muted, rgba(255,250,240,.56));
+  font-size: var(--text-caption);
   line-height: var(--leading-cjk);
 }
 
@@ -2918,8 +2905,8 @@ button {
 }
 
 .audio-deck__controls .sl-icon-button {
-  width: 42px;
-  height: 42px;
+  width: var(--touch-target);
+  height: var(--touch-target);
 }
 
 .transport-round {
@@ -3006,7 +2993,7 @@ button {
   position: relative;
   width: 100%;
   overflow: hidden;
-  background: var(--color-bg);
+  background: var(--app-bg);
 }
 
 .standalone-app .app-screen {

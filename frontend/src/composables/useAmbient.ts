@@ -1,4 +1,5 @@
 const KEY = 'sayline:ambient'
+const DEFAULT_SURFACE = '#f6f5f2'
 
 interface AmbientState {
   primary: string
@@ -15,15 +16,16 @@ function readSaved(): AmbientState | null {
   }
 }
 
-/** 设置状态栏主题色（theme-color meta）。 */
+/** 同时设置页面根背景与状态栏主题色；安全区取色不会和页面内容产生接缝。 */
 export function setThemeColor(color: string) {
+  document.documentElement.style.setProperty('--app-bg', color)
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.setAttribute('content', color)
 }
 
-/** 页面背景是 ambient 混白（30%），据此同步状态栏颜色；不传参则读当前 --ambient。 */
+/** 以 ambient 混白 30% 生成统一页面底色，并同步状态栏颜色。 */
 export function syncThemeColor(primary?: string) {
-  const base = primary || document.documentElement.style.getPropertyValue('--ambient') || '#f6f5f2'
+  const base = primary || document.documentElement.style.getPropertyValue('--ambient') || DEFAULT_SURFACE
   setThemeColor(mixWithWhite(base, 0.3))
 }
 

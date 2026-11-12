@@ -110,9 +110,7 @@ async function uploadAvatar(event: Event) {
 
 <style scoped>
 .settings-screen {
-  background:
-    radial-gradient(circle at 88% 5%, rgba(140, 140, 135, .14), transparent 27%),
-    var(--color-bg);
+  background: var(--app-bg);
 }
 
 .settings-form--profile {

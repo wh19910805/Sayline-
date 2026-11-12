@@ -23,7 +23,11 @@ const overlayStyle = computed(() => {
 
 <template>
   <div class="standalone-app">
-    <RouterView />
+    <RouterView v-slot="{ Component, route }">
+      <Transition name="route" mode="out-in">
+        <component :is="Component" :key="route.fullPath" />
+      </Transition>
+    </RouterView>
     <div
       v-if="state.active"
       class="book-enter"
@@ -66,5 +70,27 @@ const overlayStyle = computed(() => {
 .book-enter.is-leaving {
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-in-out);
+}
+
+.route-enter-active {
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+
+.route-leave-active {
+  transition:
+    opacity var(--duration-fast) var(--ease-in),
+    transform var(--duration-fast) var(--ease-in);
+}
+
+.route-enter-from {
+  opacity: 0;
+  transform: translateY(8px) scale(.995);
+}
+
+.route-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(.998);
 }
 </style>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import BrandLogo from '@/components/BrandLogo.vue'
 import { apiErrorMessage } from '@/api/http'
+import { setThemeColor, syncThemeColor } from '@/composables/useAmbient'
 import { useAuthStore } from '@/stores/auth'
 import { useCatalogStore } from '@/stores/catalog'
 
@@ -19,6 +20,9 @@ const password = ref('Sayline123')
 const nickname = ref('')
 const showPassword = ref(false)
 const error = ref('')
+
+onMounted(() => setThemeColor('#171b16'))
+onBeforeUnmount(syncThemeColor)
 
 async function submit() {
   error.value = ''

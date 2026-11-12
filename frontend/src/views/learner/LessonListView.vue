@@ -148,11 +148,7 @@ function lessonState(progress: number) {
 
 <style scoped>
 .lesson-screen {
-  background:
-    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #efeeea) 32%, transparent), transparent 55%),
-    linear-gradient(165deg,
-      color-mix(in srgb, var(--ambient, #f6f5f2) 30%, #ffffff),
-      color-mix(in srgb, var(--ambient-2, #efeeea) 32%, #ffffff));
+  background: var(--app-bg);
 }
 
 .lesson-scroll {
@@ -228,8 +224,8 @@ function lessonState(progress: number) {
   right: 12px;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: var(--touch-target);
+  height: var(--touch-target);
   border: 0;
   border-radius: 50%;
   background: rgba(255, 250, 240, .16);
@@ -240,6 +236,10 @@ function lessonState(progress: number) {
 .book-head__favorite[aria-pressed='true'] {
   color: var(--color-favorite);
   background: rgba(255, 250, 240, .28);
+}
+
+.book-head__favorite:active {
+  transform: scale(.94);
 }
 
 .lesson-list {

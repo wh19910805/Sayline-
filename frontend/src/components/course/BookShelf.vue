@@ -19,7 +19,17 @@ function updateBooks() {
   const container = scrollEl.value
   if (!container) return
   const eye = window.innerHeight / 2
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const els = container.querySelectorAll<HTMLElement>('.book3d')
+  const measurements: Array<{
+    el: HTMLElement
+    slot: HTMLElement | null
+    shadow: HTMLElement | null
+    tilt: number
+    distance: number
+    scale: number
+  }> = []
+
   for (const el of els) {
     const rect = el.getBoundingClientRect()
     const center = rect.top + rect.height / 2
@@ -27,11 +37,21 @@ function updateBooks() {
     const tilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, -(y * TILT_FACTOR)))
     const distance = Math.abs(y) / eye
     const scale = Math.max(0.85, 1 - distance * 0.15)
-    el.style.transform = `rotateX(${tilt}deg) scale(${scale})`
     const slot = el.parentElement
+    measurements.push({
+      el,
+      slot,
+      shadow: slot?.querySelector<HTMLElement>('.book-shadow') ?? null,
+      tilt,
+      distance,
+      scale,
+    })
+  }
+
+  for (const { el, slot, shadow, tilt, distance, scale } of measurements) {
+    el.style.transform = reduceMotion ? 'rotateX(14deg)' : `rotateX(${tilt}deg) scale(${scale})`
     if (slot) {
       slot.style.zIndex = String(Math.max(0, Math.round((1 - distance) * 100)))
-      const shadow = slot.querySelector<HTMLElement>('.book-shadow')
       if (shadow) {
         shadow.style.opacity = String(Math.max(0.15, 0.55 - distance * 0.4))
         shadow.style.transform = `scaleX(${Math.max(0.5, 1 - distance * 0.35)})`
@@ -74,7 +94,10 @@ function snapToNearest() {
   if (!nearest) return
   const rect = nearest.el.getBoundingClientRect()
   const target = rect.top + rect.height / 2 - eye
-  container.scrollBy({ top: target, behavior: 'smooth' })
+  const snapThreshold = Math.min(140, eye * 0.2)
+  if (nearest.distance > snapThreshold) return
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  container.scrollBy({ top: target, behavior: reduceMotion ? 'auto' : 'smooth' })
 }
 
 function bookStyle(book: BookSummary) {
@@ -150,7 +173,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="scrollEl" class="book-shelf" @scroll.passive="onScroll">
-    <div class="book-shelf__stage">
+    <div class="book-shelf__stage" :class="{ 'is-single': props.books.length === 1 }">
       <div v-for="book in props.books" :key="book.id" class="book-slot">
         <div
           class="book3d"
@@ -198,6 +221,13 @@ onBeforeUnmount(() => {
   padding-bottom: 32vh;
 }
 
+.book-shelf__stage.is-single {
+  min-height: calc(100dvh - 210px);
+  justify-content: center;
+  padding-top: 0;
+  padding-bottom: 40px;
+}
+
 .book-slot {
   --bw: clamp(280px, calc(100vw - 96px), 450px);
   --bd: calc(var(--bw) * 240 / 340);
@@ -229,6 +259,15 @@ onBeforeUnmount(() => {
   transform: rotateX(14deg);
   will-change: transform;
   cursor: pointer;
+  transition: filter var(--duration-fast) var(--ease-out);
+}
+
+.book3d:active {
+  filter: brightness(.94) saturate(.96);
+}
+
+.book3d:focus-visible {
+  outline-offset: 14px;
 }
 
 .book3d__face {
@@ -317,6 +356,10 @@ onBeforeUnmount(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .book3d {
+    transition: none;
+  }
+
+  .book-shadow {
     transition: none;
   }
 }

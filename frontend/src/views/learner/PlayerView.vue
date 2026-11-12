@@ -278,6 +278,12 @@ function handleSurfaceClick() {
   visibility.show()
 }
 
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape' || !speedMenuOpen.value) return
+  speedMenuOpen.value = false
+  visibility.show()
+}
+
 function onTimeUpdate() {
   if (!audio.value || !course.value) return
   currentTime.value = audio.value.currentTime
@@ -722,6 +728,7 @@ watch(
 
 onMounted(async () => {
   setThemeColor('#1a1a18')
+  window.addEventListener('keydown', handleKeydown)
   setupMediaSession()
   await loadCourse()
   heartbeatTimer = setInterval(() => {
@@ -734,6 +741,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
   clearInterval(heartbeatTimer)
   clearInterval(progressTimer)
   clearInterval(positionTimer)
@@ -1013,18 +1021,20 @@ onBeforeUnmount(() => {
                 >
                   {{ playbackRate.toFixed(2).replace(/0$/, '') }}×
                 </button>
-                <div v-if="speedMenuOpen" class="speed-menu" role="menu" @click.stop>
-                  <button
-                    v-for="rate in [0.25, 0.5, 0.75, 1, 1.25, 1.5]"
-                    :key="rate"
-                    type="button"
-                    role="menuitem"
-                    :aria-current="playbackRate === rate"
-                    @click="chooseRate(rate)"
-                  >
-                    {{ rate }}×
-                  </button>
-                </div>
+                <Transition name="speed-menu">
+                  <div v-if="speedMenuOpen" class="speed-menu" role="menu" @click.stop>
+                    <button
+                      v-for="rate in [0.25, 0.5, 0.75, 1, 1.25, 1.5]"
+                      :key="rate"
+                      type="button"
+                      role="menuitem"
+                      :aria-current="playbackRate === rate"
+                      @click="chooseRate(rate)"
+                    >
+                      {{ rate }}×
+                    </button>
+                  </div>
+                </Transition>
               </div>
               <span>{{ formatClock(duration * 1_000) }}</span>
             </div>
@@ -1148,11 +1158,16 @@ onBeforeUnmount(() => {
 
 .player-cover-backdrop {
   position: absolute;
-  inset: -10%;
+  top: var(--safe-top);
+  right: -10%;
+  bottom: -10%;
+  left: -10%;
   background-position: center;
   background-size: cover;
   filter: blur(48px) saturate(1.15);
   opacity: 0;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 64px);
+  mask-image: linear-gradient(to bottom, transparent, #000 64px);
   pointer-events: none;
   animation: cover-backdrop-in 900ms var(--ease-out) forwards;
 }
@@ -1347,8 +1362,8 @@ onBeforeUnmount(() => {
 }
 
 .audio-deck__controls .sl-icon-button {
-  width: 42px;
-  height: 42px;
+  width: var(--touch-target);
+  height: var(--touch-target);
   color: rgba(255, 250, 240, .78);
 }
 
@@ -1369,7 +1384,7 @@ onBeforeUnmount(() => {
 
 .speed-select {
   width: 58px;
-  height: 36px;
+  height: var(--touch-target);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1396,7 +1411,21 @@ onBeforeUnmount(() => {
   background: rgba(26, 26, 24, .96);
   box-shadow: 0 12px 28px rgba(0, 0, 0, .28);
   backdrop-filter: blur(14px);
-  transform: translateX(-50%);
+  transform: translate(-50%, 0) scale(1);
+  transform-origin: 50% 100%;
+}
+
+.speed-menu-enter-active,
+.speed-menu-leave-active {
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.speed-menu-enter-from,
+.speed-menu-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 4px) scale(.96);
 }
 
 .speed-menu button {
@@ -1424,7 +1453,7 @@ onBeforeUnmount(() => {
 }
 
 .player-mode-dock .sl-mode {
-  min-height: 42px;
+  min-height: 48px;
 }
 
 .player-mode-dock .sl-mode[aria-selected="true"]::after {

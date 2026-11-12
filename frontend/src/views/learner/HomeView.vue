@@ -175,10 +175,7 @@ function tabLabel(name: string) {
   position: absolute;
   inset: 0 0 -32px;
   z-index: -1;
-  background: linear-gradient(to bottom,
-    color-mix(in srgb, var(--ambient, #f6f5f2) 30%, #ffffff),
-    color-mix(in srgb, var(--ambient, #f6f5f2) 30%, #ffffff) 62%,
-    transparent);
+  background: linear-gradient(to bottom, var(--app-bg) 0, var(--app-bg) 62%, transparent);
   pointer-events: none;
 }
 

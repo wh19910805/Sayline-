@@ -106,11 +106,7 @@ onMounted(async () => {
 
 <style scoped>
 .recent-screen {
-  background:
-    radial-gradient(120% 90% at 88% 8%, color-mix(in srgb, var(--ambient-2, #efeeea) 32%, transparent), transparent 55%),
-    linear-gradient(165deg,
-      color-mix(in srgb, var(--ambient, #f6f5f2) 30%, #ffffff),
-      color-mix(in srgb, var(--ambient-2, #efeeea) 32%, #ffffff));
+  background: var(--app-bg);
 }
 
 .recent-scroll {
@@ -156,6 +152,20 @@ onMounted(async () => {
   background: var(--color-bg-elevated);
   text-align: left;
   cursor: pointer;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .recent-item:hover {
+    box-shadow: var(--shadow-card);
+    transform: translateY(-1px);
+  }
+}
+
+.recent-item:active {
+  transform: scale(.985);
 }
 
 .recent-item__cover {
@@ -206,7 +216,7 @@ onMounted(async () => {
 
 .recent-item__time {
   color: var(--color-text-tertiary);
-  font-size: 11px;
+  font-size: var(--text-caption);
   white-space: nowrap;
 }
 
