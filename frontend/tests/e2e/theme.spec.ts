@@ -20,6 +20,7 @@ async function surfaceColors(page: import('@playwright/test').Page) {
       body: getComputedStyle(document.body).backgroundColor,
       standalone: getComputedStyle(document.querySelector('.standalone-app')!).backgroundColor,
       screen: screen ? getComputedStyle(screen).backgroundColor : '',
+      playerSurface: screen ? getComputedStyle(screen).getPropertyValue('--player-surface').trim() : '',
     }
   })
 }
@@ -81,9 +82,15 @@ test('player surface uses the same dark color as its system theme', async ({ pag
   await page.waitForTimeout(600)
 
   const colors = await surfaceColors(page)
-  expect(colors.themeColor).toBe('#1a1a18')
-  expect(colors.html).toBe('rgb(26, 26, 24)')
-  expect(colors.body).toBe('rgb(26, 26, 24)')
-  expect(colors.standalone).toBe('rgb(26, 26, 24)')
-  expect(colors.screen).toBe('rgb(26, 26, 24)')
+  const topSurface = page.locator('.player-top-surface')
+  await expect(topSurface).toHaveCount(1)
+  const topSurfaceColor = await topSurface.evaluate(
+    (element) => getComputedStyle(element).backgroundColor,
+  )
+
+  expect(colors.playerSurface).toBe(colors.themeColor)
+  expect(colors.html).toBe(colors.screen)
+  expect(colors.body).toBe(colors.screen)
+  expect(colors.standalone).toBe(colors.screen)
+  expect(topSurfaceColor).toBe(colors.screen)
 })

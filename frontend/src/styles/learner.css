@@ -2019,8 +2019,12 @@ button {
   height: 100%;
   padding-top: var(--safe-top);
   color: var(--player-text);
-  background: var(--player-base);
+  background: var(--player-surface, var(--player-base));
   overscroll-behavior: contain;
+}
+
+.player-screen::before {
+  display: none;
 }
 
 .player-atmosphere,
@@ -2034,7 +2038,10 @@ button {
 }
 
 .player-atmosphere {
-  inset: -12%;
+  top: calc(var(--safe-top) - 12%);
+  right: -12%;
+  bottom: -12%;
+  left: -12%;
   background:
     radial-gradient(circle at 23% 16%, var(--course-a), transparent 37%),
     radial-gradient(circle at 78% 65%, var(--course-b), transparent 43%),
@@ -2042,17 +2049,32 @@ button {
   filter: blur(22px) saturate(.95);
   transform: scale(1.08);
   animation: player-atmosphere-in 700ms var(--ease-out) both;
+  z-index: 0;
 }
 
 .player-overlay {
   background:
     linear-gradient(180deg, rgba(6,9,6,.1), rgba(7,10,7,.35) 55%, rgba(5,7,5,.7)),
     radial-gradient(circle at 50% 45%, transparent, rgba(5,8,5,.18));
+  z-index: 1;
 }
 
-.player-screen > *:not(.player-atmosphere):not(.player-overlay):not(.player-cover-backdrop):not(.player-bottom-ui):not(.swipe-guide) {
+.player-top-surface {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: calc(var(--safe-top) + 72px);
+  background-color: var(--player-surface, var(--player-base));
+  -webkit-mask-image: linear-gradient(to bottom, #000 0 calc(100% - 16px), transparent);
+  mask-image: linear-gradient(to bottom, #000 0 calc(100% - 16px), transparent);
+  pointer-events: none;
+}
+
+.player-screen > *:not(.player-atmosphere):not(.player-overlay):not(.player-cover-backdrop):not(.player-top-surface):not(.player-bottom-ui):not(.swipe-guide) {
   position: relative;
-  z-index: 1;
+  z-index: 3;
 }
 
 .player-screen > .player-bottom-ui {
@@ -2228,9 +2250,10 @@ button {
   min-height: 0;
   overflow-y: auto;
   display: block;
-  padding: 18px 5px 28px;
-  mask-image: linear-gradient(transparent, #000 10%, #000 89%, transparent);
+  padding: 18px 8px 30px;
+  mask-image: linear-gradient(transparent, #000 13%, #000 84%, transparent);
   overscroll-behavior: contain;
+  scroll-behavior: smooth;
   scrollbar-width: none;
   touch-action: pan-x;
 }
@@ -2241,19 +2264,21 @@ button {
 
 .lyric-line {
   width: 100%;
-  margin: 0 0 8px;
+  margin: 0 0 4px;
   flex: 0 0 auto;
   display: grid;
-  gap: 5px;
-  padding: 7px 4px;
+  gap: 6px;
+  padding: 10px 10px;
   border: 0;
+  border-radius: 12px;
   background: transparent;
   color: rgba(255,250,240,.38);
   text-align: left;
   cursor: pointer;
   transition:
     opacity var(--duration-base) var(--ease-out),
-    transform var(--duration-base) var(--ease-out);
+    transform var(--duration-base) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
 }
 
 .lyric-line:hover {
@@ -2270,11 +2295,11 @@ button {
 
 .lyric-line__en {
   color: color-mix(in srgb, var(--caption-color, #fffaf0) 72%, transparent);
-  font-family: var(--font-display);
-  font-size: calc(18px * var(--caption-scale, 1));
-  font-weight: var(--weight-regular);
-  line-height: 1.35;
-  letter-spacing: -.01em;
+  font-family: var(--font-ui);
+  font-size: calc(clamp(17px, 4.7vw, 20px) * var(--caption-scale, 1));
+  font-weight: var(--weight-medium);
+  line-height: 1.38;
+  letter-spacing: -.02em;
 }
 
 .lyric-line__zh {
@@ -2285,27 +2310,21 @@ button {
 
 .lyric-line.is-active {
   position: relative;
-  padding-left: 15px;
-  transform: translateX(4px);
+  padding: 12px 10px;
+  transform: none;
   color: var(--player-text);
 }
 
 .lyric-line.is-active::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  border-radius: var(--radius-pill);
-  background: var(--color-oat-500);
+  display: none;
 }
 
 .lyric-line.is-active .lyric-line__en {
   color: var(--caption-color, var(--player-text));
-  font-size: calc(26px * var(--caption-scale, 1));
-  font-weight: var(--weight-semibold);
-  line-height: 1.28;
+  font-size: calc(clamp(24px, 6.8vw, 30px) * var(--caption-scale, 1));
+  font-weight: var(--weight-bold);
+  line-height: 1.24;
+  text-shadow: 0 2px 18px rgba(0,0,0,.26);
 }
 
 .lyric-line.is-active .lyric-line__zh {

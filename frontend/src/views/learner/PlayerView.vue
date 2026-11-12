@@ -105,9 +105,24 @@ const showChinese = computed(() => {
     SPEAK: settings.value.showChineseSpeak,
   }[mode.value]
 })
+
+function mixWithBlack(hex: string, amount: number): string {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return '#1a1a18'
+  const channel = (offset: number) =>
+    Math.round(parseInt(hex.slice(offset, offset + 2), 16) * (1 - amount))
+      .toString(16)
+      .padStart(2, '0')
+  return `#${channel(1)}${channel(3)}${channel(5)}`
+}
+
+const playerSurface = computed(() => {
+  const base = course.value?.themeColorSecondary || course.value?.themeColorPrimary || '#1a1a18'
+  return mixWithBlack(base, 0.45)
+})
 const backgroundStyle = computed(() => ({
   '--player-course-a': course.value?.themeColorPrimary || '#53634e',
   '--player-course-b': course.value?.themeColorSecondary || '#1f2a22',
+  '--player-surface': playerSurface.value,
 }))
 const audioProgress = computed(() =>
   duration.value > 0 ? Math.min(100, (currentTime.value / duration.value) * 100) : 0,
@@ -149,7 +164,8 @@ async function loadCourse(showLoader = true) {
     course.value = detail
     updateMediaSession()
     if (detail.themeColorPrimary) {
-      setAmbient(detail.themeColorPrimary, detail.themeColorSecondary || detail.themeColorPrimary, book?.coverUrl || detail.coverUrl || null)
+      setAmbient(detail.themeColorPrimary, detail.themeColorSecondary || detail.themeColorPrimary, detail.coverUrl || null)
+      setThemeColor(playerSurface.value)
     }
     learning.value = state
     settings.value = userSettings
@@ -540,13 +556,20 @@ function onEnded() {
 
 function updateMediaSession() {
   if (!('mediaSession' in navigator) || !course.value) return
-  const cover = bookInfo.value?.coverUrl || course.value.coverUrl
+  const cover = course.value.coverUrl
   navigator.mediaSession.metadata = new MediaMetadata({
     title: course.value.title,
     artist: bookInfo.value?.title || course.value.categoryName || 'Sayline 逐句英语',
     album: 'Sayline 逐句英语',
-    artwork: cover ? [{ src: cover, sizes: '512x512', type: 'image/jpeg' }] : [],
+    artwork: cover ? [{ src: cover, sizes: '512x512', type: coverMimeType(cover) }] : [],
   })
+}
+
+function coverMimeType(url: string): string {
+  const path = url.split('?')[0]?.toLowerCase() ?? ''
+  if (path.endsWith('.png')) return 'image/png'
+  if (path.endsWith('.webp')) return 'image/webp'
+  return 'image/jpeg'
 }
 
 function setupMediaSession() {
@@ -723,6 +746,7 @@ watch(
   (color) => {
     if (!color) return
     setAmbient(color, course.value?.themeColorSecondary || color)
+    setThemeColor(playerSurface.value)
   },
 )
 
@@ -765,6 +789,7 @@ onBeforeUnmount(() => {
     <div v-if="course?.coverUrl" class="player-cover-backdrop" :key="course.id" :style="coverBackdropStyle" aria-hidden="true" />
     <div class="player-atmosphere" aria-hidden="true" />
     <div class="player-overlay" aria-hidden="true" />
+    <div class="player-top-surface" aria-hidden="true" />
 
     <div v-if="loading" class="player-loading-skeleton" aria-hidden="true">
       <span class="skeleton-bar" style="width: 34%" />
@@ -1158,6 +1183,7 @@ onBeforeUnmount(() => {
 
 .player-cover-backdrop {
   position: absolute;
+  z-index: 0;
   top: var(--safe-top);
   right: -10%;
   bottom: -10%;

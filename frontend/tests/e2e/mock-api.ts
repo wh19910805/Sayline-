@@ -34,7 +34,7 @@ const courses = [
     description: '认识新同事',
     categoryId: 1,
     categoryName: '职场英语',
-    coverUrl: '/covers/work.jpg',
+    coverUrl: '/covers/course-work.jpg',
     themeColorPrimary: '#65734f',
     themeColorSecondary: '#9f5e31',
     durationMs: 20_000,
