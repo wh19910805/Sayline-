@@ -106,7 +106,7 @@ async function save(publishAfter = false) {
     <form class="admin-form" @submit.prevent="save(false)">
       <div class="admin-form-grid">
         <label class="sl-field">
-          <span class="sl-field__label">所属课程</span>
+          <span class="sl-field__label">所属书籍</span>
           <select v-model.number="form.bookId" class="sl-field__control" required>
             <option v-for="book in books" :key="book.id" :value="book.id">{{ book.title }}</option>
           </select>

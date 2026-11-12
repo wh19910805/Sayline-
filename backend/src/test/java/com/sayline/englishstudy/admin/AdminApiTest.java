@@ -183,7 +183,49 @@ class AdminApiTest {
         mockMvc.perform(get("/api/v1/admin/dashboard").header("Authorization", bearer(adminToken)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.totalLearners").value(1))
-            .andExpect(jsonPath("$.completedCourses").value(0));
+            .andExpect(jsonPath("$.completedCourses").value(0))
+            .andExpect(jsonPath("$.studyTrend.length()").value(7));
+    }
+
+    @Test
+    void batchUpdatesBookVisibility() throws Exception {
+        String adminToken = createUserAndLogin("13800138508", UserRole.ADMIN);
+        CourseCategory category = createCategory("Work");
+        long firstId = createBookViaApi(adminToken, category.getId());
+        long secondId = createBookViaApi(adminToken, category.getId());
+
+        mockMvc.perform(patch("/api/v1/admin/books/batch-visibility")
+                .header("Authorization", bearer(adminToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"bookIds":[%d,%d],"visible":false}
+                    """.formatted(firstId, secondId)))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/admin/books")
+                .param("categoryId", category.getId().toString())
+                .header("Authorization", bearer(adminToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content[0].visible").value(false))
+            .andExpect(jsonPath("$.content[1].visible").value(false));
+    }
+
+    @Test
+    void filtersAdminBooksByQueryCategoryAndVisibility() throws Exception {
+        String adminToken = createUserAndLogin("13800138509", UserRole.ADMIN);
+        CourseCategory work = createCategory("Work");
+        CourseCategory listening = createCategory("Listening");
+        createBookViaApi(adminToken, work.getId(), "Office Meeting", true);
+        createBookViaApi(adminToken, listening.getId(), "Morning Listening", false);
+
+        mockMvc.perform(get("/api/v1/admin/books")
+                .param("q", "morning")
+                .param("categoryId", listening.getId().toString())
+                .param("visible", "false")
+                .header("Authorization", bearer(adminToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content.length()").value(1))
+            .andExpect(jsonPath("$.content[0].title").value("Morning Listening"));
     }
 
     private String courseBody(long bookId) {
@@ -203,12 +245,21 @@ class AdminApiTest {
     }
 
     private long createBookViaApi(String adminToken, long categoryId) throws Exception {
+        return createBookViaApi(adminToken, categoryId, "Work", true);
+    }
+
+    private long createBookViaApi(
+        String adminToken,
+        long categoryId,
+        String title,
+        boolean visible
+    ) throws Exception {
         MvcResult created = mockMvc.perform(post("/api/v1/admin/books")
                 .header("Authorization", bearer(adminToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                    {"categoryId":%d,"title":"Work","coverObjectKey":"covers/work.jpg","sortOrder":1,"visible":true}
-                    """.formatted(categoryId)))
+                    {"categoryId":%d,"title":"%s","coverObjectKey":"covers/work.jpg","sortOrder":1,"visible":%s}
+                    """.formatted(categoryId, title, visible)))
             .andExpect(status().isCreated())
             .andReturn();
         return objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();

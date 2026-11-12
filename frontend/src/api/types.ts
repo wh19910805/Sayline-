@@ -28,11 +28,13 @@ export interface Category {
 
 export interface CourseSummary {
   id: number
+  bookId: number
   title: string
   description?: string | null
   categoryId: number
   categoryName: string
   coverUrl?: string | null
+  coverThumbnailUrl?: string | null
   themeColorPrimary?: string | null
   themeColorSecondary?: string | null
   durationMs: number
@@ -62,6 +64,7 @@ export interface BookSummary {
   categoryId: number
   categoryName: string
   coverUrl?: string | null
+  coverThumbnailUrl?: string | null
   themeColorPrimary?: string | null
   themeColorSecondary?: string | null
   spineColor?: string | null
@@ -84,6 +87,38 @@ export interface RecentLesson {
   themeColorSecondary?: string | null
   progress: number
   lastStudiedAt: string
+}
+
+export interface CueSearchResult {
+  cueId: number
+  courseId: number
+  bookId: number
+  courseTitle: string
+  bookTitle: string
+  sequenceNo: number
+  startMs: number
+  englishText: string
+  chineseText: string
+}
+
+export interface SearchResponse {
+  books: BookSummary[]
+  lessons: CourseSummary[]
+  cues: CueSearchResult[]
+}
+
+export interface ReviewCue {
+  bookId: number
+  courseId: number
+  cueId: number
+  bookTitle: string
+  courseTitle: string
+  sequenceNo: number
+  englishText: string
+  chineseText: string
+  lastAnswer: string
+  wrongCount: number
+  lastWrongAt: string
 }
 
 export interface PageResponse<T> {
@@ -149,6 +184,7 @@ export interface LearningSettings {
   showChineseRead: boolean
   showChineseWrite: boolean
   showChineseSpeak: boolean
+  dailyGoalMinutes: number
   defaultCategoryId?: number | null
 }
 
@@ -211,6 +247,11 @@ export interface Dashboard {
   totalStudyMs: number
   dictationAccuracy: number
   speakingCount: number
+  studyTrend: Array<{
+    date: string
+    studyMs: number
+    learners: number
+  }>
 }
 
 export interface PresignResponse {

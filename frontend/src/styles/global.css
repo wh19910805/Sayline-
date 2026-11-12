@@ -268,9 +268,9 @@ a {
 }
 
 .color-choice {
-  width: 38px;
-  height: 38px;
-  min-height: 38px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
   border-radius: 50%;
   background: var(--swatch);
 }
@@ -314,6 +314,10 @@ a {
 }
 
 .interest-order-row button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
   border: 0;
   background: transparent;
   color: var(--color-text-tertiary);
@@ -327,7 +331,7 @@ a {
 }
 
 .interest-pool button {
-  min-height: 38px;
+  min-height: 44px;
   padding: 0 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
@@ -423,7 +427,7 @@ a {
 }
 
 .admin-nav a {
-  min-height: 42px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -477,6 +481,51 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.admin-book-filters {
+  margin-bottom: 16px;
+}
+
+.admin-book-filters .sl-field__control {
+  width: min(220px, 100%);
+}
+
+.admin-book-filters input.sl-field__control {
+  width: min(330px, 100%);
+}
+
+.admin-batch-bar {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-action-soft);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+}
+
+.admin-batch-bar span {
+  flex: 1;
+}
+
+.admin-check {
+  width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.admin-check input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--color-action);
 }
 
 .admin-pagination {
@@ -655,7 +704,7 @@ a {
   }
 
   .admin-table td .admin-actions .sl-button {
-    min-height: 34px;
+    min-height: 44px;
   }
 
   .admin-mobile-nav {
@@ -665,7 +714,7 @@ a {
     bottom: 12px;
     left: 12px;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 4px;
     padding: 6px;
     border: 1px solid var(--color-border);
@@ -683,6 +732,11 @@ a {
     color: var(--color-text-tertiary);
     font-size: 10px;
     text-decoration: none;
+  }
+
+  .admin-book-filters .sl-field__control,
+  .admin-book-filters input.sl-field__control {
+    width: 100%;
   }
 
   .admin-mobile-nav a.router-link-active {

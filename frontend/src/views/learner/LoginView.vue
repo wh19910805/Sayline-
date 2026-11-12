@@ -15,8 +15,9 @@ const catalog = useCatalogStore()
 
 const adminMode = computed(() => route.meta.admin === true)
 const registerMode = ref(false)
-const phone = ref('13800138000')
-const password = ref('Sayline123')
+const demoLogin = import.meta.env.VITE_DEMO_LOGIN === 'true'
+const phone = ref(demoLogin ? '13800138000' : '')
+const password = ref(demoLogin ? 'Sayline123' : '')
 const nickname = ref('')
 const showPassword = ref(false)
 const error = ref('')
@@ -94,7 +95,13 @@ async function submit() {
             placeholder="至少 8 个字符"
           />
         </label>
-        <button class="password-field__toggle" type="button" @click="showPassword = !showPassword">
+        <button
+          class="password-field__toggle"
+          type="button"
+          :aria-label="showPassword ? '隐藏密码' : '显示密码'"
+          :aria-pressed="showPassword"
+          @click="showPassword = !showPassword"
+        >
           {{ showPassword ? '隐藏' : '显示' }}
         </button>
       </div>

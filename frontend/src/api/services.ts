@@ -20,6 +20,8 @@ import type {
   PresignResponse,
   Profile,
   RecentLesson,
+  ReviewCue,
+  SearchResponse,
   StatsResponse,
 } from './types'
 
@@ -69,20 +71,24 @@ export const learnerApi = {
     if (q) params.set('q', q)
     return http.get<PageResponse<CourseSummary>>(`/api/v1/courses?${params}`)
   },
-  books: (categoryId?: number) =>
+  books: (categoryId?: number, q?: string) =>
     withCache(
-      `books:${categoryId ?? 'all'}`,
+      `books:${categoryId ?? 'all'}:${q?.trim() || ''}`,
       () => {
         const params = new URLSearchParams()
         if (categoryId) params.set('categoryId', String(categoryId))
+        if (q?.trim()) params.set('q', q.trim())
         const query = params.toString()
         return http.get<BookSummary[]>(`/api/v1/books${query ? `?${query}` : ''}`)
       },
       TTL_CATALOG,
     ),
+  search: (q: string, signal?: AbortSignal) =>
+    http.get<SearchResponse>(`/api/v1/search?${new URLSearchParams({ q })}`, { signal }),
   book: (bookId: number) => withCache(`book:${bookId}`, () => http.get<BookDetail>(`/api/v1/books/${bookId}`), TTL_DETAIL),
   favoriteBooks: () => withCache('favoriteBooks', () => http.get<BookSummary[]>('/api/v1/favorite-books'), TTL_CATALOG),
   recentLessons: () => withCache('recentLessons', () => http.get<RecentLesson[]>('/api/v1/recent-lessons'), TTL_RECENT),
+  reviews: () => http.get<ReviewCue[]>('/api/v1/learning/reviews'),
   favoriteBook: async (bookId: number) => {
     const result = await http.post<{ favorited: boolean }>(`/api/v1/books/${bookId}/favorite`)
     invalidateBookCaches(bookId)
@@ -150,9 +156,11 @@ export const adminApi = {
     return result
   },
   deleteCategory: (id: number) => http.delete(`/api/v1/admin/categories/${id}`),
-  books: (categoryId?: number) => {
+  books: (filters: { categoryId?: number; q?: string; visible?: boolean } = {}) => {
     const params = new URLSearchParams({ size: '50' })
-    if (categoryId) params.set('categoryId', String(categoryId))
+    if (filters.categoryId) params.set('categoryId', String(filters.categoryId))
+    if (filters.q?.trim()) params.set('q', filters.q.trim())
+    if (filters.visible !== undefined) params.set('visible', String(filters.visible))
     return http.get<PageResponse<AdminBook>>(`/api/v1/admin/books?${params}`)
   },
   saveBook: async (payload: Record<string, unknown>, id?: number) => {
@@ -163,6 +171,10 @@ export const adminApi = {
     return result
   },
   deleteBook: (id: number) => http.delete(`/api/v1/admin/books/${id}`),
+  batchBookVisibility: async (bookIds: number[], visible: boolean) => {
+    await http.patch<void>('/api/v1/admin/books/batch-visibility', { bookIds, visible })
+    invalidateCatalogCache()
+  },
   courses: (filters: { bookId?: number; status?: CourseStatus; q?: string; page?: number }) => {
     const params = new URLSearchParams({ size: '20', page: String(filters.page ?? 0) })
     if (filters.bookId) params.set('bookId', String(filters.bookId))

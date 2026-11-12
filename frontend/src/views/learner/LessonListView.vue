@@ -4,12 +4,14 @@ import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import SlSkeleton from '@/components/ui/SlSkeleton.vue'
+import SlErrorState from '@/components/ui/SlErrorState.vue'
 import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
 import type { BookDetail } from '@/api/types'
 import { useCatalogStore } from '@/stores/catalog'
 import { setAmbient, syncThemeColor } from '@/composables/useAmbient'
 import { useBookEnter } from '@/composables/useBookEnter'
+import { useScrollMemory } from '@/composables/useScrollMemory'
 import { formatDuration } from '@/utils/format'
 
 const route = useRoute()
@@ -18,9 +20,11 @@ const catalog = useCatalogStore()
 const { settle } = useBookEnter()
 
 const bookId = computed(() => Number(route.params.bookId))
+const lessonScroll = ref<HTMLElement | null>(null)
 const book = ref<BookDetail | null>(null)
 const error = ref('')
 const loading = ref(true)
+const scrollMemory = useScrollMemory(lessonScroll, () => `lessons:${bookId.value}`)
 
 onMounted(async () => {
   try {
@@ -34,6 +38,8 @@ onMounted(async () => {
     loading.value = false
     await nextTick()
     settle()
+    await scrollMemory.restore()
+    scrollMemory.attach()
   }
 })
 
@@ -89,13 +95,19 @@ function lessonState(progress: number) {
       <span />
     </header>
 
-    <div v-if="error" class="inline-error lesson-error">{{ error }}</div>
+    <SlErrorState
+      v-if="error"
+      class="lesson-error"
+      :message="error"
+      title="课时列表暂时没有加载出来"
+      @retry="router.go(0)"
+    />
 
     <div v-else-if="loading" class="lesson-scroll">
       <SlSkeleton :rows="6" />
     </div>
 
-    <div v-else-if="book" class="lesson-scroll">
+    <div v-else-if="book" ref="lessonScroll" class="lesson-scroll">
       <section class="book-head" :style="coverStyle()">
         <span class="book-head__cover cover-art" :style="coverImageStyle()" />
         <div class="book-head__copy">

@@ -30,6 +30,7 @@ const categories = [
 const courses = [
   {
     id: 1,
+    bookId: 1,
     title: 'Meeting a New Colleague',
     description: '认识新同事',
     categoryId: 1,
@@ -43,6 +44,7 @@ const courses = [
   },
   {
     id: 2,
+    bookId: 1,
     title: 'Email Follow-up',
     description: '跟进邮件',
     categoryId: 1,
@@ -56,6 +58,7 @@ const courses = [
   },
   {
     id: 3,
+    bookId: 2,
     title: 'Coffee Chat Basics',
     description: '咖啡闲聊',
     categoryId: 2,
@@ -77,6 +80,7 @@ const books = [
     categoryId: 1,
     categoryName: '职场英语',
     coverUrl: '/covers/work.jpg',
+    coverThumbnailUrl: '/covers/work.jpg',
     themeColorPrimary: '#65734f',
     themeColorSecondary: '#9f5e31',
     lessonCount: 2,
@@ -90,6 +94,7 @@ const books = [
     categoryId: 2,
     categoryName: '日常口语',
     coverUrl: '/covers/spoken.jpg',
+    coverThumbnailUrl: '/covers/spoken.jpg',
     themeColorPrimary: '#8b6651',
     themeColorSecondary: '#42271f',
     lessonCount: 2,
@@ -103,6 +108,7 @@ const books = [
     categoryId: 3,
     categoryName: '听力训练',
     coverUrl: '/covers/listening.jpg',
+    coverThumbnailUrl: '/covers/listening.jpg',
     themeColorPrimary: '#517671',
     themeColorSecondary: '#243a38',
     lessonCount: 1,
@@ -160,6 +166,7 @@ export async function mockUserApi(
   options: { listenProgress?: number } = {},
 ) {
   const learning = createLearning(options.listenProgress ?? 40)
+  const adminBookVisibility = new Map(books.map((book) => [book.id, true]))
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request()
     const url = new URL(request.url())
@@ -178,10 +185,52 @@ export async function mockUserApi(
     if (path === '/api/v1/categories') return json(route, categories)
     if (path === '/api/v1/books') {
       const categoryId = Number(url.searchParams.get('categoryId'))
-      const content = categoryId
-        ? books.filter((book) => book.categoryId === categoryId)
-        : books
+      const q = url.searchParams.get('q')?.toLowerCase()
+      const content = books.filter(
+        (book) =>
+          (!categoryId || book.categoryId === categoryId) &&
+          (!q ||
+            `${book.title} ${book.description} ${book.categoryName}`
+              .toLowerCase()
+              .includes(q)),
+      )
       return json(route, content)
+    }
+    if (path === '/api/v1/search') {
+      const q = url.searchParams.get('q')?.trim().toLowerCase() ?? ''
+      const matchingBooks = books.filter((book) =>
+        `${book.title} ${book.description} ${book.categoryName}`
+          .toLowerCase()
+          .includes(q),
+      )
+      const matchingLessons = courses.filter((course) =>
+        `${course.title} ${course.description} ${course.categoryName}`
+          .toLowerCase()
+          .includes(q),
+      )
+      const matchingCues = cues
+        .filter((cue) =>
+          `${cue.englishText} ${cue.chineseText}`.toLowerCase().includes(q),
+        )
+        .map((cue) => {
+          const course = courses[0]!
+          return {
+            cueId: cue.id,
+            courseId: course.id,
+            bookId: 1,
+            courseTitle: course.title,
+            bookTitle: books[0]!.title,
+            sequenceNo: cue.sequenceNo,
+            startMs: cue.startMs,
+            englishText: cue.englishText,
+            chineseText: cue.chineseText,
+          }
+        })
+      return json(route, {
+        books: matchingBooks,
+        lessons: matchingLessons,
+        cues: matchingCues,
+      })
     }
     if (/^\/api\/v1\/books\/\d+$/.test(path)) {
       const id = Number(path.split('/').at(-1))
@@ -220,15 +269,39 @@ export async function mockUserApi(
       return json(route, { id: 1, phone: '13800138000', nickname: '林禾', avatarUrl: null })
     }
     if (path === '/api/v1/me/settings') {
-      return json(route, {
+      const settings = {
         fontScale: 1,
         subtitleColor: '#FFFAF0',
+        playbackRate: 1,
         showChineseListen: true,
         showChineseRead: true,
         showChineseWrite: true,
         showChineseSpeak: true,
+        dailyGoalMinutes: 15,
         defaultCategoryId: 1,
-      })
+      }
+      const payload =
+        request.method() === 'PATCH'
+          ? (request.postDataJSON() as Partial<typeof settings>)
+          : {}
+      return json(route, { ...settings, ...payload })
+    }
+    if (path === '/api/v1/learning/reviews') {
+      return json(route, [
+        {
+          bookId: 1,
+          courseId: 1,
+          cueId: 3,
+          bookTitle: '职场英语',
+          courseTitle: 'Meeting a New Colleague',
+          sequenceNo: 3,
+          englishText: 'Could we move the meeting to Friday morning?',
+          chineseText: '我们能把会议改到周五上午吗？',
+          lastAnswer: 'Could we move the meeting to Friday?',
+          wrongCount: 2,
+          lastWrongAt: '2026-11-12T02:00:00Z',
+        },
+      ])
     }
     if (path === '/api/v1/learning/stats') {
       if (url.searchParams.get('period') === 'MONTH') {
@@ -265,22 +338,35 @@ export async function mockUserApi(
         })
       }
       await new Promise((resolve) => setTimeout(resolve, 1_500))
+      const today = new Date()
+      const weekday = (today.getDay() + 6) % 7
+      const monday = new Date(today)
+      monday.setHours(12, 0, 0, 0)
+      monday.setDate(today.getDate() - weekday)
+      const pad = (value: number) => String(value).padStart(2, '0')
+      const localDate = (date: Date) =>
+        `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+      const days = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(monday)
+        date.setDate(monday.getDate() + index)
+        const dateValue = localDate(date)
+        const minutes =
+          dateValue === localDate(today) ? 15 : [12, 0, 36, 24, 0, 48][index] ?? 0
+        return {
+          date: dateValue,
+          active: minutes > 0,
+          sessions: minutes > 0 ? 1 : 0,
+          studyMs: minutes * 60_000,
+        }
+      })
       return json(route, {
-        rangeStart: '2026-10-19',
-        rangeEnd: '2026-10-25',
-        days: [
-          { date: '2026-10-19', active: true, sessions: 1, studyMs: 2_280_000 },
-          { date: '2026-10-20', active: false, sessions: 0, studyMs: 0 },
-          { date: '2026-10-21', active: true, sessions: 2, studyMs: 4_320_000 },
-          { date: '2026-10-22', active: true, sessions: 1, studyMs: 3_060_000 },
-          { date: '2026-10-23', active: false, sessions: 0, studyMs: 0 },
-          { date: '2026-10-24', active: true, sessions: 2, studyMs: 5_760_000 },
-          { date: '2026-10-25', active: false, sessions: 0, studyMs: 0 },
-        ],
+        rangeStart: days[0]!.date,
+        rangeEnd: days[6]!.date,
+        days,
         summary: {
-          studyDays: 4,
-          sessions: 6,
-          studyMs: 15_420_000,
+          studyDays: days.filter((day) => day.active).length,
+          sessions: days.filter((day) => day.active).length,
+          studyMs: days.reduce((total, day) => total + day.studyMs, 0),
           dictationAccuracy: 86,
           speakingCount: 24,
         },
@@ -302,17 +388,58 @@ export async function mockUserApi(
         totalStudyMs: 74_520_000,
         dictationAccuracy: 83,
         speakingCount: 9642,
+        studyTrend: [
+          { date: '2026-11-06', studyMs: 3_300_000, learners: 41 },
+          { date: '2026-11-07', studyMs: 4_020_000, learners: 52 },
+          { date: '2026-11-08', studyMs: 2_880_000, learners: 35 },
+          { date: '2026-11-09', studyMs: 5_460_000, learners: 67 },
+          { date: '2026-11-10', studyMs: 4_740_000, learners: 59 },
+          { date: '2026-11-11', studyMs: 6_120_000, learners: 73 },
+          { date: '2026-11-12', studyMs: 5_100_000, learners: 64 },
+        ],
       })
     }
-    if (path === '/api/v1/admin/categories') return json(route, categories)
-    if (path === '/api/v1/admin/books') {
-      const content = books.map((book, index) => ({
-        ...book,
-        coverObjectKey: book.coverUrl,
+    if (path === '/api/v1/admin/categories') {
+      const content = categories.map((category, index) => ({
+        ...category,
+        coverObjectKey: category.coverUrl,
         sortOrder: index + 1,
         visible: true,
       }))
+      return json(route, {
+        content,
+        page: 0,
+        size: 20,
+        totalElements: content.length,
+        totalPages: 1,
+      })
+    }
+    if (path === '/api/v1/admin/books') {
+      const categoryId = Number(url.searchParams.get('categoryId'))
+      const q = url.searchParams.get('q')?.trim().toLowerCase()
+      const visible = url.searchParams.get('visible')
+      const content = books
+        .map((book, index) => ({
+          ...book,
+          coverObjectKey: book.coverUrl,
+          sortOrder: index + 1,
+          visible: adminBookVisibility.get(book.id) ?? true,
+        }))
+        .filter(
+          (book) =>
+            (!categoryId || book.categoryId === categoryId) &&
+            (!q ||
+              `${book.title} ${book.description} ${book.categoryName}`
+                .toLowerCase()
+                .includes(q)) &&
+            (visible === null || String(book.visible) === visible),
+        )
       return json(route, { content, page: 0, size: 50, totalElements: content.length, totalPages: 1 })
+    }
+    if (path === '/api/v1/admin/books/batch-visibility') {
+      const payload = request.postDataJSON() as { bookIds: number[]; visible: boolean }
+      payload.bookIds.forEach((id) => adminBookVisibility.set(id, payload.visible))
+      return route.fulfill({ status: 200 })
     }
     if (path === '/api/v1/admin/courses') {
       const content = courses.map((course) => ({

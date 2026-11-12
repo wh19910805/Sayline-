@@ -11,7 +11,7 @@ const auth = useAuthStore()
 const navItems = [
   { to: '/admin', label: '数据看板', icon: 'dashboard' },
   { to: '/admin/categories', label: '分类管理', icon: 'git-branch' },
-  { to: '/admin/books', label: '课程管理', icon: 'book-open' },
+  { to: '/admin/books', label: '书籍管理', icon: 'book-open' },
   { to: '/admin/courses', label: '课时管理', icon: 'task' },
   { to: '/admin/users', label: '用户管理', icon: 'group' },
 ]

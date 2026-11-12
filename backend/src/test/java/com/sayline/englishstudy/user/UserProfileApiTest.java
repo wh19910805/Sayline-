@@ -98,7 +98,8 @@ class UserProfileApiTest {
             .andExpect(jsonPath("$.fontScale").value(1.0))
             .andExpect(jsonPath("$.showChineseListen").value(true))
             .andExpect(jsonPath("$.showChineseWrite").value(true))
-            .andExpect(jsonPath("$.showChineseSpeak").value(true));
+            .andExpect(jsonPath("$.showChineseSpeak").value(true))
+            .andExpect(jsonPath("$.dailyGoalMinutes").value(15));
 
         mockMvc.perform(patch("/api/v1/me/settings")
                 .header("Authorization", bearer())
@@ -111,12 +112,14 @@ class UserProfileApiTest {
                       "showChineseRead":true,
                       "showChineseWrite":true,
                       "showChineseSpeak":false,
+                      "dailyGoalMinutes":30,
                       "defaultCategoryId":%d
                     }
                     """.formatted(work.getId())))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.fontScale").value(1.25))
             .andExpect(jsonPath("$.subtitleColor").value("#F5D8A8"))
+            .andExpect(jsonPath("$.dailyGoalMinutes").value(30))
             .andExpect(jsonPath("$.defaultCategoryId").value(work.getId()));
     }
 

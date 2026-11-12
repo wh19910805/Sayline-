@@ -14,8 +14,10 @@ import com.sayline.englishstudy.catalog.CatalogDtos.BookSummary;
 import com.sayline.englishstudy.catalog.CatalogDtos.CategoryView;
 import com.sayline.englishstudy.catalog.CatalogDtos.CourseDetail;
 import com.sayline.englishstudy.catalog.CatalogDtos.CourseSummary;
+import com.sayline.englishstudy.catalog.CatalogDtos.CueSearchResult;
 import com.sayline.englishstudy.catalog.CatalogDtos.CueView;
 import com.sayline.englishstudy.catalog.CatalogDtos.RecentLesson;
+import com.sayline.englishstudy.catalog.CatalogDtos.SearchResponse;
 import com.sayline.englishstudy.common.ApiException;
 import com.sayline.englishstudy.common.PageResponse;
 import com.sayline.englishstudy.learning.BookFavorite;
@@ -76,11 +78,51 @@ public class CourseCatalogService {
     }
 
     @Transactional(readOnly = true)
-    public List<BookSummary> books(Long userId, Long categoryId) {
-        List<Book> books = categoryId == null
-            ? bookRepository.findByVisibleTrueOrderBySortOrderAscIdAsc()
-            : bookRepository.findByCategoryIdAndVisibleTrueOrderBySortOrderAscIdAsc(categoryId);
+    public List<BookSummary> books(Long userId, Long categoryId, String query) {
+        String normalizedQuery = query == null || query.isBlank() ? null : query.trim();
+        List<Book> books = bookRepository.searchVisible(categoryId, normalizedQuery);
         return toBookSummaries(userId, books);
+    }
+
+    @Transactional(readOnly = true)
+    public SearchResponse search(Long userId, String query) {
+        String normalizedQuery = query == null ? "" : query.trim();
+        if (normalizedQuery.isEmpty()) {
+            return new SearchResponse(List.of(), List.of(), List.of());
+        }
+        List<Book> books = bookRepository.searchVisible(null, normalizedQuery)
+            .stream()
+            .limit(12)
+            .toList();
+        List<Course> lessons = courseRepository.searchPublished(
+                null,
+                normalizedQuery,
+                CourseStatus.PUBLISHED,
+                PageRequest.of(0, 12))
+            .getContent();
+        Set<Long> lessonFavorites = favoriteIds(userId, lessons);
+        Map<Long, Integer> progress = progressByCourse(userId, lessons);
+        return new SearchResponse(
+            toBookSummaries(userId, books),
+            lessons.stream()
+                .map(lesson -> toSummary(
+                    lesson,
+                    progress.getOrDefault(lesson.getId(), 0),
+                    lessonFavorites.contains(lesson.getId())))
+                .toList(),
+            cueRepository.searchPublished(normalizedQuery).stream()
+                .limit(20)
+                .map(cue -> new CueSearchResult(
+                    cue.getId(),
+                    cue.getCourse().getId(),
+                    cue.getCourse().getBook().getId(),
+                    cue.getCourse().getTitle(),
+                    cue.getCourse().getBook().getTitle(),
+                    cue.getSequenceNo(),
+                    cue.getStartMs(),
+                    cue.getEnglishText(),
+                    cue.getChineseText()))
+                .toList());
     }
 
     @Transactional(readOnly = true)
@@ -112,7 +154,8 @@ public class CourseCatalogService {
             book.getDescription(),
             book.getCategory().getId(),
             book.getCategory().getName(),
-            mediaUrl(coverKey(book)),
+            mediaUrl(book.getCoverObjectKey()),
+            mediaUrl(book.getCoverThumbnailObjectKey()),
             book.getThemeColorPrimary(),
             book.getThemeColorSecondary(),
             book.getSpineColor(),
@@ -314,7 +357,8 @@ public class CourseCatalogService {
             book.getDescription(),
             book.getCategory().getId(),
             book.getCategory().getName(),
-            mediaUrl(coverKey(book)),
+            mediaUrl(book.getCoverObjectKey()),
+            mediaUrl(book.getCoverThumbnailObjectKey()),
             book.getThemeColorPrimary(),
             book.getThemeColorSecondary(),
             book.getSpineColor(),
@@ -343,6 +387,7 @@ public class CourseCatalogService {
     private CourseSummary toSummary(Course course, int progress, boolean favorite) {
         return new CourseSummary(
             course.getId(),
+            course.getBook().getId(),
             course.getTitle(),
             course.getDescription(),
             course.getCategory().getId(),

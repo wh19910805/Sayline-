@@ -55,6 +55,9 @@ public class UserSettings extends AuditableEntity {
     @Column(name = "playback_rate", nullable = false, precision = 3, scale = 2)
     private BigDecimal playbackRate = BigDecimal.ONE;
 
+    @Column(name = "daily_goal_minutes", nullable = false)
+    private int dailyGoalMinutes = 15;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_category_id")
     private CourseCategory defaultCategory;

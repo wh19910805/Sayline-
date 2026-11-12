@@ -10,6 +10,7 @@ import com.sayline.englishstudy.catalog.CatalogDtos.CourseDetail;
 import com.sayline.englishstudy.catalog.CatalogDtos.CourseSummary;
 import com.sayline.englishstudy.catalog.CatalogDtos.FavoriteState;
 import com.sayline.englishstudy.catalog.CatalogDtos.RecentLesson;
+import com.sayline.englishstudy.catalog.CatalogDtos.SearchResponse;
 import com.sayline.englishstudy.common.PageResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -39,9 +40,18 @@ public class CatalogController {
     @GetMapping("/books")
     public List<BookSummary> books(
         @AuthenticationPrincipal AuthenticatedUser user,
-        @RequestParam(required = false) Long categoryId
+        @RequestParam(required = false) Long categoryId,
+        @RequestParam(required = false) String q
     ) {
-        return catalogService.books(user.id(), categoryId);
+        return catalogService.books(user.id(), categoryId, q);
+    }
+
+    @GetMapping("/search")
+    public SearchResponse search(
+        @AuthenticationPrincipal AuthenticatedUser user,
+        @RequestParam String q
+    ) {
+        return catalogService.search(user.id(), q);
     }
 
     @GetMapping("/books/{bookId}")

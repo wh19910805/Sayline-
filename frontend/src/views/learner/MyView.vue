@@ -4,21 +4,33 @@ import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRouter } from 'vue-router'
 
 import AppBottomNav from '@/components/AppBottomNav.vue'
+import SlDialog from '@/components/ui/SlDialog.vue'
+import SlErrorState from '@/components/ui/SlErrorState.vue'
 import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
-import type { Profile, StatsResponse } from '@/api/types'
+import type { Profile, ReviewCue, StatsResponse } from '@/api/types'
+import { useScrollMemory } from '@/composables/useScrollMemory'
 import { useCatalogStore } from '@/stores/catalog'
+import { useAuthStore } from '@/stores/auth'
 import { formatStudyDuration, maskPhone } from '@/utils/format'
 
 const router = useRouter()
 const catalog = useCatalogStore()
-const period = ref<'WEEK' | 'MONTH'>('WEEK')
+const auth = useAuthStore()
+const savedPeriod = sessionStorage.getItem('sayline:report-period')
+const period = ref<'WEEK' | 'MONTH'>(savedPeriod === 'MONTH' ? 'MONTH' : 'WEEK')
+const meScroll = ref<HTMLElement | null>(null)
 const profile = ref<Profile | null>(null)
 const stats = ref<StatsResponse | null>(null)
 const settings = ref<Awaited<ReturnType<typeof learnerApi.settings>> | null>(null)
+const reviews = ref<ReviewCue[]>([])
+const reviewLoading = ref(false)
+const reviewError = ref('')
 const error = ref('')
 let latestStatsRequest = 0
 const statsLoading = ref(false)
+const logoutOpen = ref(false)
+const scrollMemory = useScrollMemory(meScroll, () => `me:${period.value}`)
 
 const translationCount = computed(() =>
   settings.value
@@ -33,14 +45,33 @@ const translationCount = computed(() =>
 
 const weekDays = computed(() => {
   const labels = ['一', '二', '三', '四', '五', '六', '日']
+  const today = shanghaiDate()
   return (stats.value?.days ?? []).map((day, index) => ({
     ...day,
     label: labels[index] ?? '',
     minutes: Math.round(day.studyMs / 60_000),
+    today: day.date === today,
   }))
 })
 
 const maxMinutes = computed(() => Math.max(...weekDays.value.map((day) => day.minutes), 1))
+const weekSummary = computed(() => {
+  const total = weekDays.value.reduce((sum, day) => sum + day.minutes, 0)
+  const active = weekDays.value.filter((day) => day.minutes > 0)
+  const best = Math.max(0, ...weekDays.value.map((day) => day.minutes))
+  return `本周共 ${total} 分钟，${active.length} 天有学习，单日最高 ${best} 分钟。`
+})
+const todayMinutes = computed(() => {
+  const today = shanghaiDate()
+  return weekDays.value.find((day) => day.date === today)?.minutes ?? 0
+})
+const dailyGoalMinutes = computed(() => settings.value?.dailyGoalMinutes || 15)
+const dailyGoalPercent = computed(() =>
+  Math.min(100, Math.round((todayMinutes.value / dailyGoalMinutes.value) * 100)),
+)
+const dailyGoalRemaining = computed(() =>
+  Math.max(0, dailyGoalMinutes.value - todayMinutes.value),
+)
 
 interface CalendarCell {
   key: string
@@ -113,9 +144,12 @@ onMounted(async () => {
     await catalog.loadInterests()
     ;[profile.value, settings.value] = await Promise.all([learnerApi.profile(), learnerApi.settings()])
     await loadStats()
+    await scrollMemory.restore()
+    scrollMemory.attach()
   } catch (reason) {
     error.value = apiErrorMessage(reason)
   }
+  void loadReviews()
 })
 
 function goTab(value: 'home' | 'me') {
@@ -125,6 +159,7 @@ function goTab(value: 'home' | 'me') {
 async function changePeriod(next: 'WEEK' | 'MONTH') {
   if (next === period.value && stats.value) return
   period.value = next
+  sessionStorage.setItem('sayline:report-period', next)
   error.value = ''
   const request = ++latestStatsRequest
   statsLoading.value = true
@@ -143,11 +178,41 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
     }
   }
 }
+
+async function loadReviews() {
+  reviewLoading.value = true
+  reviewError.value = ''
+  try {
+    reviews.value = await learnerApi.reviews()
+  } catch (reason) {
+    reviewError.value = apiErrorMessage(reason)
+  } finally {
+    reviewLoading.value = false
+  }
+}
+
+function openReview(review: ReviewCue) {
+  router.push(`/learn/${review.bookId}/${review.courseId}?cue=${review.cueId}&mode=WRITE`)
+}
+
+function shanghaiDate() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
+async function logout() {
+  await auth.logout()
+  await router.replace('/login')
+}
 </script>
 
 <template>
   <main class="app-screen me-screen">
-    <div class="me-scroll">
+    <div ref="meScroll" class="me-scroll">
       <button class="profile-card" type="button" @click="router.push('/me/profile')">
         <span class="profile-card__avatar">
           <img v-if="profile?.avatarUrl" :src="profile.avatarUrl" alt="" />
@@ -186,7 +251,72 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
         </button>
       </section>
 
-      <p v-if="error" class="inline-error">{{ error }}</p>
+      <section class="daily-goal-card" aria-label="今日学习目标">
+        <div class="daily-goal-card__head">
+          <div>
+            <p class="eyebrow">TODAY</p>
+            <h2>今日目标</h2>
+          </div>
+          <strong>{{ todayMinutes }} / {{ dailyGoalMinutes }} 分钟</strong>
+        </div>
+        <div
+          class="daily-goal-card__track"
+          role="progressbar"
+          aria-label="今日学习目标进度"
+          :aria-valuenow="todayMinutes"
+          aria-valuemin="0"
+          :aria-valuemax="dailyGoalMinutes"
+        >
+          <span :style="{ width: `${dailyGoalPercent}%` }" />
+        </div>
+        <p>
+          {{ dailyGoalRemaining > 0 ? `再学 ${dailyGoalRemaining} 分钟即可完成今天的目标。` : '今天的目标已完成，继续保持。' }}
+        </p>
+      </section>
+
+      <section class="review-section">
+        <div class="review-section__head">
+          <div>
+            <p class="eyebrow">REVIEW</p>
+            <h2>错句复习</h2>
+          </div>
+          <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="router.push('/me/learning')">
+            调整目标
+          </button>
+        </div>
+        <div v-if="reviewLoading" class="review-loading">正在整理最近错句…</div>
+        <SlErrorState
+          v-else-if="reviewError"
+          :message="reviewError"
+          title="复习队列暂时不可用"
+          @retry="loadReviews"
+        />
+        <div v-else-if="reviews.length" class="review-list">
+          <button
+            v-for="review in reviews"
+            :key="`${review.courseId}-${review.cueId}`"
+            class="review-item"
+            type="button"
+            :aria-label="`复习 ${review.englishText}`"
+            @click="openReview(review)"
+          >
+            <span class="review-item__count">{{ review.wrongCount }}</span>
+            <span class="review-item__copy">
+              <strong lang="en">{{ review.englishText }}</strong>
+              <small>{{ review.bookTitle }} · 错 {{ review.wrongCount }} 次</small>
+            </span>
+            <SlIcon name="arrow-right-s" :size="18" />
+          </button>
+        </div>
+        <p v-else class="review-empty">最近没有错句。继续学习后，错句会自动出现在这里。</p>
+      </section>
+
+      <SlErrorState
+        v-if="error"
+        :message="error"
+        title="学习数据暂时没有加载出来"
+        @retry="router.go(0)"
+      />
 
       <div class="study-summary-line">
         <span>学习统计</span>
@@ -219,8 +349,20 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
             {{ stats?.summary.studyDays ? '有学习' : '待开始' }}
           </span>
         </div>
-        <div v-if="!statsLoading && period === 'WEEK'" class="week-chart" aria-label="本周学习时长">
-          <div v-for="day in weekDays" :key="day.date" class="week-day">
+        <div
+          v-if="!statsLoading && period === 'WEEK'"
+          class="week-chart"
+          role="img"
+          :aria-label="weekSummary"
+        >
+          <div
+            v-for="day in weekDays"
+            :key="day.date"
+            class="week-day"
+            :class="{ 'is-today': day.today }"
+            :aria-label="`星期${day.label}，学习 ${day.minutes} 分钟`"
+          >
+            <span class="week-day__value">{{ day.minutes }}</span>
             <div class="week-day__track">
               <span
                 class="week-day__bar"
@@ -244,6 +386,9 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
           </span>
         </div>
         <div v-if="statsLoading" class="report-loading">正在整理学习记录…</div>
+        <p v-if="!statsLoading && period === 'WEEK'" class="report-card__summary">
+          {{ weekSummary }}
+        </p>
         <div class="report-card__legend">
           <template v-if="period === 'MONTH'">
             <span>少</span>
@@ -269,8 +414,31 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
           <p>每次至少 1 秒</p>
         </article>
       </section>
+
+      <section class="account-session">
+        <div>
+          <strong>账号与安全</strong>
+          <span>退出后会清理本机用户缓存，不会删除学习记录。</span>
+        </div>
+        <button class="sl-button sl-button--ghost" type="button" @click="logoutOpen = true">
+          退出登录
+        </button>
+      </section>
     </div>
     <AppBottomNav value="me" @navigate="goTab" />
+
+    <SlDialog
+      :open="logoutOpen"
+      title="退出登录？"
+      eyebrow="ACCOUNT"
+      description="退出后会移除本机缓存的收藏、最近学习和播放状态。"
+      @close="logoutOpen = false"
+    >
+      <template #actions>
+        <button class="sl-button sl-button--secondary" type="button" @click="logoutOpen = false">取消</button>
+        <button class="sl-button sl-button--danger" type="button" @click="logout">确认退出</button>
+      </template>
+    </SlDialog>
   </main>
 </template>
 
@@ -308,5 +476,153 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
   place-items: center;
   color: var(--color-text-tertiary);
   font-size: var(--text-caption);
+}
+
+.account-session {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 28px 0 10px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.account-session > div {
+  display: grid;
+  gap: 5px;
+}
+
+.account-session strong {
+  font-size: var(--text-body-sm);
+}
+
+.account-session span {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.daily-goal-card,
+.review-section {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+}
+
+.daily-goal-card__head,
+.review-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.daily-goal-card h2,
+.review-section h2 {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: var(--weight-regular);
+}
+
+.daily-goal-card__head > strong {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.daily-goal-card__track {
+  height: 7px;
+  overflow: hidden;
+  margin-top: 15px;
+  border-radius: 99px;
+  background: var(--color-surface-muted);
+}
+
+.daily-goal-card__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--color-moss-500), var(--color-action));
+}
+
+.daily-goal-card p,
+.review-empty {
+  margin: 9px 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.review-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.review-item {
+  width: 100%;
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 4px;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.review-item__count {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+}
+
+.review-item__copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.review-item__copy strong,
+.review-item__copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-item__copy strong {
+  font-size: 13px;
+}
+
+.review-item__copy small {
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+}
+
+.review-loading {
+  padding: 24px 0 10px;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-caption);
+}
+
+.report-card__summary {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+  line-height: 1.5;
 }
 </style>

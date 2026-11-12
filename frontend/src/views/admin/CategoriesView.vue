@@ -7,6 +7,7 @@ import { adminApi } from '@/api/services'
 import type { AdminCategory } from '@/api/types'
 import SlButton from '@/components/ui/SlButton.vue'
 import SlDialog from '@/components/ui/SlDialog.vue'
+import SlErrorState from '@/components/ui/SlErrorState.vue'
 import SlField from '@/components/ui/SlField.vue'
 import SlSwitch from '@/components/ui/SlSwitch.vue'
 import SlTable from '@/components/ui/SlTable.vue'
@@ -21,6 +22,7 @@ const formOpen = ref(false)
 const error = ref('')
 const loading = ref(false)
 const uploading = ref(false)
+const deleteTarget = ref<AdminCategory | null>(null)
 const form = reactive({
   name: '',
   description: '',
@@ -161,10 +163,15 @@ async function uploadCover(event: Event) {
   }
 }
 
-async function remove(category: AdminCategory) {
-  if (!window.confirm(`确定删除“${category.name}”吗？有关联课程时只能隐藏。`)) return
+function remove(category: AdminCategory) {
+  deleteTarget.value = category
+}
+
+async function confirmRemove() {
+  if (!deleteTarget.value) return
   try {
-    await adminApi.deleteCategory(category.id)
+    await adminApi.deleteCategory(deleteTarget.value.id)
+    deleteTarget.value = null
     await load()
   } catch (reason) {
     error.value = apiErrorMessage(reason)
@@ -180,7 +187,7 @@ onMounted(load)
       <div><p class="eyebrow">CONTENT STRUCTURE</p><h1>课程分类</h1></div>
       <button class="sl-button sl-button--accent" type="button" @click="openCreate"><SlIcon name="add" :size="17" /> 新建分类</button>
     </header>
-    <p v-if="error" class="inline-error">{{ error }}</p>
+    <SlErrorState v-if="error" :message="error" title="分类列表暂时不可用" @retry="load" />
     <div class="admin-card">
       <SlTable :loading="loading" :empty="!categories.length" empty-title="暂无分类" empty-description="还没有分类，点右上角新建">
         <template #head><tr><th>排序</th><th>分类</th><th>颜色</th><th>状态</th><th>操作</th></tr></template>
@@ -239,6 +246,19 @@ onMounted(load)
       <template #actions>
         <SlButton variant="ghost" @click="formOpen = false">取消</SlButton>
         <SlButton variant="accent" type="submit" form="category-form">保存</SlButton>
+      </template>
+    </SlDialog>
+
+    <SlDialog
+      :open="!!deleteTarget"
+      title="删除这个分类？"
+      eyebrow="DELETE CATEGORY"
+      :description="`将删除「${deleteTarget?.name ?? ''}」。分类下仍有书籍时，系统会阻止删除并建议隐藏。`"
+      @close="deleteTarget = null"
+    >
+      <template #actions>
+        <SlButton variant="ghost" @click="deleteTarget = null">取消</SlButton>
+        <SlButton variant="danger" @click="confirmRemove">确认删除</SlButton>
       </template>
     </SlDialog>
   </section>

@@ -42,6 +42,7 @@ function ringStyle(item: RecentLesson) {
 <template>
   <transition name="continue-dock">
     <div v-if="lesson" class="continue-group">
+      <span class="continue-dock__label">继续学习</span>
       <button
         class="continue-dock__cover"
         type="button"
@@ -74,12 +75,20 @@ function ringStyle(item: RecentLesson) {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 4px;
+  padding: 4px 8px 4px 4px;
   border: 1px solid rgba(26, 26, 24, .08);
   border-radius: 999px;
   background: color-mix(in srgb, #ffffff 82%, transparent);
   backdrop-filter: blur(18px);
   box-shadow: 0 4px 16px rgba(26, 26, 24, .08);
+}
+
+.continue-dock__label {
+  padding: 0 2px 0 4px;
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
 }
 
 .continue-dock__cover {

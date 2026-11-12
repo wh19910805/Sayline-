@@ -4,7 +4,6 @@ import App from './App.vue'
 import { router } from './router'
 import { pinia } from './stores'
 import { restoreAmbient } from './composables/useAmbient'
-import 'remixicon/fonts/remixicon.css'
 import './styles/global.css'
 
 restoreAmbient()

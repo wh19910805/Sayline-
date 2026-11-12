@@ -68,3 +68,16 @@ export function restoreAmbient() {
   }
   syncThemeColor()
 }
+
+export function clearAmbient() {
+  const root = document.documentElement
+  root.style.removeProperty('--ambient')
+  root.style.removeProperty('--ambient-2')
+  root.style.removeProperty('--ambient-cover')
+  try {
+    localStorage.removeItem(KEY)
+  } catch {
+    /* 忽略隐私模式异常 */
+  }
+  syncThemeColor()
+}

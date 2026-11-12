@@ -1,6 +1,8 @@
 package com.sayline.englishstudy.admin;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 
 import com.sayline.englishstudy.catalog.CourseStatus;
 import com.sayline.englishstudy.user.UserRole;
@@ -105,6 +107,12 @@ public final class AdminDtos {
     public record UserStatusRequest(@NotNull UserStatus status) {
     }
 
+    public record BatchVisibilityRequest(
+        @NotNull List<Long> bookIds,
+        boolean visible
+    ) {
+    }
+
     public record UserAdminView(
         Long id,
         String phone,
@@ -125,7 +133,15 @@ public final class AdminDtos {
         int completionRate,
         long totalStudyMs,
         int dictationAccuracy,
-        long speakingCount
+        long speakingCount,
+        List<DailyStudyPoint> studyTrend
+    ) {
+    }
+
+    public record DailyStudyPoint(
+        LocalDate date,
+        long studyMs,
+        long learners
     ) {
     }
 }

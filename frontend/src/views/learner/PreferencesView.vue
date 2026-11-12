@@ -84,7 +84,7 @@ async function save() {
               <strong>{{ category.name }}</strong>
               <button type="button" aria-label="上移" :disabled="index === 0" @click="move(index, -1)"><SlIcon name="arrow-up" :size="16" /></button>
               <button type="button" aria-label="下移" :disabled="index === selectedIds.length - 1" @click="move(index, 1)"><SlIcon name="arrow-down" :size="16" /></button>
-              <button type="button" aria-label="移除" @click="remove(category.id)"><X :size="16" /></button>
+              <button type="button" aria-label="移除" @click="remove(category.id)"><SlIcon name="close" :size="16" /></button>
             </article>
             <p v-if="!selectedIds.length">至少选择一个兴趣分类。</p>
           </div>

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import SlIcon from '@/components/ui/SlIcon.vue'
 
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
 import type { AdminBook, AdminCategory } from '@/api/types'
+import SlDialog from '@/components/ui/SlDialog.vue'
+import SlErrorState from '@/components/ui/SlErrorState.vue'
 import SlTable from '@/components/ui/SlTable.vue'
 import { resolveContentType } from '@/utils/uploadContentType'
 
@@ -16,6 +18,16 @@ const saving = ref(false)
 const formOpen = ref(false)
 const editingId = ref<number | null>(null)
 const uploading = ref(false)
+const query = ref('')
+const categoryFilter = ref<number | ''>('')
+const visibleFilter = ref<'true' | 'false' | ''>('')
+const selectedIds = ref<number[]>([])
+const deleteTarget = ref<AdminBook | null>(null)
+const batchTarget = ref<boolean | null>(null)
+const batchSaving = ref(false)
+const allSelected = computed(
+  () => books.value.length > 0 && selectedIds.value.length === books.value.length,
+)
 const form = reactive({
   categoryId: 0,
   title: '',
@@ -29,13 +41,19 @@ const form = reactive({
 
 async function load() {
   loading.value = true
+  error.value = ''
   try {
     const [bookPage, categoryPage] = await Promise.all([
-      adminApi.books(),
+      adminApi.books({
+        categoryId: categoryFilter.value || undefined,
+        q: query.value.trim() || undefined,
+        visible: visibleFilter.value === '' ? undefined : visibleFilter.value === 'true',
+      }),
       adminApi.categories(0, 100),
     ])
     books.value = bookPage.content
     categories.value = categoryPage.content
+    selectedIds.value = []
   } catch (reason) {
     error.value = apiErrorMessage(reason)
   } finally {
@@ -113,13 +131,42 @@ async function save() {
   }
 }
 
-async function remove(book: AdminBook) {
-  if (!window.confirm(`确认删除课程「${book.title}」？`)) return
+function remove(book: AdminBook) {
+  deleteTarget.value = book
+}
+
+async function confirmRemove() {
+  if (!deleteTarget.value) return
   try {
-    await adminApi.deleteBook(book.id)
+    await adminApi.deleteBook(deleteTarget.value.id)
+    deleteTarget.value = null
     await load()
   } catch (reason) {
     error.value = apiErrorMessage(reason)
+  }
+}
+
+function toggleSelection(id: number, checked: boolean) {
+  selectedIds.value = checked
+    ? [...new Set([...selectedIds.value, id])]
+    : selectedIds.value.filter((value) => value !== id)
+}
+
+function toggleAll(checked: boolean) {
+  selectedIds.value = checked ? books.value.map((book) => book.id) : []
+}
+
+async function confirmBatchVisibility() {
+  if (!selectedIds.value.length || batchTarget.value === null) return
+  batchSaving.value = true
+  try {
+    await adminApi.batchBookVisibility(selectedIds.value, batchTarget.value)
+    batchTarget.value = null
+    await load()
+  } catch (reason) {
+    error.value = apiErrorMessage(reason)
+  } finally {
+    batchSaving.value = false
   }
 }
 
@@ -129,14 +176,44 @@ onMounted(load)
 <template>
   <section>
     <header class="admin-page-head">
-      <div><p class="eyebrow">CONTENT LIBRARY</p><h1>课程管理</h1></div>
-      <button class="sl-button sl-button--accent" type="button" @click="openCreate"><SlIcon name="add" :size="17" /> 新建课程</button>
+      <div><p class="eyebrow">CONTENT LIBRARY</p><h1>书籍管理</h1></div>
+      <button class="sl-button sl-button--accent" type="button" @click="openCreate"><SlIcon name="add" :size="17" /> 新建书籍</button>
     </header>
-    <p v-if="error" class="inline-error">{{ error }}</p>
+    <div class="admin-actions admin-book-filters">
+      <select v-model="categoryFilter" class="sl-field__control" aria-label="按分类筛选" @change="load">
+        <option value="">全部分类</option>
+        <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+      </select>
+      <select v-model="visibleFilter" class="sl-field__control" aria-label="按显示状态筛选" @change="load">
+        <option value="">全部状态</option>
+        <option value="true">可见</option>
+        <option value="false">已隐藏</option>
+      </select>
+      <input
+        v-model="query"
+        class="sl-field__control"
+        placeholder="搜索书籍名、简介或分类"
+        aria-label="搜索书籍名、简介或分类"
+        @keyup.enter="load"
+      />
+      <button class="sl-button sl-button--secondary" type="button" @click="load">搜索</button>
+    </div>
+    <div v-if="selectedIds.length" class="admin-batch-bar" aria-live="polite">
+      <span>已选择 {{ selectedIds.length }} 本</span>
+      <button class="sl-button sl-button--secondary sl-button--sm" type="button" @click="batchTarget = true">批量显示</button>
+      <button class="sl-button sl-button--danger sl-button--sm" type="button" @click="batchTarget = false">批量隐藏</button>
+    </div>
+    <SlErrorState v-if="error" :message="error" title="书籍列表暂时不可用" @retry="load" />
     <div class="admin-card">
-      <SlTable :loading="loading" :empty="!books.length" empty-title="暂无课程" empty-description="还没有课程，点右上角新建">
-        <template #head><tr><th>课程名</th><th>分类</th><th>排序</th><th>状态</th><th>操作</th></tr></template>
+      <SlTable :loading="loading" :empty="!books.length" empty-title="暂无书籍" empty-description="还没有书籍，点右上角新建">
+        <template #head>
+          <tr>
+            <th><label class="admin-check"><input type="checkbox" aria-label="选择全部书籍" :checked="allSelected" @change="toggleAll(($event.target as HTMLInputElement).checked)" /></label></th>
+            <th>书籍名</th><th>分类</th><th>排序</th><th>状态</th><th>操作</th>
+          </tr>
+        </template>
         <tr v-for="book in books" :key="book.id">
+          <td><label class="admin-check"><input type="checkbox" :aria-label="`选择 ${book.title}`" :checked="selectedIds.includes(book.id)" @change="toggleSelection(book.id, ($event.target as HTMLInputElement).checked)" /></label></td>
           <td><strong>{{ book.title }}</strong><br /><small>{{ book.description }}</small></td>
           <td>{{ book.categoryName }}</td>
           <td>{{ book.sortOrder }}</td>
@@ -153,11 +230,11 @@ onMounted(load)
 
     <div v-if="formOpen" class="admin-modal">
       <div class="admin-modal__card">
-        <header><h2>{{ editingId ? '编辑课程' : '新建课程' }}</h2><button class="sl-icon-button" type="button" aria-label="关闭" @click="formOpen = false">×</button></header>
+        <header><h2>{{ editingId ? '编辑书籍' : '新建书籍' }}</h2><button class="sl-icon-button" type="button" aria-label="关闭" @click="formOpen = false">×</button></header>
         <form class="admin-form" @submit.prevent="save">
           <div class="admin-form-grid">
             <label class="sl-field">
-              <span class="sl-field__label">课程名</span>
+              <span class="sl-field__label">书籍名</span>
               <input v-model="form.title" class="sl-field__control" required maxlength="120" />
             </label>
             <label class="sl-field">
@@ -189,5 +266,33 @@ onMounted(load)
         </form>
       </div>
     </div>
+
+    <SlDialog
+      :open="!!deleteTarget"
+      title="删除这本书？"
+      eyebrow="DELETE BOOK"
+      :description="`将永久删除「${deleteTarget?.title ?? ''}」。书籍下仍有课时时，系统会阻止删除并建议隐藏。`"
+      @close="deleteTarget = null"
+    >
+      <template #actions>
+        <button class="sl-button sl-button--secondary" type="button" @click="deleteTarget = null">取消</button>
+        <button class="sl-button sl-button--danger" type="button" @click="confirmRemove">确认删除</button>
+      </template>
+    </SlDialog>
+
+    <SlDialog
+      :open="batchTarget !== null"
+      :title="batchTarget ? '批量显示书籍？' : '批量隐藏书籍？'"
+      eyebrow="BATCH VISIBILITY"
+      :description="`将${batchTarget ? '显示' : '隐藏'}已选择的 ${selectedIds.length} 本书籍。学习端的目录会立即更新。`"
+      @close="batchTarget = null"
+    >
+      <template #actions>
+        <button class="sl-button sl-button--secondary" type="button" @click="batchTarget = null">取消</button>
+        <button class="sl-button" :class="batchTarget ? 'sl-button--accent' : 'sl-button--danger'" type="button" :disabled="batchSaving" @click="confirmBatchVisibility">
+          {{ batchSaving ? '处理中…' : batchTarget ? '确认显示' : '确认隐藏' }}
+        </button>
+      </template>
+    </SlDialog>
   </section>
 </template>

@@ -162,6 +162,66 @@ test('learner report has no horizontal overflow on mobile', async ({ page }) => 
   expect(overflow).toBe(false)
 })
 
+test('home restores the selected category and scroll position after navigation', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('tab', { name: '口语' }).click()
+  await expect(page.locator('.book3d')).toHaveCount(1)
+  await page.locator('.home-scroll').evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+    element.dispatchEvent(new Event('scroll'))
+  })
+
+  await page.getByRole('button', { name: '我的' }).click()
+  await expect(page.locator('.me-screen')).toBeVisible()
+  await page.getByRole('button', { name: '学习', exact: true }).click()
+
+  await expect(page.getByRole('tab', { name: '口语' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await expect
+    .poll(() => page.locator('.home-scroll').evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0)
+})
+
+test('learner sees daily goal progress and can retry a missed sentence', async ({ page }) => {
+  await page.goto('/me')
+
+  await expect(page.getByText('今日目标')).toBeVisible()
+  await expect(page.getByText('15 / 15 分钟')).toBeVisible()
+  await expect(page.getByRole('heading', { name: '错句复习' })).toBeVisible()
+
+  await page.getByRole('button', { name: /Could we move the meeting to Friday morning/ }).click()
+  await expect(page).toHaveURL(/\/learn\/1\/1\?cue=3&mode=WRITE/)
+  await expect(page.locator('.write-current__translation')).toContainText(
+    '我们能把会议改到周五上午吗？',
+  )
+})
+
+test('learning settings show a dirty-aware daily goal save state', async ({ page }) => {
+  await page.goto('/me/learning')
+
+  const save = page.locator('.learning-settings-save')
+  await expect(save).toBeDisabled()
+
+  await page.getByLabel('每日学习目标（分钟）').fill('30')
+  await expect(save).toBeEnabled()
+  await save.click()
+  await expect(page.getByText('学习设置已保存')).toBeVisible()
+  await expect(save).toBeDisabled()
+})
+
+test('weekly report exposes minutes and a screen-reader summary', async ({ page }) => {
+  await page.goto('/me')
+
+  await expect(page.locator('.week-day').first()).toHaveAttribute(
+    'aria-label',
+    /学习 \d+ 分钟/,
+  )
+  await expect(page.getByText(/本周共 \d+ 分钟/)).toBeVisible()
+  await expect(page.locator('.week-day__value').first()).toBeVisible()
+})
+
 test('learner month view shows calendar heat levels, today and legend', async ({ page }) => {
   await page.goto('/me')
   await page.getByRole('button', { name: '本月' }).click()

@@ -33,6 +33,15 @@ export const useCatalogStore = defineStore('catalog', () => {
         const defaultCategory = saved.find((item) => item.id === settings.defaultCategoryId)
         selectedCategoryId.value = defaultCategory?.id ?? saved[0]!.id
       }
+      const rememberedCategory = sessionStorage.getItem('sayline:home-category')
+      if (rememberedCategory === 'favorite') {
+        selectedCategoryId.value = 'favorite'
+      } else if (rememberedCategory) {
+        const categoryId = Number(rememberedCategory)
+        if (saved.some((item) => item.id === categoryId)) {
+          selectedCategoryId.value = categoryId
+        }
+      }
       interestsResolved = true
     }
     return saved
@@ -51,6 +60,7 @@ export const useCatalogStore = defineStore('catalog', () => {
 
   async function selectCategory(value: number | 'favorite') {
     selectedCategoryId.value = value
+    sessionStorage.setItem('sayline:home-category', String(value))
     await loadBooks()
   }
 

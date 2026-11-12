@@ -2,7 +2,9 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { http } from '@/api'
+import { clearAllCaches } from '@/api/cache'
 import { authApi } from '@/api/services'
+import { clearAmbient } from '@/composables/useAmbient'
 import type { AuthResponse, User } from '@/api/types'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -15,6 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAdmin = computed(() => user.value?.role === 'ADMIN')
 
   function acceptSession(response: AuthResponse) {
+    clearUserState()
     user.value = response.user
     accessToken.value = response.accessToken
     http.setAccessToken(response.accessToken)
@@ -64,10 +67,17 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await authApi.logout()
     } finally {
+      clearUserState()
       user.value = null
       accessToken.value = null
       http.setAccessToken(null)
     }
+  }
+
+  function clearUserState() {
+    clearAllCaches()
+    clearAmbient()
+    navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_USER_CACHE' })
   }
 
   return {

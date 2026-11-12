@@ -3,15 +3,20 @@ package com.sayline.englishstudy.admin;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.sayline.englishstudy.admin.AdminDtos.BookAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.BookRequest;
+import com.sayline.englishstudy.admin.AdminDtos.BatchVisibilityRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CourseAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.CourseRequest;
 import com.sayline.englishstudy.admin.AdminDtos.DashboardView;
+import com.sayline.englishstudy.admin.AdminDtos.DailyStudyPoint;
 import com.sayline.englishstudy.admin.AdminDtos.UserAdminView;
 import com.sayline.englishstudy.auth.AuthenticatedUser;
 import com.sayline.englishstudy.auth.RefreshSessionRepository;
@@ -133,15 +138,21 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<BookAdminView> books(Long categoryId, int page, int size) {
+    public PageResponse<BookAdminView> books(
+        Long categoryId,
+        String query,
+        Boolean visible,
+        int page,
+        int size
+    ) {
+        String normalizedQuery = query == null || query.isBlank() ? null : query.trim();
         PageRequest pageable = PageRequest.of(
             Math.max(0, page),
             Math.min(50, Math.max(1, size)),
             Sort.by("sortOrder", "id"));
-        Page<Book> books = categoryId == null
-            ? bookRepository.findAll(pageable)
-            : bookRepository.findByCategoryId(categoryId, pageable);
-        return PageResponse.from(books.map(this::toView));
+        return PageResponse.from(
+            bookRepository.searchAdmin(categoryId, visible, normalizedQuery, pageable)
+                .map(this::toView));
     }
 
     @Transactional
@@ -174,6 +185,16 @@ public class AdminService {
             throw new ApiException("BOOK_HAS_LESSONS", HttpStatus.CONFLICT, "该书下仍有课时，只能隐藏");
         }
         bookRepository.delete(book);
+    }
+
+    @Transactional
+    public void batchBookVisibility(BatchVisibilityRequest request) {
+        List<Long> ids = request.bookIds().stream().distinct().toList();
+        List<Book> books = bookRepository.findAllById(ids);
+        if (books.size() != ids.size()) {
+            throw notFound("部分书籍不存在");
+        }
+        books.forEach(book -> book.setVisible(request.visible()));
     }
 
     @Transactional(readOnly = true)
@@ -293,6 +314,21 @@ public class AdminService {
         long attempts = dictationRepository.count();
         long correct = dictationRepository.countByCorrectTrue();
         int dictationAccuracy = attempts == 0 ? 0 : (int) Math.round(correct * 100.0 / attempts);
+        LocalDate today = LocalDate.now(APP_ZONE);
+        LocalDate trendStart = today.minusDays(6);
+        Map<LocalDate, Object[]> trendRows = new HashMap<>();
+        for (Object[] row : dailyStatRepository.dailyTrend(trendStart, today)) {
+            trendRows.put((LocalDate) row[0], row);
+        }
+        List<DailyStudyPoint> studyTrend = new ArrayList<>();
+        for (int day = 0; day < 7; day++) {
+            LocalDate date = trendStart.plusDays(day);
+            Object[] row = trendRows.get(date);
+            studyTrend.add(new DailyStudyPoint(
+                date,
+                row == null ? 0 : ((Number) row[1]).longValue(),
+                row == null ? 0 : ((Number) row[2]).longValue()));
+        }
         return new DashboardView(
             learners,
             sessionRepository.countActiveUsersSince(
@@ -303,7 +339,8 @@ public class AdminService {
             starts == 0 ? 0 : (int) Math.round(completed * 100.0 / starts),
             dailyStatRepository.totalStudyMs(),
             dictationAccuracy,
-            cueProgressRepository.countBySpokenTrue());
+            cueProgressRepository.countBySpokenTrue(),
+            studyTrend);
     }
 
     private void apply(CourseCategory category, CategoryRequest request) {

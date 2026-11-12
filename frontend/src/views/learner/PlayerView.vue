@@ -171,14 +171,24 @@ async function loadCourse(showLoader = true) {
     settings.value = userSettings
     playbackRate.value = userSettings.playbackRate ?? 1
     duration.value = detail.durationMs / 1_000
-    mode.value = state.lastMode || 'LISTEN'
+    const requestedMode = String(route.query.mode ?? '').toUpperCase() as LearningMode
+    mode.value = ['LISTEN', 'READ', 'WRITE', 'SPEAK'].includes(requestedMode)
+      ? requestedMode
+      : state.lastMode || 'LISTEN'
     autoHide.value = mode.value === 'LISTEN' || mode.value === 'READ'
+    const requestedCueId = Number(route.query.cue)
+    const requestedIndex = Number.isFinite(requestedCueId)
+      ? detail.cues.findIndex((cue) => cue.id === requestedCueId)
+      : -1
     const savedIndex = detail.cues.findIndex((cue) => cue.id === state.lastCueId)
-    activeCueIndex.value = savedIndex >= 0 ? savedIndex : 0
+    activeCueIndex.value = requestedIndex >= 0 ? requestedIndex : savedIndex >= 0 ? savedIndex : 0
     await nextTick()
     if (mode.value === 'READ') startReadObservation()
     if (audio.value) {
-      audio.value.currentTime = Math.max(0, state.lastPositionMs / 1_000)
+      const requestedCue = activeCue.value
+      audio.value.currentTime = requestedIndex >= 0 && requestedCue
+        ? requestedCue.startMs / 1_000
+        : Math.max(0, state.lastPositionMs / 1_000)
       audio.value.playbackRate = playbackRate.value
     }
     visibility.show()
@@ -997,7 +1007,14 @@ onBeforeUnmount(() => {
                 :style="{ height: `${height}px` }"
               />
             </div>
-            <button class="record-button" :class="{ 'is-recording': recording }" type="button" @click="toggleRecording">
+            <button
+              class="record-button"
+              :class="{ 'is-recording': recording }"
+              type="button"
+              :aria-label="recording ? '停止录音' : '开始录音'"
+              :aria-pressed="recording"
+              @click="toggleRecording"
+            >
               <SlIcon name="stop" v-if="recording" :size="22" />
               <SlIcon name="mic" v-else :size="26" />
             </button>

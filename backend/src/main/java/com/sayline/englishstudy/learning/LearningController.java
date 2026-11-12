@@ -11,6 +11,7 @@ import com.sayline.englishstudy.learning.LearningDtos.HeartbeatResponse;
 import com.sayline.englishstudy.learning.LearningDtos.LearningState;
 import com.sayline.englishstudy.learning.LearningDtos.PositionRequest;
 import com.sayline.englishstudy.learning.LearningDtos.StatsResponse;
+import com.sayline.englishstudy.learning.ReviewDtos.ReviewCue;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,10 +28,16 @@ public class LearningController {
 
     private final LearningService learningService;
     private final LearningStatsService statsService;
+    private final ReviewService reviewService;
 
-    public LearningController(LearningService learningService, LearningStatsService statsService) {
+    public LearningController(
+        LearningService learningService,
+        LearningStatsService statsService,
+        ReviewService reviewService
+    ) {
         this.learningService = learningService;
         this.statsService = statsService;
+        this.reviewService = reviewService;
     }
 
     @GetMapping("/courses/{courseId}")
@@ -84,5 +91,10 @@ public class LearningController {
         @RequestParam(required = false) LocalDate date
     ) {
         return statsService.stats(user.id(), period.toUpperCase(Locale.ROOT), date);
+    }
+
+    @GetMapping("/reviews")
+    public java.util.List<ReviewCue> reviews(@AuthenticationPrincipal AuthenticatedUser user) {
+        return reviewService.reviews(user.id());
     }
 }

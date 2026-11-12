@@ -20,6 +20,7 @@ public final class CatalogDtos {
 
     public record CourseSummary(
         Long id,
+        Long bookId,
         String title,
         String description,
         Long categoryId,
@@ -40,6 +41,7 @@ public final class CatalogDtos {
         Long categoryId,
         String categoryName,
         String coverUrl,
+        String coverThumbnailUrl,
         String themeColorPrimary,
         String themeColorSecondary,
         String spineColor,
@@ -56,6 +58,7 @@ public final class CatalogDtos {
         Long categoryId,
         String categoryName,
         String coverUrl,
+        String coverThumbnailUrl,
         String themeColorPrimary,
         String themeColorSecondary,
         String spineColor,
@@ -102,6 +105,26 @@ public final class CatalogDtos {
         String themeColorSecondary,
         int progress,
         Instant lastStudiedAt
+    ) {
+    }
+
+    public record CueSearchResult(
+        Long cueId,
+        Long courseId,
+        Long bookId,
+        String courseTitle,
+        String bookTitle,
+        int sequenceNo,
+        long startMs,
+        String englishText,
+        String chineseText
+    ) {
+    }
+
+    public record SearchResponse(
+        List<BookSummary> books,
+        List<CourseSummary> lessons,
+        List<CueSearchResult> cues
     ) {
     }
 

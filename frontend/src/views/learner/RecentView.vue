@@ -5,14 +5,18 @@ import { useRouter } from 'vue-router'
 
 import AppBottomNav from '@/components/AppBottomNav.vue'
 import SlSkeleton from '@/components/ui/SlSkeleton.vue'
+import SlErrorState from '@/components/ui/SlErrorState.vue'
 import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
 import type { RecentLesson } from '@/api/types'
+import { useScrollMemory } from '@/composables/useScrollMemory'
 
 const router = useRouter()
+const recentScroll = ref<HTMLElement | null>(null)
 const lessons = ref<RecentLesson[]>([])
 const loading = ref(true)
 const error = ref('')
+const scrollMemory = useScrollMemory(recentScroll, () => 'recent')
 
 function goTab(value: 'home' | 'me') {
   router.push(value === 'home' ? '/' : '/me')
@@ -54,6 +58,8 @@ function coverStyle(lesson: RecentLesson) {
 onMounted(async () => {
   try {
     lessons.value = await learnerApi.recentLessons()
+    await scrollMemory.restore()
+    scrollMemory.attach()
   } catch (reason) {
     error.value = apiErrorMessage(reason)
   } finally {
@@ -64,14 +70,19 @@ onMounted(async () => {
 
 <template>
   <main class="app-screen recent-screen">
-    <div class="mobile-scroll recent-scroll">
+    <div ref="recentScroll" class="mobile-scroll recent-scroll">
       <header class="recent-head">
         <h1>最近</h1>
       </header>
 
-      <p v-if="error" class="inline-error">{{ error }}</p>
+      <SlErrorState
+        v-if="error"
+        :message="error"
+        title="最近学习暂时没有加载出来"
+        @retry="router.go(0)"
+      />
 
-      <SlSkeleton v-if="loading" :rows="6" />
+      <SlSkeleton v-else-if="loading" :rows="6" />
 
       <ul v-else-if="lessons.length" class="recent-list">
         <li v-for="lesson in lessons" :key="lesson.id">

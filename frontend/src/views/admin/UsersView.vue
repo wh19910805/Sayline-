@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue'
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
 import type { AdminUser } from '@/api/types'
+import SlErrorState from '@/components/ui/SlErrorState.vue'
 import SlTable from '@/components/ui/SlTable.vue'
 
 const users = ref<AdminUser[]>([])
@@ -43,7 +44,7 @@ onMounted(load)
       <input v-model="query" class="sl-field__control" style="width: min(340px, 100%)" placeholder="手机号或昵称" @keyup.enter="load" />
       <button class="sl-button sl-button--secondary" type="button" @click="load">搜索</button>
     </div>
-    <p v-if="error" class="inline-error">{{ error }}</p>
+    <SlErrorState v-if="error" :message="error" title="用户列表暂时不可用" @retry="load" />
     <div class="admin-card">
       <SlTable :loading="loading" :empty="!users.length" empty-title="暂无用户" empty-description="还没有注册用户">
         <template #head><tr><th>用户</th><th>角色</th><th>注册时间</th><th>最近登录</th><th>操作</th></tr></template>

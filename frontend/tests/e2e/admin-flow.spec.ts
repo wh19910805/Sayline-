@@ -8,7 +8,8 @@ test('admin sees dashboard and manages books and lessons', async ({ page }) => {
 
   await expect(page.getByText('学习正在发生。')).toBeVisible()
   await expect(page.getByText('1284')).toBeVisible()
-  await page.getByRole('link', { name: '课程管理' }).first().click()
+  await expect(page.getByRole('heading', { name: '七日学习趋势' })).toBeVisible()
+  await page.getByRole('link', { name: '书籍管理' }).first().click()
   await expect(page.getByText('会议、协作与真实职场表达')).toBeVisible()
   await expect(page.getByText('抓住重点，适应真实语速')).toBeVisible()
   await page.getByRole('link', { name: '课时管理' }).first().click()
@@ -27,6 +28,21 @@ test('admin lesson table remains usable on mobile', async ({ page }) => {
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
   expect(overflow).toBe(false)
+})
+
+test('admin filters books and batch hides selected rows', async ({ page }) => {
+  await mockUserApi(page, 'ADMIN')
+  await page.goto('/admin/books')
+
+  await page.getByPlaceholder('搜索书籍名、简介或分类').fill('听力')
+  await page.getByRole('button', { name: '搜索' }).click()
+  await expect(page.getByRole('strong').filter({ hasText: '听力训练' })).toBeVisible()
+  await expect(page.locator('.admin-table tbody').getByText('日常口语')).toHaveCount(0)
+
+  await page.getByRole('checkbox', { name: '选择 听力训练' }).check()
+  await page.getByRole('button', { name: '批量隐藏' }).click()
+  await page.getByRole('button', { name: '确认隐藏' }).click()
+  await expect(page.getByRole('cell', { name: '已隐藏' })).toBeVisible()
 })
 
 test('admin account can enter the learner experience', async ({ page }) => {

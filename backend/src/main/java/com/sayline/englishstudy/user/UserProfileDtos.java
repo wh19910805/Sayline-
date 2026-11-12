@@ -5,6 +5,8 @@ import java.util.List;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -31,6 +33,7 @@ public final class UserProfileDtos {
         boolean showChineseRead,
         boolean showChineseWrite,
         boolean showChineseSpeak,
+        int dailyGoalMinutes,
         Long defaultCategoryId
     ) {
     }
@@ -43,6 +46,7 @@ public final class UserProfileDtos {
         Boolean showChineseRead,
         Boolean showChineseWrite,
         Boolean showChineseSpeak,
+        @Min(1) @Max(240) Integer dailyGoalMinutes,
         Long defaultCategoryId
     ) {
     }

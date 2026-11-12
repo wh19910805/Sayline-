@@ -48,10 +48,27 @@ test('primary learner controls meet the mobile touch target baseline', async ({ 
     '.transport-skip',
     '.player-mode-dock .sl-mode',
   ])
+  await page.locator('[aria-label="写"]').click()
+  await expect(page.locator('.write-current')).toBeVisible()
+  await expectTouchTargets(page, ['.write-current__actions button', '.skip-link'])
+  await page.locator('[aria-label="读"]').click()
+  await expectTouchTargets(page, ['.translation-toggle'])
+  await page.locator('[aria-label="说"]').click()
+  await page.getByRole('button', { name: '开始录音' }).waitFor()
+  await expectTouchTargets(page, ['.record-button'])
 
   await page.goto('/me')
   await expect(page.locator('.profile-card')).toBeVisible()
   await expectTouchTargets(page, ['.sl-tabs--pill .sl-tab'])
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false)
+})
+
+test('admin mobile actions meet the touch target baseline', async ({ page }) => {
+  await mockUserApi(page, 'ADMIN')
+  await page.goto('/admin/categories')
+
+  await expect(page.locator('.admin-mobile-nav')).toBeVisible()
+  await page.locator('.admin-table').waitFor()
+  await expectTouchTargets(page, ['.admin-mobile-nav a', '.admin-table .sl-icon-button'])
 })

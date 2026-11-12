@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRouter } from 'vue-router'
 
@@ -9,8 +9,13 @@ import type { LearningSettings } from '@/api/types'
 
 const router = useRouter()
 const settings = ref<LearningSettings | null>(null)
+const initialSnapshot = ref('')
 const error = ref('')
 const saved = ref(false)
+const saving = ref(false)
+const dirty = computed(
+  () => !!settings.value && JSON.stringify(settings.value) !== initialSnapshot.value,
+)
 const sizes = [
   { value: 0.9, label: '小' },
   { value: 1, label: '标准' },
@@ -29,21 +34,28 @@ const speeds = [
 onMounted(async () => {
   try {
     settings.value = await learnerApi.settings()
+    initialSnapshot.value = JSON.stringify(settings.value)
   } catch (reason) {
     error.value = apiErrorMessage(reason)
   }
 })
 
 async function save() {
-  if (!settings.value) return
+  if (!settings.value || !dirty.value || saving.value) return
+  saving.value = true
   saved.value = false
+  error.value = ''
   try {
     settings.value = await learnerApi.updateSettings(settings.value)
+    initialSnapshot.value = JSON.stringify(settings.value)
     saved.value = true
   } catch (reason) {
     error.value = apiErrorMessage(reason)
+  } finally {
+    saving.value = false
   }
 }
+
 </script>
 
 <template>
@@ -108,6 +120,26 @@ async function save() {
         </section>
 
         <section class="settings-section">
+          <span class="eyebrow settings-section__eyebrow">DAILY PLAN</span>
+          <h2>每日学习目标</h2>
+          <p>用每天可完成的分钟数衡量进度，范围 1–240 分钟。</p>
+          <label class="daily-goal-field">
+            <span>每日学习目标（分钟）</span>
+            <span class="daily-goal-field__control">
+              <input
+                v-model.number="settings.dailyGoalMinutes"
+                type="number"
+                min="1"
+                max="240"
+                inputmode="numeric"
+                aria-label="每日学习目标（分钟）"
+              />
+              <small>分钟</small>
+            </span>
+          </label>
+        </section>
+
+        <section class="settings-section">
           <span class="eyebrow settings-section__eyebrow">TRANSLATION</span>
           <h2>中文翻译</h2>
           <label class="sl-switch">
@@ -137,12 +169,18 @@ async function save() {
           <SlIcon name="arrow-right-s" :size="18" />
         </button>
         <p v-if="error" class="inline-error">{{ error }}</p>
-        <p v-if="saved" class="inline-success">学习设置已保存</p>
+        <p v-if="saved && !dirty" class="inline-success" aria-live="polite">学习设置已保存</p>
       </form>
     </div>
     <div class="settings-save-dock">
-      <button class="sl-button sl-button--lg sl-button--full learning-settings-save" type="button" @click="save">
-        保存设置
+      <button
+        class="sl-button sl-button--lg sl-button--full learning-settings-save"
+        type="button"
+        :disabled="!dirty || saving"
+        :aria-busy="saving || undefined"
+        @click="save"
+      >
+        {{ saving ? '正在保存…' : dirty ? '保存设置' : '设置已保存' }}
       </button>
     </div>
   </main>
@@ -250,7 +288,49 @@ async function save() {
   right: 0;
   bottom: 0;
   left: 0;
-  padding: 18px 16px calc(12px + var(--safe-bottom));
-  background: linear-gradient(180deg, transparent, var(--color-bg) 42%);
+  padding: 14px 16px calc(12px + var(--safe-bottom));
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+  background: color-mix(in srgb, var(--app-bg) 92%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.daily-goal-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.daily-goal-field > span:first-child {
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm);
+}
+
+.daily-goal-field__control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.daily-goal-field__control input {
+  width: 72px;
+  min-height: 40px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.daily-goal-field__control small {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-caption);
 }
 </style>

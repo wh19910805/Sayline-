@@ -89,6 +89,57 @@ class CatalogApiTest {
     }
 
     @Test
+    void searchesVisibleBooksByTitleDescriptionAndCategory() throws Exception {
+        CourseCategory work = createCategory("Business English", 1, true);
+        CourseCategory hidden = createCategory("Private Shelf", 2, true);
+        createBook(work, "Coffee Shop Small Talk", "Ordering drinks with confidence");
+        createBook(work, "Meeting Openers", "Introduce yourself clearly");
+        Book hiddenBook = createBook(hidden, "Coffee Draft", "Not visible yet");
+        hiddenBook.setVisible(false);
+        bookRepository.save(hiddenBook);
+        String token = createLearnerToken("13800138109");
+
+        mockMvc.perform(get("/api/v1/books")
+                .param("q", "coffee")
+                .header("Authorization", bearer(token)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].title").value("Coffee Shop Small Talk"));
+    }
+
+    @Test
+    void returnsBookThumbnailUrlsForShelfUse() throws Exception {
+        CourseCategory category = createCategory("Work", 1, true);
+        Book book = createBook(category, "Thumbnail Book", "Small cover");
+        book.setCoverObjectKey("/covers/full.png");
+        book.setCoverThumbnailObjectKey("/covers/thumb.jpg");
+        bookRepository.save(book);
+        String token = createLearnerToken("13800138110");
+
+        mockMvc.perform(get("/api/v1/books").header("Authorization", bearer(token)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].coverThumbnailUrl").value("/covers/thumb.jpg"));
+    }
+
+    @Test
+    void searchesBooksLessonsAndSubtitleTextTogether() throws Exception {
+        CourseCategory category = createCategory("Coffee", 1, true);
+        Book book = createBook(category, "Coffee Stories", "Slow listening");
+        Course course = createCourse(category, "Coffee Chat", CourseStatus.PUBLISHED);
+        createCue(course, 1, "Coffee keeps me awake.", "咖啡让我保持清醒。");
+        String token = createLearnerToken("13800138111");
+
+        mockMvc.perform(get("/api/v1/search")
+                .param("q", "coffee")
+                .header("Authorization", bearer(token)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.books[0].id").value(book.getId()))
+            .andExpect(jsonPath("$.lessons[0].id").value(course.getId()))
+            .andExpect(jsonPath("$.cues[0].courseId").value(course.getId()))
+            .andExpect(jsonPath("$.cues[0].englishText").value("Coffee keeps me awake."));
+    }
+
+    @Test
     void searchesPublishedCoursesWithinCategory() throws Exception {
         CourseCategory work = createCategory("Work", 1, true);
         CourseCategory listening = createCategory("Listening", 2, true);
@@ -209,11 +260,15 @@ class CatalogApiTest {
     }
 
     private Book createBook(CourseCategory category) {
+        return createBook(category, category.getName(), category.getName() + " description");
+    }
+
+    private Book createBook(CourseCategory category, String title, String description) {
         Book book = new Book();
         book.setCategory(category);
-        book.setTitle(category.getName());
-        book.setDescription(category.getName() + " description");
-        book.setCoverObjectKey("covers/" + category.getName() + ".jpg");
+        book.setTitle(title);
+        book.setDescription(description);
+        book.setCoverObjectKey("covers/" + title + ".jpg");
         book.setThemeColorPrimary("#2D5C4D");
         book.setThemeColorSecondary("#E8C99B");
         book.setSortOrder(1);

@@ -28,3 +28,7 @@ export function cacheDeletePrefix(prefix: string): void {
     if (key.startsWith(prefix)) store.delete(key)
   }
 }
+
+export function clearAllCaches(): void {
+  store.clear()
+}

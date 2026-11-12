@@ -84,6 +84,9 @@ public class UserProfileService {
         if (request.showChineseSpeak() != null) {
             settings.setShowChineseSpeak(request.showChineseSpeak());
         }
+        if (request.dailyGoalMinutes() != null) {
+            settings.setDailyGoalMinutes(request.dailyGoalMinutes());
+        }
         if (request.defaultCategoryId() != null) {
             settings.setDefaultCategory(requiredCategory(request.defaultCategoryId()));
         }
@@ -164,6 +167,7 @@ public class UserProfileService {
             settings.isShowChineseRead(),
             settings.isShowChineseWrite(),
             settings.isShowChineseSpeak(),
+            settings.getDailyGoalMinutes(),
             settings.getDefaultCategory() == null ? null : settings.getDefaultCategory().getId());
     }
 

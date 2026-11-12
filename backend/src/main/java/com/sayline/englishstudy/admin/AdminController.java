@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.sayline.englishstudy.admin.AdminDtos.BookAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.BookRequest;
+import com.sayline.englishstudy.admin.AdminDtos.BatchVisibilityRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CourseAdminView;
@@ -75,10 +76,12 @@ public class AdminController {
     @GetMapping("/books")
     public PageResponse<BookAdminView> books(
         @RequestParam(required = false) Long categoryId,
+        @RequestParam(required = false) String q,
+        @RequestParam(required = false) Boolean visible,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size
     ) {
-        return adminService.books(categoryId, page, size);
+        return adminService.books(categoryId, q, visible, page, size);
     }
 
     @PostMapping("/books")
@@ -98,6 +101,14 @@ public class AdminController {
     public ResponseEntity<Void> deleteBook(@PathVariable Long bookId) {
         adminService.deleteBook(bookId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/books/batch-visibility")
+    public ResponseEntity<Void> batchBookVisibility(
+        @Valid @RequestBody BatchVisibilityRequest request
+    ) {
+        adminService.batchBookVisibility(request);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/courses")

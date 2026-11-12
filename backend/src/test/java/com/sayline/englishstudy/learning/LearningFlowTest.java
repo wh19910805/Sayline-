@@ -148,6 +148,20 @@ class LearningFlowTest {
     }
 
     @Test
+    void returnsLatestIncorrectDictationCuesAsReviewQueue() throws Exception {
+        action(secondCue, "WRITE", 0, "wrong answer")
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/learning/reviews")
+                .header("Authorization", bearer()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].courseId").value(course.getId()))
+            .andExpect(jsonPath("$[0].cueId").value(secondCue.getId()))
+            .andExpect(jsonPath("$[0].englishText").value("How are you?"));
+    }
+
+    @Test
     void countsOneSessionAtThirtySecondsAndStartsNewSessionAfterTenMinutes() throws Exception {
         heartbeat(10_000).andExpect(jsonPath("$.sessionCounted").value(false));
         heartbeat(10_000).andExpect(jsonPath("$.sessionCounted").value(false));

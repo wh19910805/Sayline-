@@ -6,6 +6,8 @@ import { useRouter } from 'vue-router'
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
 import type { AdminBook, AdminCourse, CourseStatus } from '@/api/types'
+import SlDialog from '@/components/ui/SlDialog.vue'
+import SlErrorState from '@/components/ui/SlErrorState.vue'
 import SlTable from '@/components/ui/SlTable.vue'
 
 const router = useRouter()
@@ -19,6 +21,7 @@ const totalPages = ref(1)
 const totalElements = ref(0)
 const error = ref('')
 const loading = ref(false)
+const deleteTarget = ref<AdminCourse | null>(null)
 
 async function load() {
   loading.value = true
@@ -71,10 +74,15 @@ async function offline(course: AdminCourse) {
   }
 }
 
-async function remove(course: AdminCourse) {
-  if (!window.confirm(`确认删除课时「${course.title}」？关联的字幕、收藏和学习记录会一并删除，且无法恢复。`)) return
+function remove(course: AdminCourse) {
+  deleteTarget.value = course
+}
+
+async function confirmRemove() {
+  if (!deleteTarget.value) return
   try {
-    await adminApi.deleteCourse(course.id)
+    await adminApi.deleteCourse(deleteTarget.value.id)
+    deleteTarget.value = null
     await load()
   } catch (reason) {
     error.value = apiErrorMessage(reason)
@@ -95,7 +103,7 @@ onMounted(() => {
     </header>
     <div class="admin-actions" style="margin-bottom: 16px">
       <select v-model="bookFilter" class="sl-field__control" style="width: 150px" @change="page = 0; load()">
-        <option value="">全部课程</option>
+        <option value="">全部书籍</option>
         <option v-for="book in books" :key="book.id" :value="book.id">{{ book.title }}</option>
       </select>
       <select v-model="statusFilter" class="sl-field__control" style="width: 150px" @change="page = 0; load()">
@@ -107,10 +115,10 @@ onMounted(() => {
       <input v-model="query" class="sl-field__control" style="width: min(320px, 100%)" placeholder="搜索课时名" @keyup.enter="page = 0; load()" />
       <button class="sl-button sl-button--secondary" type="button" @click="page = 0; load()">搜索</button>
     </div>
-    <p v-if="error" class="inline-error">{{ error }}</p>
+    <SlErrorState v-if="error" :message="error" title="课时列表暂时不可用" @retry="load" />
     <div class="admin-card">
       <SlTable :loading="loading" :empty="!courses.length" empty-title="暂无课时" empty-description="还没有课时，点右上角新建">
-        <template #head><tr><th>课时</th><th>所属课程</th><th>时长</th><th>状态</th><th>操作</th></tr></template>
+        <template #head><tr><th>课时</th><th>所属书籍</th><th>时长</th><th>状态</th><th>操作</th></tr></template>
         <tr v-for="course in courses" :key="course.id">
           <td><strong>{{ course.title }}</strong><br /><small>{{ course.description }}</small></td>
           <td>{{ course.bookName }}</td>
@@ -137,5 +145,18 @@ onMounted(() => {
       <span>第 {{ page + 1 }} / {{ totalPages }} 页 · 共 {{ totalElements }} 个</span>
       <button class="sl-button sl-button--secondary sl-button--sm" type="button" :disabled="page >= totalPages - 1" @click="goPage(page + 1)">下一页</button>
     </div>
+
+    <SlDialog
+      :open="!!deleteTarget"
+      title="删除这个课时？"
+      eyebrow="DELETE LESSON"
+      :description="`将永久删除「${deleteTarget?.title ?? ''}」及其字幕、收藏和学习记录，且无法恢复。已发布课时需先下架。`"
+      @close="deleteTarget = null"
+    >
+      <template #actions>
+        <button class="sl-button sl-button--secondary" type="button" @click="deleteTarget = null">取消</button>
+        <button class="sl-button sl-button--danger" type="button" @click="confirmRemove">确认删除</button>
+      </template>
+    </SlDialog>
   </section>
 </template>

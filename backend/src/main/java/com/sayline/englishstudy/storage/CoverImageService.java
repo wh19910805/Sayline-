@@ -5,6 +5,7 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,6 +36,9 @@ public class CoverImageService {
         }
         try {
             byte[] original = storageService.readBytes(objectKey);
+            if (original == null || original.length == 0) {
+                return;
+            }
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(original));
             if (image == null) {
                 return; // 无法解码（如 WebP），回退原图
@@ -65,7 +69,9 @@ public class CoverImageService {
             graphics.dispose();
         }
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ImageIO.write(target, "jpeg", output);
+        if (!ImageIO.write(target, "jpeg", output)) {
+            throw new IOException("No JPEG image writer is available");
+        }
         return output.toByteArray();
     }
 

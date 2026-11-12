@@ -37,3 +37,25 @@ test('book shelf renders the default category book and opens its lessons', async
   await page.locator('.book3d').first().click()
   await expect(page).toHaveURL(/\/learn\/\d+/)
 })
+
+test('unified search finds subtitle text and opens the matching cue', async ({ page }) => {
+  await page.goto('/')
+
+  await page.getByRole('button', { name: '搜索课程' }).click()
+  await page.getByRole('searchbox', { name: '搜索书籍、课时和字幕' }).fill('Friday')
+
+  await expect(page.getByRole('heading', { name: '字幕' })).toBeVisible()
+  await page.getByRole('button', { name: /Could we move the meeting to Friday morning/ }).click()
+
+  await expect(page).toHaveURL(/\/learn\/1\/1\?cue=3&mode=WRITE/)
+  await expect(page.locator('.write-current__translation')).toContainText(
+    '我们能把会议改到周五上午吗？',
+  )
+})
+
+test('bookshelf uses uploaded cover thumbnails', async ({ page }) => {
+  await page.goto('/')
+
+  const topFace = page.locator('.book3d__top').first()
+  await expect(topFace).toHaveCSS('background-image', /work\.jpg/)
+})

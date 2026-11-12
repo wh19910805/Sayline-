@@ -425,8 +425,12 @@ button {
 
 .password-field__toggle {
   position: absolute;
-  right: 13px;
-  bottom: 15px;
+  right: 4px;
+  bottom: 3px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
   border: 0;
   background: transparent;
   color: var(--color-text-tertiary);
@@ -441,11 +445,11 @@ button {
 }
 
 .login-panel__options .sl-checkbox {
-  min-height: 34px;
+  min-height: 44px;
 }
 
 .login-register {
-  min-height: 35px;
+  min-height: 44px;
   border: 0;
   background: transparent;
   color: var(--color-text-tertiary);
@@ -503,8 +507,8 @@ button {
 }
 
 .home-top-row .sl-icon-button {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   margin: -2px -7px 0 0;
 }
 
@@ -1269,7 +1273,7 @@ button {
 .legend-3 { background: var(--color-moss-700); }
 
 .week-chart {
-  height: 146px;
+  height: 160px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -1288,6 +1292,12 @@ button {
   gap: 8px;
   color: var(--color-text-tertiary);
   font-size: 10px;
+}
+
+.week-day__value {
+  color: var(--color-text-tertiary);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
 }
 
 .week-day__track {
@@ -1924,14 +1934,14 @@ button {
 }
 
 .preference-row__actions .sl-icon-button {
-  width: 29px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
 }
 
 .preference-row .default-choice {
   grid-column: 2 / -1;
   justify-self: start;
-  min-height: 27px;
+  min-height: 44px;
   margin-top: 5px;
   padding: 0 9px;
   border: 1px solid var(--color-border);
@@ -1978,7 +1988,7 @@ button {
 }
 
 .interest-pool button {
-  min-height: 36px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -2343,11 +2353,11 @@ button {
 }
 
 .translation-toggle {
-  min-height: 34px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0;
+  padding: 0 6px;
   border: 0;
   background: transparent;
   color: rgba(255,250,240,.56);
@@ -2543,7 +2553,7 @@ button {
 }
 
 .write-current__actions button {
-  min-height: 30px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -2707,7 +2717,7 @@ button {
 }
 
 .skip-link {
-  min-height: 30px;
+  min-height: 44px;
   border: 0;
   background: transparent;
   color: rgba(255,250,240,.38);
@@ -2880,8 +2890,8 @@ button {
 }
 
 .audio-deck__times button {
-  min-width: 38px;
-  min-height: 24px;
+  min-width: 44px;
+  min-height: 44px;
   border: 0;
   border-radius: 99px;
   background: rgba(255,255,255,.08);
@@ -2960,7 +2970,7 @@ button {
 }
 
 .player-complete-row .sl-button {
-  min-height: 34px;
+  min-height: 44px;
   border-color: rgba(255,255,255,.18);
   background: rgba(255,255,255,.08);
   color: var(--player-text);
