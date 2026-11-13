@@ -183,7 +183,7 @@ function textColorFor(hex: string): string {
 }
 
 function coverImageStyle(book: BookSummary) {
-  const cover = book.coverUrl || book.coverThumbnailUrl
+  const cover = book.coverThumbnailUrl || book.coverUrl
   if (!cover) return undefined
   return {
     backgroundImage: `url("${cover}"), linear-gradient(150deg, var(--book-a), var(--book-b))`,

@@ -105,10 +105,28 @@ test('unified search finds subtitle text and opens the matching cue', async ({ p
 })
 
 test('bookshelf uses uploaded cover thumbnails', async ({ page }) => {
+  await page.route('**/api/v1/books?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([{
+        id: 1,
+        title: '职场英语',
+        categoryId: 1,
+        categoryName: '职场英语',
+        coverUrl: '/covers/work-full.jpg',
+        coverThumbnailUrl: '/covers/work-thumb.jpg',
+        lessonCount: 2,
+        progress: 20,
+        favorite: false,
+      }]),
+    }),
+  )
   await page.goto('/')
 
   const topFace = page.locator('.book3d__top').first()
-  await expect(topFace).toHaveCSS('background-image', /work\.jpg/)
+  await expect(topFace).toHaveCSS('background-image', /work-thumb\.jpg/)
+  await expect(topFace).not.toHaveCSS('background-image', /work-full\.jpg/)
 })
 
 test('current book card falls back to the original cover', async ({ page }) => {

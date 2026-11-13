@@ -81,6 +81,7 @@ public class S3StorageService implements StorageService {
         GetObjectRequest request = GetObjectRequest.builder()
             .bucket(bucket)
             .key(objectKey)
+            .responseCacheControl("public, max-age=31536000, immutable")
             .build();
         String url = presigner.presignGetObject(GetObjectPresignRequest.builder()
                 .signatureDuration(Duration.ofMinutes(15))
