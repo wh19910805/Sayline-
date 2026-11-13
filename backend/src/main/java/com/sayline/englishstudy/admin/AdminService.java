@@ -390,6 +390,7 @@ public class AdminService {
             List<ParsedSubtitleCue> parsed = subtitleParser.parse(
                 storageService.readText(subtitleObjectKey), subtitleObjectKey);
             cueRepository.deleteByCourseId(course.getId());
+            cueRepository.flush();
             for (ParsedSubtitleCue item : parsed) {
                 SubtitleCue cue = new SubtitleCue();
                 cue.setCourse(course);

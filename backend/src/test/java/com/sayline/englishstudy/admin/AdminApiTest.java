@@ -155,6 +155,42 @@ class AdminApiTest {
     }
 
     @Test
+    void replacesSubtitleCuesForPublishedCourse() throws Exception {
+        String adminToken = createUserAndLogin("13800138510", UserRole.ADMIN);
+        CourseCategory category = createCategory("Work");
+        long bookId = createBookViaApi(adminToken, category.getId());
+        MvcResult created = mockMvc.perform(post("/api/v1/admin/courses")
+                .header("Authorization", bearer(adminToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(courseBody(bookId)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        long courseId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+        mockMvc.perform(post("/api/v1/admin/courses/{id}/publish", courseId)
+                .header("Authorization", bearer(adminToken)))
+            .andExpect(status().isOk());
+        when(storageService.readText(eq("subtitles/updated.srt"))).thenReturn("""
+            1
+            00:00:00,000 --> 00:00:02,000
+            Good afternoon.
+            下午好。
+            """);
+
+        mockMvc.perform(patch("/api/v1/admin/courses/{id}", courseId)
+                .header("Authorization", bearer(adminToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(courseBody(bookId).replace("subtitles/lesson.srt", "subtitles/updated.srt")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.subtitleObjectKey").value("subtitles/updated.srt"));
+
+        mockMvc.perform(get("/api/v1/courses/{id}", courseId)
+                .header("Authorization", bearer(adminToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.cues.length()").value(1))
+            .andExpect(jsonPath("$.cues[0].chineseText").value("下午好。"));
+    }
+
+    @Test
     void searchesAndDisablesUsers() throws Exception {
         String adminToken = createUserAndLogin("13800138504", UserRole.ADMIN);
         long learnerId = createUser("13800138505", "Lin", UserRole.USER).getId();
