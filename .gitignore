@@ -5,6 +5,7 @@
 node_modules/
 target/
 dist/
+backups/
 playwright-report/
 test-results/
 .idea/
