@@ -11,8 +11,29 @@ $objectFile = Join-Path $OutputDir "minio-$stamp.tar.gz"
 docker compose ps --status running | Out-Null
 docker compose exec -T mysql sh -c 'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --routines "$MYSQL_DATABASE"' |
     Set-Content -Path $dbFile -Encoding utf8
-docker compose exec -T minio tar czf - -C /data . |
-    Set-Content -Path $objectFile -AsByteStream
+
+$minioContainer = docker compose ps -q minio
+if (-not $minioContainer) {
+    throw "MinIO container is not running."
+}
+$minioVolume = docker inspect $minioContainer --format '{{range .Mounts}}{{if eq .Destination "/data"}}{{.Name}}{{end}}{{end}}'
+if ([string]::IsNullOrWhiteSpace($minioVolume)) {
+    throw "MinIO data volume was not found."
+}
+
+if (Test-Path -LiteralPath $objectFile) {
+    Remove-Item -LiteralPath $objectFile -Force
+}
+$backupDirectory = (Resolve-Path $OutputDir).Path
+$archiveName = Split-Path $objectFile -Leaf
+docker run --rm --entrypoint sh `
+    -v "${minioVolume}:/data:ro" `
+    -v "${backupDirectory}:/backup" `
+    nginx:1.27-alpine `
+    -c "tar czf /backup/$archiveName -C /data ."
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to archive MinIO data."
+}
 
 $manifest = @{
     createdAt = (Get-Date).ToString("o")
