@@ -16,4 +16,8 @@ public interface StudySessionRepository extends JpaRepository<StudySession, Stri
         where session.lastActiveAt >= :since
         """)
     long countActiveUsersSince(@Param("since") Instant since);
+
+    void deleteByCourseId(Long courseId);
+
+    void deleteByUserId(Long userId);
 }

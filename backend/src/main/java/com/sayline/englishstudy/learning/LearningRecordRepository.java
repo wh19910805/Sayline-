@@ -41,4 +41,8 @@ public interface LearningRecordRepository extends JpaRepository<LearningRecord, 
         order by record.lastStudiedAt desc
         """)
     List<LearningRecord> findRecentByUserId(@Param("userId") Long userId);
+
+    void deleteByCourseId(Long courseId);
+
+    void deleteByUserId(Long userId);
 }

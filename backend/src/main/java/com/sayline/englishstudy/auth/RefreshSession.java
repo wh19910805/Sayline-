@@ -44,4 +44,10 @@ public class RefreshSession {
 
     @Column(name = "revoked_at")
     private Instant revokedAt;
+
+    @Column(name = "user_agent", length = 255)
+    private String userAgent;
+
+    @Column(name = "ip_address", length = 64)
+    private String ipAddress;
 }

@@ -209,29 +209,45 @@ onMounted(load)
         <template #head>
           <tr>
             <th><label class="admin-check"><input type="checkbox" aria-label="选择全部书籍" :checked="allSelected" @change="toggleAll(($event.target as HTMLInputElement).checked)" /></label></th>
-            <th>书籍名</th><th>分类</th><th>排序</th><th>状态</th><th>操作</th>
+            <th>书籍</th><th>分类</th><th>封面</th><th>排序</th><th>状态</th><th>更新时间</th><th>操作</th>
           </tr>
         </template>
         <tr v-for="book in books" :key="book.id">
           <td><label class="admin-check"><input type="checkbox" :aria-label="`选择 ${book.title}`" :checked="selectedIds.includes(book.id)" @change="toggleSelection(book.id, ($event.target as HTMLInputElement).checked)" /></label></td>
           <td><strong>{{ book.title }}</strong><br /><small>{{ book.description }}</small></td>
           <td>{{ book.categoryName }}</td>
+          <td>
+            <span class="admin-book-cover" :style="book.coverUrl ? { backgroundImage: `url(&quot;${book.coverUrl}&quot;)` } : undefined">
+              <SlIcon v-if="!book.coverUrl" name="book-2" :size="16" />
+            </span>
+          </td>
           <td>{{ book.sortOrder }}</td>
           <td><span class="sl-badge" :class="{ 'sl-badge--warning': !book.visible }">{{ book.visible ? '可见' : '已隐藏' }}</span></td>
+          <td>{{ book.updatedAt ? new Date(book.updatedAt).toLocaleDateString('zh-CN') : '暂无' }}</td>
           <td>
             <div class="admin-actions">
               <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="openEdit(book)">编辑</button>
-              <button class="sl-button sl-button--danger sl-button--sm" type="button" @click="remove(book)">删除</button>
+              <details class="admin-row-menu">
+                <summary class="sl-button sl-button--secondary sl-button--sm" aria-label="更多书籍操作">更多 <SlIcon name="arrow-down-s" :size="15" /></summary>
+                <div class="admin-row-menu__panel">
+                  <button type="button" @click="openEdit(book)">调整封面与排序</button>
+                  <button class="is-danger" type="button" @click="remove(book)">删除书籍</button>
+                </div>
+              </details>
             </div>
           </td>
         </tr>
       </SlTable>
     </div>
 
-    <div v-if="formOpen" class="admin-modal">
-      <div class="admin-modal__card">
-        <header><h2>{{ editingId ? '编辑书籍' : '新建书籍' }}</h2><button class="sl-icon-button" type="button" aria-label="关闭" @click="formOpen = false">×</button></header>
-        <form class="admin-form" @submit.prevent="save">
+    <SlDialog
+      :open="formOpen"
+      :title="editingId ? '编辑书籍' : '新建书籍'"
+      eyebrow="BOOK DETAILS"
+      description="封面和排序会直接影响学习端书架展示。"
+      @close="formOpen = false"
+    >
+        <form id="book-editor-form" class="admin-form" @submit.prevent="save">
           <div class="admin-form-grid">
             <label class="sl-field">
               <span class="sl-field__label">书籍名</span>
@@ -259,13 +275,12 @@ onMounted(load)
             <input type="file" accept="image/jpeg,image/png,image/webp" hidden @change="upload" />
             <span>{{ uploading ? '上传中…' : form.coverObjectKey || 'JPG / PNG / WebP' }}</span>
           </label>
-          <div class="admin-actions">
-            <button class="sl-button sl-button--secondary" type="button" @click="formOpen = false">取消</button>
-            <button class="sl-button sl-button--accent" type="submit" :disabled="saving">保存</button>
-          </div>
         </form>
-      </div>
-    </div>
+      <template #actions>
+        <button class="sl-button sl-button--secondary" type="button" @click="formOpen = false">取消</button>
+        <button class="sl-button sl-button--accent" type="submit" form="book-editor-form" :disabled="saving">保存</button>
+      </template>
+    </SlDialog>
 
     <SlDialog
       :open="!!deleteTarget"
@@ -296,3 +311,64 @@ onMounted(load)
     </SlDialog>
   </section>
 </template>
+
+<style scoped>
+.admin-book-cover {
+  width: 36px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  background: var(--color-surface-muted);
+  background-position: center;
+  background-size: cover;
+  color: var(--color-text-tertiary);
+}
+
+.admin-row-menu {
+  position: relative;
+}
+
+.admin-row-menu summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.admin-row-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-row-menu__panel {
+  position: absolute;
+  z-index: 20;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 160px;
+  display: grid;
+  padding: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-float);
+}
+
+.admin-row-menu__panel button {
+  min-height: 44px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-row-menu__panel button:hover,
+.admin-row-menu__panel button:focus-visible {
+  background: var(--color-surface-muted);
+}
+
+.admin-row-menu__panel .is-danger {
+  color: var(--color-danger);
+}
+</style>

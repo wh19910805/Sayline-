@@ -12,15 +12,22 @@ import type {
   CourseDetail,
   CourseStatus,
   CourseSummary,
+  ContentHealth,
   Dashboard,
+  ImportItem,
+  ImportJob,
+  ImportPreview,
+  ImportType,
   LearningMode,
   LearningSettings,
   LearningState,
   PageResponse,
+  PasswordResetToken,
   PresignResponse,
   Profile,
   RecentLesson,
   ReviewCue,
+  SessionInfo,
   SearchResponse,
   StatsResponse,
 } from './types'
@@ -61,6 +68,8 @@ export const authApi = {
     http.post<AuthResponse>('/api/v1/auth/register', { phone, password, nickname }),
   me: () => http.get<AuthResponse['user']>('/api/v1/auth/me'),
   logout: () => http.post<void>('/api/v1/auth/logout'),
+  resetPassword: (payload: { phone: string; token: string; newPassword: string }) =>
+    http.post<void>('/api/v1/auth/password-reset', payload),
 }
 
 export const learnerApi = {
@@ -88,7 +97,12 @@ export const learnerApi = {
   book: (bookId: number) => withCache(`book:${bookId}`, () => http.get<BookDetail>(`/api/v1/books/${bookId}`), TTL_DETAIL),
   favoriteBooks: () => withCache('favoriteBooks', () => http.get<BookSummary[]>('/api/v1/favorite-books'), TTL_CATALOG),
   recentLessons: () => withCache('recentLessons', () => http.get<RecentLesson[]>('/api/v1/recent-lessons'), TTL_RECENT),
-  reviews: () => http.get<ReviewCue[]>('/api/v1/learning/reviews'),
+  reviews: (includeMastered = true) =>
+    http.get<ReviewCue[]>(
+      `/api/v1/learning/reviews?${new URLSearchParams({ includeMastered: String(includeMastered) })}`,
+    ),
+  updateReview: (cueId: number, payload: { status: ReviewCue['status']; nextReviewAt?: string }) =>
+    http.patch<void>(`/api/v1/learning/reviews/${cueId}`, payload),
   favoriteBook: async (bookId: number) => {
     const result = await http.post<{ favorited: boolean }>(`/api/v1/books/${bookId}/favorite`)
     invalidateBookCaches(bookId)
@@ -111,6 +125,12 @@ export const learnerApi = {
   profile: () => http.get<Profile>('/api/v1/me/profile'),
   updateProfile: (payload: { nickname: string; avatarObjectKey?: string | null }) =>
     http.patch<Profile>('/api/v1/me/profile', payload),
+  changePhone: (payload: { currentPassword: string; newPhone: string }) =>
+    http.patch<Profile>('/api/v1/me/phone', payload),
+  deleteAccount: (currentPassword: string) =>
+    http.delete<void>('/api/v1/me/account', { body: JSON.stringify({ currentPassword }) }),
+  sessions: () => http.get<SessionInfo[]>('/api/v1/me/sessions'),
+  revokeSession: (sessionId: string) => http.delete<void>(`/api/v1/me/sessions/${sessionId}`),
   presignAvatar: (payload: { fileName: string; contentType: string; sizeBytes: number }) =>
     http.post<PresignResponse>('/api/v1/uploads/avatar/presign', {
       kind: 'COVER',
@@ -128,8 +148,11 @@ export const learnerApi = {
     courseId: number,
     payload: { mode: LearningMode; cueId?: number; positionMs: number },
   ) => http.post<LearningState>(`/api/v1/learning/courses/${courseId}/position`, payload),
-  confirm: (courseId: number, mode: LearningMode) =>
-    http.post<LearningState>(`/api/v1/learning/courses/${courseId}/confirm`, { mode }),
+  confirm: (courseId: number, mode: LearningMode, playbackCompleted = false) =>
+    http.post<LearningState>(`/api/v1/learning/courses/${courseId}/confirm`, {
+      mode,
+      playbackCompleted,
+    }),
   heartbeat: (courseId: number, activeMs: number) =>
     http.post<{ sessionId: string; sessionActiveMs: number; sessionCounted: boolean }>(
       `/api/v1/learning/courses/${courseId}/heartbeat`,
@@ -144,6 +167,7 @@ export const learnerApi = {
 
 export const adminApi = {
   dashboard: () => http.get<Dashboard>('/api/v1/admin/dashboard'),
+  contentHealth: () => http.get<ContentHealth>('/api/v1/admin/content-health'),
   categories: (page = 0, size = 20) => {
     const params = new URLSearchParams({ page: String(page), size: String(size) })
     return http.get<PageResponse<AdminCategory>>(`/api/v1/admin/categories?${params}`)
@@ -195,6 +219,10 @@ export const adminApi = {
   },
   publishCourse: (id: number) => http.post<AdminCourse>(`/api/v1/admin/courses/${id}/publish`),
   offlineCourse: (id: number) => http.post<AdminCourse>(`/api/v1/admin/courses/${id}/offline`),
+  batchCourseStatus: async (courseIds: number[], status: 'PUBLISHED' | 'OFFLINE') => {
+    await http.patch<void>('/api/v1/admin/courses/batch-status', { courseIds, status })
+    invalidateCatalogCache()
+  },
   deleteCourse: (id: number) => http.delete<void>(`/api/v1/admin/courses/${id}`),
   users: (q?: string) => {
     const params = new URLSearchParams({ size: '50' })
@@ -203,10 +231,36 @@ export const adminApi = {
   },
   setUserStatus: (id: number, status: 'ENABLED' | 'DISABLED') =>
     http.patch<AdminUser>(`/api/v1/admin/users/${id}/status`, { status }),
+  issuePasswordResetToken: (id: number) =>
+    http.post<PasswordResetToken>(`/api/v1/admin/users/${id}/password-reset-token`),
   presignUpload: (payload: {
     kind: 'COVER' | 'AUDIO' | 'SUBTITLE'
     fileName: string
     contentType: string
     sizeBytes: number
   }) => http.post<PresignResponse>('/api/v1/admin/uploads/presign', payload),
+  previewImport: (payload: {
+    type: ImportType
+    bookId?: number | null
+    items: ImportItem[]
+  }) => http.post<ImportPreview>('/api/v1/admin/imports/preview', payload),
+  executeImport: async (payload: {
+    type: ImportType
+    bookId?: number | null
+    resetLearning: boolean
+    items: ImportItem[]
+  }) => {
+    const result = await http.post<ImportJob>('/api/v1/admin/imports', payload)
+    invalidateCatalogCache()
+    return result
+  },
+  imports: (page = 0, size = 20) => {
+    const params = new URLSearchParams({ page: String(page), size: String(size) })
+    return http.get<PageResponse<ImportJob>>(`/api/v1/admin/imports?${params}`)
+  },
+  rollbackImport: async (jobId: number) => {
+    const result = await http.post<ImportJob>(`/api/v1/admin/imports/${jobId}/rollback`)
+    invalidateCatalogCache()
+    return result
+  },
 }

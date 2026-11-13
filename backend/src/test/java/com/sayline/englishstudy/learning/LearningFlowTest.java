@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -74,7 +75,8 @@ class LearningFlowTest {
     @BeforeEach
     void setUp() throws Exception {
         for (String table : new String[] {
-            "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
+            "admin_audit_logs", "content_import_jobs", "password_reset_tokens",
+            "review_cue_states", "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
             "study_sessions", "learning_records", "course_favorites", "refresh_sessions",
             "subtitle_cues", "courses", "book_favorites", "books", "user_settings",
             "user_interests", "course_categories", "users"
@@ -159,6 +161,54 @@ class LearningFlowTest {
             .andExpect(jsonPath("$[0].courseId").value(course.getId()))
             .andExpect(jsonPath("$[0].cueId").value(secondCue.getId()))
             .andExpect(jsonPath("$[0].englishText").value("How are you?"));
+    }
+
+    @Test
+    void completesListeningFromPlaybackWhenAudioReachesEnd() throws Exception {
+        mockMvc.perform(post("/api/v1/learning/courses/{courseId}/confirm", course.getId())
+                .header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"mode":"LISTEN","playbackCompleted":true}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.modes.listen.progress").value(100))
+            .andExpect(jsonPath("$.modes.listen.confirmed").value(true))
+            .andExpect(jsonPath("$.cues[0].heard").value(true))
+            .andExpect(jsonPath("$.cues[1].heard").value(true));
+    }
+
+    @Test
+    void marksReviewCuesMasteredAndSnoozedUntilDue() throws Exception {
+        action(secondCue, "WRITE", 0, "wrong answer").andExpect(status().isOk());
+
+        mockMvc.perform(patch("/api/v1/learning/reviews/{cueId}", secondCue.getId())
+                .header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"status":"MASTERED"}
+                    """))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/learning/reviews").header("Authorization", bearer()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
+        mockMvc.perform(get("/api/v1/learning/reviews")
+                .param("includeMastered", "true")
+                .header("Authorization", bearer()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].status").value("MASTERED"));
+
+        mockMvc.perform(patch("/api/v1/learning/reviews/{cueId}", secondCue.getId())
+                .header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"status":"SNOOZED","nextReviewAt":"2020-01-01T00:00:00Z"}
+                    """))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/learning/reviews").header("Authorization", bearer()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].status").value("SNOOZED"))
+            .andExpect(jsonPath("$[0].due").value(true));
     }
 
     @Test

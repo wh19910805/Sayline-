@@ -14,6 +14,9 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
@@ -119,5 +122,33 @@ public class S3StorageService implements StorageService {
                 .contentType(contentType)
                 .build(),
             RequestBody.fromBytes(bytes));
+    }
+
+    @Override
+    public String objectMd5(String objectKey) {
+        if (objectKey == null || objectKey.isBlank()) {
+            return null;
+        }
+        HeadObjectResponse response = client.headObject(HeadObjectRequest.builder()
+            .bucket(bucket)
+            .key(objectKey)
+            .build());
+        String etag = response.eTag();
+        if (etag == null) {
+            return null;
+        }
+        String normalized = etag.replace("\"", "").toLowerCase();
+        return normalized.matches("[0-9a-f]{32}") ? normalized : null;
+    }
+
+    @Override
+    public java.util.List<String> listObjectKeys(String prefix) {
+        ListObjectsV2Request request = ListObjectsV2Request.builder()
+            .bucket(bucket)
+            .prefix(prefix)
+            .build();
+        return client.listObjectsV2Paginator(request).contents().stream()
+            .map(item -> item.key())
+            .toList();
     }
 }

@@ -52,6 +52,11 @@ const routes = [
     component: () => import('@/views/learner/LearningSettingsView.vue'),
   },
   {
+    path: '/me/offline',
+    name: 'offline-lessons',
+    component: () => import('@/views/learner/OfflineLessonsView.vue'),
+  },
+  {
     path: '/preferences',
     name: 'preferences',
     component: () => import('@/views/learner/PreferencesView.vue'),
@@ -86,6 +91,16 @@ const routes = [
         path: 'courses',
         name: 'admin-courses',
         component: () => import('@/views/admin/CoursesView.vue'),
+      },
+      {
+        path: 'imports',
+        name: 'admin-imports',
+        component: () => import('@/views/admin/BatchImportView.vue'),
+      },
+      {
+        path: 'operations',
+        name: 'admin-operations',
+        component: () => import('@/views/admin/OperationsView.vue'),
       },
       {
         path: 'courses/new',

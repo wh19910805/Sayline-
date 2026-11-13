@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -53,7 +54,8 @@ class UserProfileApiTest {
     @BeforeEach
     void setUp() throws Exception {
         for (String table : new String[] {
-            "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
+            "admin_audit_logs", "content_import_jobs", "password_reset_tokens",
+            "review_cue_states", "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
             "study_sessions", "learning_records", "course_favorites", "refresh_sessions",
             "subtitle_cues", "courses", "book_favorites", "books", "user_settings",
             "user_interests", "course_categories", "users"
@@ -99,7 +101,9 @@ class UserProfileApiTest {
             .andExpect(jsonPath("$.showChineseListen").value(true))
             .andExpect(jsonPath("$.showChineseWrite").value(true))
             .andExpect(jsonPath("$.showChineseSpeak").value(true))
-            .andExpect(jsonPath("$.dailyGoalMinutes").value(15));
+            .andExpect(jsonPath("$.dailyGoalMinutes").value(15))
+            .andExpect(jsonPath("$.reminderEnabled").value(false))
+            .andExpect(jsonPath("$.reminderTime").value("20:00:00"));
 
         mockMvc.perform(patch("/api/v1/me/settings")
                 .header("Authorization", bearer())
@@ -113,6 +117,8 @@ class UserProfileApiTest {
                       "showChineseWrite":true,
                       "showChineseSpeak":false,
                       "dailyGoalMinutes":30,
+                      "reminderEnabled":true,
+                      "reminderTime":"21:15",
                       "defaultCategoryId":%d
                     }
                     """.formatted(work.getId())))
@@ -120,7 +126,37 @@ class UserProfileApiTest {
             .andExpect(jsonPath("$.fontScale").value(1.25))
             .andExpect(jsonPath("$.subtitleColor").value("#F5D8A8"))
             .andExpect(jsonPath("$.dailyGoalMinutes").value(30))
+            .andExpect(jsonPath("$.reminderEnabled").value(true))
+            .andExpect(jsonPath("$.reminderTime").value("21:15:00"))
             .andExpect(jsonPath("$.defaultCategoryId").value(work.getId()));
+    }
+
+    @Test
+    void managesPhoneSessionsAndAccountDeletion() throws Exception {
+        mockMvc.perform(get("/api/v1/me/sessions").header("Authorization", bearer()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].current").value(true));
+
+        mockMvc.perform(patch("/api/v1/me/phone")
+                .header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"currentPassword":"Sayline123","newPhone":"13800138301"}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.phone").value("13800138301"));
+
+        mockMvc.perform(delete("/api/v1/me/account")
+                .header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"currentPassword":"Sayline123"}
+                    """))
+            .andExpect(status().isOk());
+
+        org.assertj.core.api.Assertions.assertThat(
+                userRepository.findByPhone("13800138301"))
+            .isEmpty();
     }
 
     @Test

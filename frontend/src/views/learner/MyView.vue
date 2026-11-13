@@ -26,6 +26,8 @@ const settings = ref<Awaited<ReturnType<typeof learnerApi.settings>> | null>(nul
 const reviews = ref<ReviewCue[]>([])
 const reviewLoading = ref(false)
 const reviewError = ref('')
+const showUnmasteredOnly = ref(true)
+const sortByWrongCount = ref(true)
 const error = ref('')
 let latestStatsRequest = 0
 const statsLoading = ref(false)
@@ -72,6 +74,55 @@ const dailyGoalPercent = computed(() =>
 const dailyGoalRemaining = computed(() =>
   Math.max(0, dailyGoalMinutes.value - todayMinutes.value),
 )
+const streakDays = computed(() => {
+  const byDate = new Map((stats.value?.days ?? []).map((day) => [day.date, day]))
+  const cursor = new Date(`${shanghaiDate()}T12:00:00+08:00`)
+  if ((byDate.get(shanghaiDate())?.studyMs ?? 0) === 0) cursor.setDate(cursor.getDate() - 1)
+  let count = 0
+  while (true) {
+    const date = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(cursor)
+    if ((byDate.get(date)?.studyMs ?? 0) === 0) break
+    count += 1
+    cursor.setDate(cursor.getDate() - 1)
+  }
+  return count
+})
+const weeklyGoalPercent = computed(() => {
+  const studyMs = (stats.value?.days ?? [])
+    .slice(-7)
+    .reduce((total, day) => total + day.studyMs, 0)
+  return Math.min(100, Math.round(studyMs / (dailyGoalMinutes.value * 7 * 60_000) * 100))
+})
+const reminderDismissed = ref(localStorage.getItem('sayline:reminder-dismissed') === shanghaiDate())
+const reminderDue = computed(() => {
+  if (!settings.value?.reminderEnabled || dailyGoalRemaining.value === 0 || reminderDismissed.value) {
+    return false
+  }
+  const reminderTime = settings.value.reminderTime?.slice(0, 5) || '20:00'
+  const now = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Shanghai',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date())
+  return now >= reminderTime
+})
+const pendingReviewCount = computed(
+  () => reviews.value.filter((review) => review.status !== 'MASTERED').length,
+)
+const displayedReviews = computed(() => {
+  const items = showUnmasteredOnly.value
+    ? reviews.value.filter((review) => review.status !== 'MASTERED')
+    : [...reviews.value]
+  return items.sort((a, b) => sortByWrongCount.value
+    ? b.wrongCount - a.wrongCount
+    : Date.parse(b.lastWrongAt) - Date.parse(a.lastWrongAt))
+})
 
 interface CalendarCell {
   key: string
@@ -183,12 +234,41 @@ async function loadReviews() {
   reviewLoading.value = true
   reviewError.value = ''
   try {
-    reviews.value = await learnerApi.reviews()
+    reviews.value = await learnerApi.reviews(true)
   } catch (reason) {
     reviewError.value = apiErrorMessage(reason)
   } finally {
     reviewLoading.value = false
   }
+}
+
+async function updateReviewState(review: ReviewCue, status: ReviewCue['status']) {
+  const nextReviewAt = status === 'SNOOZED'
+    ? new Date(Date.now() + 24 * 60 * 60 * 1_000).toISOString()
+    : undefined
+  try {
+    await learnerApi.updateReview(review.cueId, { status, nextReviewAt })
+    reviews.value = reviews.value.map((item) =>
+      item.cueId === review.cueId
+        ? { ...item, status, nextReviewAt: nextReviewAt ?? null, due: status !== 'SNOOZED' }
+        : item,
+    )
+  } catch (reason) {
+    reviewError.value = apiErrorMessage(reason)
+  }
+}
+
+function reviewDueLabel(review: ReviewCue) {
+  if (review.status === 'MASTERED') return '已掌握'
+  if (review.status === 'SNOOZED' && review.nextReviewAt) {
+    return `复习到期 · ${new Date(review.nextReviewAt).toLocaleDateString('zh-CN')}`
+  }
+  return `错 ${review.wrongCount} 次 · 建议今天复习`
+}
+
+function dismissReminder() {
+  reminderDismissed.value = true
+  localStorage.setItem('sayline:reminder-dismissed', shanghaiDate())
 }
 
 function openReview(review: ReviewCue) {
@@ -229,16 +309,27 @@ async function logout() {
         </span>
       </button>
 
+      <div v-if="reminderDue" class="study-reminder" role="status">
+        <span><SlIcon name="time" :size="18" /> 今天还差 {{ dailyGoalRemaining }} 分钟完成目标。</span>
+        <button type="button" @click="router.push('/me/learning')">去学习</button>
+        <button type="button" aria-label="关闭今日提醒" @click="dismissReminder"><SlIcon name="close" :size="16" /></button>
+      </div>
+
       <section class="settings-shortcuts">
-        <button type="button" @click="router.push('/me/profile')">
-          <span class="settings-shortcuts__icon"><SlIcon name="user" :size="18" /></span>
-          <span><strong>个人资料</strong><small>头像、昵称和手机号</small></span>
-          <SlIcon name="arrow-right-s" :size="18" />
-        </button>
+        <div class="profile-insights" aria-label="学习概览">
+          <span><strong>{{ dailyGoalPercent }}%</strong><small>今日目标</small></span>
+          <span><strong>{{ streakDays }} 天</strong><small>连续学习</small></span>
+          <span><strong>{{ pendingReviewCount }}</strong><small>待复习</small></span>
+        </div>
         <button type="button" @click="router.push('/me/learning')">
           <span class="settings-shortcuts__icon"><SlIcon name="closed-captioning" :size="18" /></span>
           <span><strong>学习设置</strong><small>字幕字号、颜色、翻译显示</small></span>
           <span class="settings-shortcuts__meta">{{ translationCount }}/4 中文</span>
+          <SlIcon name="arrow-right-s" :size="18" />
+        </button>
+        <button type="button" @click="router.push('/me/offline')">
+          <span class="settings-shortcuts__icon"><SlIcon name="arrow-down" :size="18" /></span>
+          <span><strong>离线课程</strong><small>管理已下载音频、字幕和存储空间</small></span>
           <SlIcon name="arrow-right-s" :size="18" />
         </button>
         <button type="button" @click="router.push('/preferences')">
@@ -272,6 +363,7 @@ async function logout() {
         <p>
           {{ dailyGoalRemaining > 0 ? `再学 ${dailyGoalRemaining} 分钟即可完成今天的目标。` : '今天的目标已完成，继续保持。' }}
         </p>
+        <small class="daily-goal-card__week">本周目标完成率 {{ weeklyGoalPercent }}%</small>
       </section>
 
       <section class="review-section">
@@ -284,6 +376,24 @@ async function logout() {
             调整目标
           </button>
         </div>
+        <div class="review-controls" role="group" aria-label="复习队列筛选">
+          <button
+            type="button"
+            :aria-pressed="showUnmasteredOnly"
+            @click="showUnmasteredOnly = !showUnmasteredOnly"
+          >
+            <SlIcon name="check" :size="15" />
+            只看未掌握
+          </button>
+          <button
+            type="button"
+            :aria-pressed="sortByWrongCount"
+            @click="sortByWrongCount = !sortByWrongCount"
+          >
+            <SlIcon name="line-chart" :size="15" />
+            按错误次数
+          </button>
+        </div>
         <div v-if="reviewLoading" class="review-loading">正在整理最近错句…</div>
         <SlErrorState
           v-else-if="reviewError"
@@ -291,24 +401,48 @@ async function logout() {
           title="复习队列暂时不可用"
           @retry="loadReviews"
         />
-        <div v-else-if="reviews.length" class="review-list">
-          <button
-            v-for="review in reviews"
+        <div v-else-if="displayedReviews.length" class="review-list">
+          <article
+            v-for="review in displayedReviews"
             :key="`${review.courseId}-${review.cueId}`"
             class="review-item"
-            type="button"
-            :aria-label="`复习 ${review.englishText}`"
-            @click="openReview(review)"
           >
-            <span class="review-item__count">{{ review.wrongCount }}</span>
-            <span class="review-item__copy">
-              <strong lang="en">{{ review.englishText }}</strong>
-              <small>{{ review.bookTitle }} · 错 {{ review.wrongCount }} 次</small>
-            </span>
-            <SlIcon name="arrow-right-s" :size="18" />
-          </button>
+            <button
+              class="review-item__open"
+              type="button"
+              :aria-label="`复习 ${review.englishText}`"
+              @click="openReview(review)"
+            >
+              <span class="review-item__count">{{ review.wrongCount }}</span>
+              <span class="review-item__copy">
+                <strong lang="en">{{ review.englishText }}</strong>
+                <small>{{ review.bookTitle }} · {{ reviewDueLabel(review) }}</small>
+              </span>
+              <SlIcon name="arrow-right-s" :size="18" />
+            </button>
+            <div class="review-item__actions">
+              <button
+                type="button"
+                :disabled="review.status === 'MASTERED'"
+                @click="updateReviewState(review, 'MASTERED')"
+              >
+                <SlIcon name="check" :size="16" />
+                已掌握
+              </button>
+              <button
+                type="button"
+                :disabled="review.status === 'SNOOZED'"
+                @click="updateReviewState(review, 'SNOOZED')"
+              >
+                <SlIcon name="time" :size="16" />
+                稍后复习
+              </button>
+            </div>
+          </article>
         </div>
-        <p v-else class="review-empty">最近没有错句。继续学习后，错句会自动出现在这里。</p>
+        <p v-else class="review-empty">
+          {{ reviews.length ? '当前筛选下没有待复习内容。' : '最近没有错句。继续学习后，错句会自动出现在这里。' }}
+        </p>
       </section>
 
       <SlErrorState
@@ -489,8 +623,15 @@ async function logout() {
 }
 
 .account-session > div {
+  min-width: 0;
+  flex: 1;
   display: grid;
   gap: 5px;
+}
+
+.account-session > button {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .account-session strong {
@@ -549,6 +690,40 @@ async function logout() {
   background: linear-gradient(90deg, var(--color-moss-500), var(--color-action));
 }
 
+.study-reminder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 11px 13px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-warning-soft);
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.study-reminder span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.study-reminder button {
+  min-height: 44px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.study-reminder span + button {
+  margin-left: auto;
+}
+
 .daily-goal-card p,
 .review-empty {
   margin: 9px 0 0;
@@ -557,26 +732,91 @@ async function logout() {
   line-height: 1.5;
 }
 
+.daily-goal-card__week {
+  display: block;
+  margin-top: 5px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
 .review-list {
   display: grid;
   gap: 8px;
   margin-top: 14px;
 }
 
+.review-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.review-controls button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.review-controls button[aria-pressed="true"] {
+  border-color: var(--color-ink-900);
+  background: var(--color-ink-900);
+  color: var(--color-paper-50);
+}
+
 .review-item {
   width: 100%;
+  display: grid;
+  gap: 6px;
+  padding: 9px 4px;
+  border-top: 1px solid var(--color-border);
+}
+
+.review-item__open {
   min-height: 64px;
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr) 24px;
   align-items: center;
   gap: 10px;
-  padding: 9px 4px;
+  padding: 0;
   border: 0;
-  border-top: 1px solid var(--color-border);
   background: transparent;
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
+}
+
+.review-item__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.review-item__actions button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.review-item__actions button:disabled {
+  opacity: .45;
+  cursor: default;
 }
 
 .review-item__count {

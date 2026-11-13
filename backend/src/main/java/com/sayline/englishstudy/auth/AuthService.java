@@ -47,7 +47,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResult register(RegisterRequest request) {
+    public AuthResult register(RegisterRequest request, String userAgent, String ipAddress) {
         String phone = request.phone().trim();
         if (userRepository.existsByPhone(phone)) {
             throw new ApiException("PHONE_ALREADY_REGISTERED", HttpStatus.CONFLICT, "该手机号已注册");
@@ -60,11 +60,11 @@ public class AuthService {
         user.setRole(UserRole.USER);
         user.setStatus(UserStatus.ENABLED);
         user.setLastLoginAt(Instant.now());
-        return issue(userRepository.save(user));
+        return issue(userRepository.save(user), userAgent, ipAddress);
     }
 
     @Transactional
-    public AuthResult login(LoginRequest request) {
+    public AuthResult login(LoginRequest request, String userAgent, String ipAddress) {
         User user = userRepository.findByPhone(request.phone().trim())
             .orElseThrow(this::invalidCredentials);
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
@@ -72,7 +72,7 @@ public class AuthService {
         }
         ensureEnabled(user);
         user.setLastLoginAt(Instant.now());
-        return issue(user);
+        return issue(user, userAgent, ipAddress);
     }
 
     @Transactional
@@ -88,7 +88,7 @@ public class AuthService {
         ensureEnabled(session.getUser());
         session.setRevokedAt(Instant.now());
         session.setLastUsedAt(Instant.now());
-        return issue(session.getUser());
+        return issue(session.getUser(), session.getUserAgent(), session.getIpAddress());
     }
 
     @Transactional
@@ -110,7 +110,7 @@ public class AuthService {
             .orElseThrow(() -> new ApiException("USER_NOT_FOUND", HttpStatus.UNAUTHORIZED, "登录用户不存在"));
     }
 
-    private AuthResult issue(User user) {
+    private AuthResult issue(User user, String userAgent, String ipAddress) {
         String rawRefreshToken = UUID.randomUUID() + "." + UUID.randomUUID();
         RefreshSession session = new RefreshSession();
         session.setId(UUID.randomUUID().toString());
@@ -118,6 +118,8 @@ public class AuthService {
         session.setTokenHash(hash(rawRefreshToken));
         session.setCreatedAt(Instant.now());
         session.setExpiresAt(Instant.now().plus(refreshTokenTtl));
+        session.setUserAgent(truncate(userAgent, 255));
+        session.setIpAddress(truncate(ipAddress, 64));
         refreshSessionRepository.save(session);
 
         String accessToken = jwtService.issue(user);
@@ -128,6 +130,10 @@ public class AuthService {
         if (user.getStatus() == UserStatus.DISABLED) {
             throw new ApiException("ACCOUNT_DISABLED", HttpStatus.FORBIDDEN, "账号已停用，请联系管理员");
         }
+    }
+
+    private String truncate(String value, int maxLength) {
+        return value == null || value.length() <= maxLength ? value : value.substring(0, maxLength);
     }
 
     private ApiException invalidCredentials() {

@@ -26,7 +26,7 @@ public final class LearningDtos {
     ) {
     }
 
-    public record ConfirmRequest(@NotNull LearningMode mode) {
+    public record ConfirmRequest(@NotNull LearningMode mode, boolean playbackCompleted) {
     }
 
     public record HeartbeatRequest(@Min(1) long activeMs) {

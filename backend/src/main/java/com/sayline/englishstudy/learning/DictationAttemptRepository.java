@@ -13,4 +13,8 @@ public interface DictationAttemptRepository extends JpaRepository<DictationAttem
     long countByCorrectTrue();
 
     List<DictationAttempt> findTop50ByUserIdAndCorrectFalseOrderByCreatedAtDesc(Long userId);
+
+    void deleteByCourseId(Long courseId);
+
+    void deleteByUserId(Long userId);
 }

@@ -26,6 +26,10 @@ const searchResponse = ref<SearchResponse | null>(null)
 const searchLoading = ref(false)
 const searchError = ref('')
 const error = ref('')
+const searchResults = ref<HTMLElement | null>(null)
+const activeSearchIndex = ref(-1)
+const popularSearches = ['会议', '咖啡', 'interview', 'team']
+const recentSearches = ref<string[]>(loadRecentSearches())
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 let searchController: AbortController | undefined
 
@@ -38,6 +42,15 @@ const scrollMemory = useScrollMemory(
   homeScroll,
   () => `home:${String(catalog.selectedCategoryId)}`,
 )
+const searchEntries = computed(() => {
+  const response = searchResponse.value
+  if (!response) return []
+  return [
+    ...response.books.map((item) => ({ type: 'book' as const, item })),
+    ...response.lessons.map((item) => ({ type: 'lesson' as const, item })),
+    ...response.cues.map((item) => ({ type: 'cue' as const, item })),
+  ]
+})
 
 const emptyState = computed(() => {
   if (catalog.selectedCategoryId === 'favorite') {
@@ -66,6 +79,7 @@ watch(searchTerm, (value) => {
   searchController?.abort()
   searchResponse.value = null
   searchError.value = ''
+  activeSearchIndex.value = -1
   if (!value.trim()) {
     searchLoading.value = false
     sessionStorage.removeItem('sayline:home-search')
@@ -87,6 +101,32 @@ watch(searchTerm, (value) => {
   }, 250)
 }, { immediate: true })
 
+function loadRecentSearches() {
+  try {
+    const value = JSON.parse(localStorage.getItem('sayline:recent-searches') || '[]')
+    return Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === 'string').slice(0, 6)
+      : []
+  } catch {
+    return []
+  }
+}
+
+function rememberSearch(value = searchTerm.value) {
+  const normalized = value.trim()
+  if (!normalized) return
+  recentSearches.value = [
+    normalized,
+    ...recentSearches.value.filter((item) => item !== normalized),
+  ].slice(0, 6)
+  localStorage.setItem('sayline:recent-searches', JSON.stringify(recentSearches.value))
+}
+
+function useSearch(value: string) {
+  searchTerm.value = value
+  searchOpen.value = true
+}
+
 function toggleSearch() {
   searchOpen.value = !searchOpen.value
   if (!searchOpen.value) {
@@ -99,6 +139,7 @@ function toggleSearch() {
 }
 
 function openBook(book: BookSummary) {
+  rememberSearch()
   enter(
     {
       coverUrl: book.coverUrl || null,
@@ -110,11 +151,64 @@ function openBook(book: BookSummary) {
 }
 
 function openLesson(lesson: CourseSummary) {
+  rememberSearch()
   router.push(`/learn/${lesson.bookId}/${lesson.id}`)
 }
 
 function openCue(cue: CueSearchResult) {
+  rememberSearch()
   router.push(`/learn/${cue.bookId}/${cue.courseId}?cue=${cue.cueId}&mode=WRITE`)
+}
+
+function searchIndex(group: 'book' | 'lesson' | 'cue', index: number) {
+  if (group === 'book') return index
+  if (group === 'lesson') return (searchResponse.value?.books.length ?? 0) + index
+  return (searchResponse.value?.books.length ?? 0)
+    + (searchResponse.value?.lessons.length ?? 0)
+    + index
+}
+
+function highlighted(text: string) {
+  const query = searchTerm.value.trim()
+  if (!query) return [{ text, match: false }]
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return text
+    .split(new RegExp(`(${escaped})`, 'ig'))
+    .filter(Boolean)
+    .map((part) => ({
+      text: part,
+      match: part.toLocaleLowerCase() === query.toLocaleLowerCase(),
+    }))
+}
+
+async function onSearchKeydown(event: KeyboardEvent) {
+  if (!searchEntries.value.length) {
+    if (event.key === 'Enter') rememberSearch()
+    return
+  }
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault()
+    const direction = event.key === 'ArrowDown' ? 1 : -1
+    activeSearchIndex.value = (
+      activeSearchIndex.value + direction + searchEntries.value.length
+    ) % searchEntries.value.length
+    await nextTick()
+    searchResults.value
+      ?.querySelector<HTMLElement>(`[data-search-index="${activeSearchIndex.value}"]`)
+      ?.focus()
+    return
+  }
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    const entry = searchEntries.value[activeSearchIndex.value]
+    if (!entry) {
+      rememberSearch()
+      return
+    }
+    if (entry.type === 'book') openBook(entry.item)
+    if (entry.type === 'lesson') openLesson(entry.item)
+    if (entry.type === 'cue') openCue(entry.item)
+  }
 }
 
 function retrySearch() {
@@ -190,6 +284,11 @@ function tabLabel(name: string) {
         </button>
       </div>
 
+      <div v-if="searchOpen" class="search-scope">
+        <strong>全站搜索</strong>
+        <span>搜索书籍、课时和字幕，不受当前分类限制</span>
+      </div>
+
       <label v-if="searchOpen" class="home-search-bar">
         <SlIcon name="search" :size="18" />
         <input
@@ -197,12 +296,43 @@ function tabLabel(name: string) {
           autofocus
           type="search"
           aria-label="搜索书籍、课时和字幕"
+          aria-controls="global-search-results"
+          :aria-expanded="searchActive"
+          :aria-activedescendant="activeSearchIndex >= 0 ? `search-result-${activeSearchIndex}` : undefined"
           placeholder="搜索书籍、课时和字幕"
+          @keydown="onSearchKeydown"
         />
         <span>{{ searchLoading ? '搜索中' : searchResponse ? `${searchCount} 条` : '键入关键词' }}</span>
       </label>
 
-      <div v-if="searchActive" class="search-results" aria-live="polite">
+      <section v-if="searchOpen && !searchActive" class="search-suggestions" aria-label="搜索建议">
+        <div v-if="recentSearches.length">
+          <h2>最近搜索</h2>
+          <div class="search-chips">
+            <button v-for="term in recentSearches" :key="term" type="button" @click="useSearch(term)">
+              <SlIcon name="history" :size="15" />
+              {{ term }}
+            </button>
+          </div>
+        </div>
+        <div>
+          <h2>热门搜索</h2>
+          <div class="search-chips">
+            <button v-for="term in popularSearches" :key="term" type="button" @click="useSearch(term)">
+              <SlIcon name="line-chart" :size="15" />
+              {{ term }}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div
+        v-if="searchActive"
+        id="global-search-results"
+        ref="searchResults"
+        class="search-results"
+        aria-live="polite"
+      >
         <SlSkeleton v-if="searchLoading" :rows="5" />
         <SlErrorState
           v-else-if="searchError"
@@ -210,24 +340,39 @@ function tabLabel(name: string) {
           title="搜索暂时不可用"
           @retry="retrySearch"
         />
-        <SlEmpty
-          v-else-if="searchResponse && searchCount === 0"
-          title="没有找到相关内容"
-          description="试试课程名、分类或字幕里的英文单词。"
-        />
+        <div v-else-if="searchResponse && searchCount === 0" class="search-empty">
+          <SlEmpty
+            title="没有找到相关内容"
+            description="试试更短的关键词，或从下面的热门搜索开始。"
+          />
+          <div class="search-chips search-chips--empty">
+            <button v-for="term in popularSearches" :key="term" type="button" @click="useSearch(term)">
+              {{ term }}
+            </button>
+          </div>
+        </div>
         <template v-else-if="searchResponse">
           <section v-if="searchResponse.books.length" class="search-group">
             <h2>书籍</h2>
             <button
-              v-for="book in searchResponse.books"
+              v-for="(book, index) in searchResponse.books"
               :key="`book-${book.id}`"
               class="search-result"
+              :class="{ 'is-keyboard-active': activeSearchIndex === searchIndex('book', index) }"
+              :id="`search-result-${searchIndex('book', index)}`"
+              :data-search-index="searchIndex('book', index)"
               type="button"
+              @focus="activeSearchIndex = searchIndex('book', index)"
               @click="openBook(book)"
             >
               <span class="search-result__cover" :style="searchCoverStyle(book)" />
               <span class="search-result__copy">
-                <strong>{{ book.title }}</strong>
+                <strong>
+                  <template v-for="(part, partIndex) in highlighted(book.title)" :key="partIndex">
+                    <mark v-if="part.match">{{ part.text }}</mark>
+                    <template v-else>{{ part.text }}</template>
+                  </template>
+                </strong>
                 <small>{{ book.categoryName }} · {{ book.lessonCount }} 课时</small>
               </span>
               <SlIcon name="arrow-right-s" :size="18" />
@@ -236,15 +381,24 @@ function tabLabel(name: string) {
           <section v-if="searchResponse.lessons.length" class="search-group">
             <h2>课时</h2>
             <button
-              v-for="lesson in searchResponse.lessons"
+              v-for="(lesson, index) in searchResponse.lessons"
               :key="`lesson-${lesson.id}`"
               class="search-result"
+              :class="{ 'is-keyboard-active': activeSearchIndex === searchIndex('lesson', index) }"
+              :id="`search-result-${searchIndex('lesson', index)}`"
+              :data-search-index="searchIndex('lesson', index)"
               type="button"
+              @focus="activeSearchIndex = searchIndex('lesson', index)"
               @click="openLesson(lesson)"
             >
               <span class="search-result__kind"><SlIcon name="headphone" :size="19" /></span>
               <span class="search-result__copy">
-                <strong>{{ lesson.title }}</strong>
+                <strong>
+                  <template v-for="(part, partIndex) in highlighted(lesson.title)" :key="partIndex">
+                    <mark v-if="part.match">{{ part.text }}</mark>
+                    <template v-else>{{ part.text }}</template>
+                  </template>
+                </strong>
                 <small>{{ lesson.categoryName }}</small>
               </span>
               <SlIcon name="arrow-right-s" :size="18" />
@@ -253,17 +407,31 @@ function tabLabel(name: string) {
           <section v-if="searchResponse.cues.length" class="search-group">
             <h2>字幕</h2>
             <button
-              v-for="cue in searchResponse.cues"
+              v-for="(cue, index) in searchResponse.cues"
               :key="`cue-${cue.cueId}`"
               class="search-result search-result--cue"
+              :class="{ 'is-keyboard-active': activeSearchIndex === searchIndex('cue', index) }"
+              :id="`search-result-${searchIndex('cue', index)}`"
+              :data-search-index="searchIndex('cue', index)"
               type="button"
+              @focus="activeSearchIndex = searchIndex('cue', index)"
               @click="openCue(cue)"
             >
               <span class="search-result__kind"><SlIcon name="closed-captioning" :size="19" /></span>
               <span class="search-result__copy">
-                <strong lang="en">{{ cue.englishText }}</strong>
+                <strong lang="en">
+                  <template v-for="(part, partIndex) in highlighted(cue.englishText)" :key="partIndex">
+                    <mark v-if="part.match">{{ part.text }}</mark>
+                    <template v-else>{{ part.text }}</template>
+                  </template>
+                </strong>
                 <small>{{ cue.bookTitle }} · {{ cue.courseTitle }}</small>
-                <span lang="zh">{{ cue.chineseText }}</span>
+                <span lang="zh">
+                  <template v-for="(part, partIndex) in highlighted(cue.chineseText)" :key="partIndex">
+                    <mark v-if="part.match">{{ part.text }}</mark>
+                    <template v-else>{{ part.text }}</template>
+                  </template>
+                </span>
               </span>
               <SlIcon name="arrow-right-s" :size="18" />
             </button>
@@ -280,7 +448,11 @@ function tabLabel(name: string) {
 
       <SlSkeleton v-else-if="catalog.loading" :rows="6" />
 
-      <BookShelf v-else-if="catalog.books.length" :books="catalog.books" @open="openBook" />
+      <BookShelf
+        v-else-if="catalog.books.length"
+        :books="catalog.books"
+        @open="openBook"
+      />
 
       <div v-else>
         <SlEmpty :title="emptyState.title" :description="emptyState.description">
@@ -329,6 +501,19 @@ function tabLabel(name: string) {
   background: var(--color-bg-elevated);
 }
 
+.search-scope {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.search-scope strong {
+  color: var(--color-text);
+}
+
 .home-search-bar input {
   flex: 1;
   min-width: 0;
@@ -344,9 +529,53 @@ function tabLabel(name: string) {
   font-size: 11px;
 }
 
+.search-suggestions {
+  display: grid;
+  gap: 18px;
+  padding: 20px 0 0;
+}
+
+.search-suggestions h2 {
+  margin: 0 0 9px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  letter-spacing: .06em;
+}
+
+.search-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.search-chips button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
 .search-results {
   min-height: 240px;
   padding-top: 18px;
+}
+
+.search-empty {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.search-chips--empty {
+  justify-content: center;
+  margin-top: -6px;
 }
 
 .search-group {
@@ -379,6 +608,11 @@ function tabLabel(name: string) {
   cursor: pointer;
 }
 
+.search-result.is-keyboard-active {
+  border-color: var(--color-action);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-action) 16%, transparent);
+}
+
 .search-result--cue {
   align-items: start;
 }
@@ -408,6 +642,13 @@ function tabLabel(name: string) {
 .search-result__copy strong {
   font-size: 14px;
   line-height: 1.4;
+}
+
+.search-result__copy mark {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: var(--color-warning-soft);
+  color: inherit;
 }
 
 .search-result__copy small,

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterView } from 'vue-router'
 
+import GlobalAudioPlayer from '@/components/GlobalAudioPlayer.vue'
 import { useBookEnter } from '@/composables/useBookEnter'
 
 const { state } = useBookEnter()
@@ -23,9 +24,15 @@ const overlayStyle = computed(() => {
 
 <template>
   <div class="standalone-app">
+    <GlobalAudioPlayer />
     <RouterView v-slot="{ Component, route }">
       <Transition name="route" mode="out-in">
-        <component :is="Component" :key="route.fullPath" />
+        <KeepAlive :include="['PlayerView']">
+          <component
+            :is="Component"
+            :key="route.name === 'player' ? 'player' : route.fullPath"
+          />
+        </KeepAlive>
       </Transition>
     </RouterView>
     <div

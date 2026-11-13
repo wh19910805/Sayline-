@@ -130,6 +130,9 @@ public class LearningService {
     public LearningState confirmMode(AuthenticatedUser user, Long courseId, ConfirmRequest request) {
         Course course = publishedCourse(courseId);
         LearningRecord record = findOrCreateRecord(user, course);
+        if (request.playbackCompleted() && request.mode() == LearningMode.LISTEN) {
+            markAllCuesHeard(user, course);
+        }
         refreshProgress(record, user.id(), course);
         int progress = progress(record, request.mode());
         if (progress < 100) {
@@ -140,6 +143,26 @@ public class LearningService {
             record.setCompletedAt(Instant.now());
         }
         return state(user.id(), course, record);
+    }
+
+    private void markAllCuesHeard(AuthenticatedUser user, Course course) {
+        Map<Long, LearningCueProgress> existing = cueProgressRepository
+            .findByUserIdAndCourseId(user.id(), course.getId())
+            .stream()
+            .collect(Collectors.toMap(progress -> progress.getCue().getId(), Function.identity()));
+        List<LearningCueProgress> progressItems = cueRepository
+            .findByCourseIdOrderBySequenceNoAsc(course.getId())
+            .stream()
+            .map(cue -> {
+                LearningCueProgress progress = existing.computeIfAbsent(
+                    cue.getId(),
+                    ignored -> newCueProgress(user, course, cue));
+                progress.setHeard(true);
+                return progress;
+            })
+            .toList();
+        cueProgressRepository.saveAll(progressItems);
+        cueProgressRepository.flush();
     }
 
     @Transactional

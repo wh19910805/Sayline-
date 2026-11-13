@@ -334,6 +334,7 @@ textarea.sl-field__control {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 0;
   border: 0;
   background: transparent;
@@ -355,14 +356,15 @@ textarea.sl-field__control {
 .sl-tab::after {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 50%;
+  right: auto;
   bottom: -1px;
+  width: 24px;
   height: 3px;
   border-radius: 99px 99px 0 0;
   background: var(--color-action);
   opacity: 0;
-  transform: scaleX(0);
+  transform: translateX(-50%) scaleX(0);
   transform-origin: center;
   transition:
     opacity var(--duration-fast) var(--ease-out),
@@ -371,7 +373,7 @@ textarea.sl-field__control {
 
 .sl-tab[aria-selected="true"]::after {
   opacity: 1;
-  transform: scaleX(1);
+  transform: translateX(-50%) scaleX(1);
 }
 
 .sl-tabs--pill {
@@ -447,8 +449,8 @@ textarea.sl-field__control {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 16px 10px;
-  row-gap: 18px;
+  gap: 12px 10px;
+  row-gap: 14px;
 }
 
 .sl-word-input__word {
@@ -461,15 +463,40 @@ textarea.sl-field__control {
 
 .sl-word-input__cell {
   position: relative;
-  display: inline-block;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
   width: calc(var(--letters) * 11px + 18px);
   min-width: 34px;
-  border-bottom: 1.5px solid var(--color-border-strong);
-  transition: border-color var(--duration-fast) var(--ease-out);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-subtle);
+  box-shadow: inset 0 1px 2px rgba(26, 26, 24, .05);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.sl-word-input__word.is-filling .sl-word-input__cell {
+  border-color: var(--color-action);
+  background: var(--color-action-soft);
+}
+
+.sl-word-input__word.is-correct .sl-word-input__cell {
+  border-color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.sl-word-input__word.is-incorrect .sl-word-input__cell {
+  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
 .sl-word-input__cell:focus-within {
-  border-bottom-color: var(--color-action);
+  border-color: var(--color-action);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-action) 16%, transparent);
 }
 
 .sl-word-input__mirror {
@@ -501,7 +528,8 @@ textarea.sl-field__control {
   width: 100%;
   max-width: 100%;
   min-width: 34px;
-  padding: 3px 2px 7px;
+  height: 42px;
+  padding: 0 2px;
   border: 0;
   border-radius: 0;
   outline: none;
@@ -517,6 +545,59 @@ textarea.sl-field__control {
 
 .sl-word-input__word input:disabled {
   opacity: .45;
+}
+
+.sl-word-input__status {
+  position: absolute;
+  z-index: 2;
+  top: -7px;
+  right: -7px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--color-bg-elevated);
+  border-radius: 50%;
+  color: var(--color-paper-50);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.sl-word-input__status.is-correct {
+  background: var(--color-success);
+}
+
+.sl-word-input__status.is-wrong {
+  background: var(--color-danger);
+}
+
+.dictation {
+  display: grid;
+  gap: 12px;
+}
+
+.dictation-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dictation-actions__hint {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-micro);
+  line-height: 1.45;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .sl-word-input__punctuation {

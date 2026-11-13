@@ -52,3 +52,62 @@ test('admin account can enter the learner experience', async ({ page }) => {
   await expect(page.locator('.book3d').first()).toBeVisible()
   await expect(page.locator('.admin-sidebar')).toHaveCount(0)
 })
+
+test('admin previews and executes a paired batch import', async ({ page }) => {
+  await mockUserApi(page, 'ADMIN')
+  await page.goto('/admin/imports')
+
+  await page.getByLabel('目标书籍').selectOption('1')
+  await page.getByTestId('import-files').setInputFiles([
+    {
+      name: '01 Hello.mp3',
+      mimeType: 'audio/mpeg',
+      buffer: Buffer.from('ID3 batch audio'),
+    },
+    {
+      name: '01 Hello.srt',
+      mimeType: 'application/x-subrip',
+      buffer: Buffer.from('1\n00:00:00,000 --> 00:00:02,000\nHello\n'),
+    },
+    {
+      name: '01 Hello.orig.srt',
+      mimeType: 'application/x-subrip',
+      buffer: Buffer.from('backup subtitle'),
+    },
+  ])
+
+  await expect(page.getByText(/已自动忽略 1 个/)).toBeVisible()
+  await expect(page.getByText('1 组待检查')).toBeVisible()
+  await page.getByRole('button', { name: '导入前预览' }).click()
+  await expect(page.getByText('1 可导入')).toBeVisible()
+  await expect(page.getByRole('cell', { name: /可导入/ })).toBeVisible()
+
+  await page.getByRole('button', { name: '执行导入（1）' }).click()
+  await expect(page.getByRole('heading', { name: '任务 #1 已完成' })).toBeVisible()
+  await expect(page.getByText('成功 1，跳过 0，失败 0。')).toBeVisible()
+  await expect(page.getByText('新建课时').last()).toBeVisible()
+})
+
+test('admin course table groups destructive actions and supports batch status', async ({ page }) => {
+  await mockUserApi(page, 'ADMIN')
+  await page.goto('/admin/courses')
+
+  await expect(page.getByText('音频、字幕完整').first()).toBeVisible()
+  await page.getByRole('checkbox', { name: '选择 Meeting a New Colleague' }).check()
+  await page.getByRole('button', { name: '批量下架' }).click()
+  await page.getByRole('button', { name: '确认下架' }).click()
+  await expect(page.locator('.admin-batch-bar')).toHaveCount(0)
+
+  await page.locator('.admin-row-menu summary').nth(1).click()
+  await expect(page.getByRole('button', { name: '删除课时' }).first()).toBeVisible()
+})
+
+test('admin operations page reports content health and audit activity', async ({ page }) => {
+  await mockUserApi(page, 'ADMIN')
+  await page.goto('/admin/operations')
+
+  await expect(page.getByRole('heading', { name: '内容与运营监控' })).toBeVisible()
+  await expect(page.getByText('孤立媒体对象')).toBeVisible()
+  await expect(page.getByText('ORPHAN_MEDIA')).toBeVisible()
+  await expect(page.getByText(/BATCH_CONTENT_IMPORT/)).toBeVisible()
+})

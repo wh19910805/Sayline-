@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import type { BookSummary } from '@/api/types'
+import SlIcon from '@/components/ui/SlIcon.vue'
 
 const props = defineProps<{ books: BookSummary[] }>()
 const emit = defineEmits<{
@@ -9,16 +10,42 @@ const emit = defineEmits<{
 }>()
 
 const scrollEl = ref<HTMLElement | null>(null)
+const activeBookId = ref<number | null>(props.books[0]?.id ?? null)
+const activeBook = computed(
+  () => props.books.find((book) => book.id === activeBookId.value) ?? props.books[0] ?? null,
+)
+const failedCardCovers = ref<string[]>([])
+const activeBookCoverUrl = computed(() => {
+  const book = activeBook.value
+  if (!book) return null
+  return [book.coverThumbnailUrl, book.coverUrl]
+    .find((url): url is string => typeof url === 'string' && !failedCardCovers.value.includes(url)) ?? null
+})
 
 const MAX_TILT = 20
 const TILT_FACTOR = 0.1
 let raf = 0
 let snapTimer: ReturnType<typeof setTimeout> | undefined
+let scrollContainer: HTMLElement | null = null
+
+function getScrollContainer(element: HTMLElement | null) {
+  let current = element?.parentElement ?? null
+  while (current) {
+    const overflowY = getComputedStyle(current).overflowY
+    if (overflowY === 'auto' || overflowY === 'scroll') return current
+    current = current.parentElement
+  }
+  return document.scrollingElement as HTMLElement | null
+}
+
+function selectionAnchor() {
+  return Math.min(190, Math.max(132, window.innerHeight * 0.17))
+}
 
 function updateBooks() {
   const container = scrollEl.value
   if (!container) return
-  const eye = window.innerHeight / 2
+  const eye = selectionAnchor()
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const els = container.querySelectorAll<HTMLElement>('.book3d')
   const measurements: Array<{
@@ -58,6 +85,17 @@ function updateBooks() {
       }
     }
   }
+  const nearest = measurements.reduce<(typeof measurements)[number] | null>(
+    (current, item) => !current || item.distance < current.distance ? item : current,
+    null,
+  )
+  if (nearest) activeBookId.value = Number(nearest.el.dataset.bookId)
+}
+
+function onBookKeydown(event: KeyboardEvent, book: BookSummary) {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  emit('open', book)
 }
 
 function onScroll() {
@@ -78,10 +116,11 @@ function scheduleSnap() {
 }
 
 function snapToNearest() {
-  const container = scrollEl.value
-  if (!container) return
-  const eye = window.innerHeight / 2
-  const els = container.querySelectorAll<HTMLElement>('.book3d')
+  const container = scrollContainer
+  const shelf = scrollEl.value
+  if (!container || !shelf) return
+  const eye = selectionAnchor()
+  const els = shelf.querySelectorAll<HTMLElement>('.book3d')
   let nearest: { el: HTMLElement; distance: number } | null = null
   for (const el of els) {
     const rect = el.getBoundingClientRect()
@@ -94,7 +133,7 @@ function snapToNearest() {
   if (!nearest) return
   const rect = nearest.el.getBoundingClientRect()
   const target = rect.top + rect.height / 2 - eye
-  const snapThreshold = Math.min(140, eye * 0.2)
+  const snapThreshold = Math.min(110, Math.max(56, eye * 0.5))
   if (nearest.distance > snapThreshold) return
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   container.scrollBy({ top: target, behavior: reduceMotion ? 'auto' : 'smooth' })
@@ -144,7 +183,7 @@ function textColorFor(hex: string): string {
 }
 
 function coverImageStyle(book: BookSummary) {
-  const cover = book.coverThumbnailUrl || book.coverUrl
+  const cover = book.coverUrl || book.coverThumbnailUrl
   if (!cover) return undefined
   return {
     backgroundImage: `url("${cover}"), linear-gradient(150deg, var(--book-a), var(--book-b))`,
@@ -153,21 +192,37 @@ function coverImageStyle(book: BookSummary) {
   }
 }
 
+function onCardCoverError(url: string) {
+  failedCardCovers.value = [...new Set([...failedCardCovers.value, url])]
+}
+
+function selectionStyle(book: BookSummary) {
+  return {
+    '--selection-accent': book.themeColorPrimary || '#53634e',
+  }
+}
+
 onMounted(() => {
   updateBooks()
-  window.addEventListener('scroll', onScroll, { capture: true, passive: true })
+  scrollContainer = getScrollContainer(scrollEl.value)
+  scrollContainer?.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('resize', onScroll, { passive: true })
 })
 
 watch(
-  () => props.books.length,
-  () => nextTick(updateBooks),
+  () => props.books.map((book) => book.id).join(','),
+  () => {
+    if (!props.books.some((book) => book.id === activeBookId.value)) {
+      activeBookId.value = props.books[0]?.id ?? null
+    }
+    nextTick(updateBooks)
+  },
 )
 
 onBeforeUnmount(() => {
   if (raf) cancelAnimationFrame(raf)
   if (snapTimer) clearTimeout(snapTimer)
-  window.removeEventListener('scroll', onScroll, { capture: true })
+  scrollContainer?.removeEventListener('scroll', onScroll)
   window.removeEventListener('resize', onScroll)
 })
 </script>
@@ -175,15 +230,20 @@ onBeforeUnmount(() => {
 <template>
   <div ref="scrollEl" class="book-shelf" @scroll.passive="onScroll">
     <div class="book-shelf__stage" :class="{ 'is-single': props.books.length === 1 }">
-      <div v-for="book in props.books" :key="book.id" class="book-slot">
-        <div
+      <button
+        v-for="book in props.books"
+        :key="book.id"
+        class="book-slot"
+        :class="{ 'is-active': activeBookId === book.id }"
+        type="button"
+        :aria-label="`${book.title}，${book.lessonCount} 课时，进度 ${book.progress}%`"
+        @click="emit('open', book)"
+        @keydown="onBookKeydown($event, book)"
+      >
+        <span
           class="book3d"
           :style="bookStyle(book)"
-          role="button"
-          tabindex="0"
-          :aria-label="book.title"
-          @click="emit('open', book)"
-          @keydown.enter="emit('open', book)"
+          :data-book-id="book.id"
         >
           <span class="book3d__face book3d__top" :style="coverImageStyle(book)">
             <span v-if="!book.coverUrl" class="book3d__cover-mark">EN</span>
@@ -195,10 +255,50 @@ onBeforeUnmount(() => {
           <span class="book3d__face book3d__side" />
           <span class="book3d__face book3d__side-left" />
           <span class="book3d__face book3d__back" />
-        </div>
+        </span>
         <span class="book-shadow" />
-      </div>
+      </button>
     </div>
+
+    <Transition name="book-selection" mode="out-in">
+      <section
+        v-if="activeBook"
+        :key="activeBook.id"
+        class="book-selection-card"
+        :style="selectionStyle(activeBook)"
+        aria-live="polite"
+      >
+        <span class="book-selection-card__cover-frame" aria-hidden="true">
+          <span class="book-selection-card__cover-fallback">
+            <SlIcon name="book-open" :size="20" />
+          </span>
+          <img
+            v-if="activeBookCoverUrl"
+            :key="activeBookCoverUrl"
+            :src="activeBookCoverUrl"
+            alt=""
+            @error="onCardCoverError(activeBookCoverUrl)"
+          />
+        </span>
+        <span class="book-selection-card__copy">
+          <strong>{{ activeBook.title }}</strong>
+          <small>{{ activeBook.lessonCount }} 课时</small>
+        </span>
+        <button
+          class="book-selection-card__action"
+          :class="{ 'is-disabled': activeBook.lessonCount === 0 }"
+          type="button"
+          :disabled="activeBook.lessonCount === 0"
+          :aria-label="activeBook.lessonCount === 0
+            ? `内容准备中：${activeBook.title}`
+            : `${activeBook.progress > 0 ? '继续学习' : '开始学习'}：${activeBook.title}`"
+          @click="emit('open', activeBook)"
+        >
+          {{ activeBook.lessonCount === 0 ? '准备中' : activeBook.progress > 0 ? '继续' : '开始' }}
+          <SlIcon :name="activeBook.lessonCount === 0 ? 'time' : 'arrow-right-s'" :size="15" />
+        </button>
+      </section>
+    </Transition>
   </div>
 </template>
 
@@ -217,15 +317,15 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 40px;
-  padding-top: 12vh;
-  padding-bottom: 32vh;
+  gap: 8px;
+  padding-top: clamp(24px, 4dvh, 40px);
+  padding-bottom: calc(72dvh + 96px);
 }
 
 .book-shelf__stage.is-single {
-  min-height: calc(100dvh - 210px);
-  justify-content: center;
-  padding-top: 0;
+  min-height: 0;
+  justify-content: flex-start;
+  padding-top: clamp(24px, 4dvh, 40px);
   padding-bottom: 40px;
 }
 
@@ -239,6 +339,14 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   perspective: 800px;
+  width: var(--bw);
+  min-height: 84px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
 }
 
 .book-shadow {
@@ -267,8 +375,10 @@ onBeforeUnmount(() => {
   filter: brightness(.94) saturate(.96);
 }
 
-.book3d:focus-visible {
-  outline-offset: 14px;
+.book-slot:focus-visible {
+  outline: 2px solid var(--color-action);
+  outline-offset: 12px;
+  border-radius: 14px;
 }
 
 .book3d__face {
@@ -297,6 +407,8 @@ onBeforeUnmount(() => {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), inset 0 -1px 0 rgba(0, 0, 0, .35);
   white-space: nowrap;
   overflow: hidden;
+  border-radius: 0;
+  background-clip: padding-box;
 }
 
 .book3d__title {
@@ -355,12 +467,164 @@ onBeforeUnmount(() => {
   background: #ece5d6;
 }
 
+.book-slot.is-active .book3d__spine {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .38),
+    inset 0 -1px 0 rgba(0, 0, 0, .38),
+    0 0 0 1px rgba(255, 250, 240, .2);
+}
+
+.book-selection-card {
+  position: fixed;
+  z-index: 200;
+  left: 50%;
+  bottom: calc(84px + var(--safe-bottom));
+  width: min(calc(100% - 40px), 450px);
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 78px;
+  padding: 10px 11px 10px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--color-bg-elevated) 80%, transparent);
+  background-image: linear-gradient(
+    118deg,
+    color-mix(in srgb, var(--selection-accent, var(--color-action)) 6%, transparent),
+    transparent 42%
+  );
+  box-shadow:
+    0 14px 30px rgba(26, 26, 24, .12),
+    inset 0 1px 0 rgba(255, 255, 255, .72);
+  -webkit-backdrop-filter: blur(22px) saturate(1.12);
+  backdrop-filter: blur(22px) saturate(1.12);
+  transform: translateX(-50%);
+}
+
+.book-selection-card__cover-frame {
+  position: relative;
+  width: 76px;
+  aspect-ratio: 7 / 5;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--selection-accent, var(--color-action)) 24%, white);
+  border-radius: 999px;
+  background-color: var(--selection-accent, var(--color-action));
+  box-shadow:
+    0 7px 14px color-mix(in srgb, var(--selection-accent, var(--color-action)) 18%, transparent),
+    inset 0 0 0 1px rgba(255, 255, 255, .16);
+}
+
+.book-selection-card__cover-frame img,
+.book-selection-card__cover-fallback {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.book-selection-card__cover-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 250, 240, .86);
+}
+
+.book-selection-card__copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.book-selection-card__copy > strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 17px;
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-selection-card__copy > small {
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  line-height: 1.35;
+}
+
+.book-selection-card__action {
+  min-width: 68px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-text);
+  color: var(--color-bg-elevated);
+  font-size: 12px;
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  box-shadow: 0 5px 14px rgba(26, 26, 24, .18);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.book-selection-card__action:active {
+  transform: scale(.96);
+  box-shadow: 0 2px 7px rgba(26, 26, 24, .14);
+}
+
+.book-selection-card__action.is-disabled {
+  background: var(--color-surface-muted);
+  color: var(--color-text-tertiary);
+  box-shadow: none;
+  cursor: default;
+}
+
+.book-selection-card__action:disabled {
+  opacity: 1;
+}
+
+.book-selection-card__action.is-disabled:active {
+  transform: none;
+}
+
+.book-selection-enter-active,
+.book-selection-leave-active {
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.book-selection-enter-from,
+.book-selection-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 6px);
+}
+
+@media (min-width: 768px) {
+  .book-selection-card {
+    bottom: calc(96px + var(--safe-bottom));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .book3d {
     transition: none;
   }
 
   .book-shadow {
+    transition: none;
+  }
+
+  .book-selection-enter-active,
+  .book-selection-leave-active {
     transition: none;
   }
 }

@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue'
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
 import type { AdminUser } from '@/api/types'
+import SlDialog from '@/components/ui/SlDialog.vue'
 import SlErrorState from '@/components/ui/SlErrorState.vue'
 import SlTable from '@/components/ui/SlTable.vue'
 
@@ -11,6 +12,9 @@ const users = ref<AdminUser[]>([])
 const query = ref('')
 const error = ref('')
 const loading = ref(false)
+const resetTarget = ref<AdminUser | null>(null)
+const resetToken = ref('')
+const resetExpiresAt = ref('')
 
 async function load() {
   loading.value = true
@@ -21,6 +25,21 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+async function createResetToken(user: AdminUser) {
+  try {
+    const result = await adminApi.issuePasswordResetToken(user.id)
+    resetTarget.value = user
+    resetToken.value = result.token
+    resetExpiresAt.value = result.expiresAt
+  } catch (reason) {
+    error.value = apiErrorMessage(reason)
+  }
+}
+
+async function copyResetToken() {
+  await navigator.clipboard?.writeText(resetToken.value)
 }
 
 async function toggle(user: AdminUser) {
@@ -60,9 +79,37 @@ onMounted(load)
             <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="toggle(user)">
               {{ user.status === 'ENABLED' ? '禁用' : '恢复' }}
             </button>
+            <button class="sl-button sl-button--secondary sl-button--sm" type="button" @click="createResetToken(user)">重置密码</button>
           </td>
         </tr>
       </SlTable>
     </div>
+
+    <SlDialog
+      :open="!!resetTarget"
+      title="一次性密码重置码"
+      eyebrow="PASSWORD RECOVERY"
+      :description="`请将重置码安全地交给 ${resetTarget?.nickname ?? ''}。重置码 30 分钟内有效，使用后立即失效。`"
+      @close="resetTarget = null"
+    >
+      <code class="reset-token">{{ resetToken }}</code>
+      <p>有效期至 {{ resetExpiresAt ? new Date(resetExpiresAt).toLocaleString('zh-CN') : '—' }}</p>
+      <template #actions>
+        <button class="sl-button sl-button--secondary" type="button" @click="resetTarget = null">关闭</button>
+        <button class="sl-button sl-button--accent" type="button" @click="copyResetToken">复制重置码</button>
+      </template>
+    </SlDialog>
   </section>
 </template>
+
+<style scoped>
+.reset-token {
+  display: block;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+</style>

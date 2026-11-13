@@ -140,6 +140,26 @@ async function save() {
         </section>
 
         <section class="settings-section">
+          <span class="eyebrow settings-section__eyebrow">REMINDER</span>
+          <h2>学习提醒</h2>
+          <p>应用打开时，在设定时间后提醒尚未完成每日目标。</p>
+          <label class="sl-switch">
+            <span class="sl-switch__label">开启站内提醒</span>
+            <input v-model="settings.reminderEnabled" type="checkbox" />
+            <span class="sl-switch__track"><span class="sl-switch__thumb" /></span>
+          </label>
+          <label class="reminder-time">
+            <span>提醒时间</span>
+            <input
+              v-model="settings.reminderTime"
+              type="time"
+              :disabled="!settings.reminderEnabled"
+              aria-label="每日学习提醒时间"
+            />
+          </label>
+        </section>
+
+        <section class="settings-section">
           <span class="eyebrow settings-section__eyebrow">TRANSLATION</span>
           <h2>中文翻译</h2>
           <label class="sl-switch">
@@ -165,14 +185,14 @@ async function save() {
         </section>
 
         <button class="settings-link-row" type="button" @click="router.push('/preferences')">
-          <span><strong>学习偏好</strong><small>兴趣分类和默认 Tab</small></span>
+          <span class="settings-link-row__copy"><strong>学习偏好</strong><small>兴趣分类和默认 Tab</small></span>
           <SlIcon name="arrow-right-s" :size="18" />
         </button>
         <p v-if="error" class="inline-error">{{ error }}</p>
         <p v-if="saved && !dirty" class="inline-success" aria-live="polite">学习设置已保存</p>
       </form>
     </div>
-    <div class="settings-save-dock">
+    <div class="settings-save-dock" :class="{ 'is-dirty': dirty }">
       <button
         class="sl-button sl-button--lg sl-button--full learning-settings-save"
         type="button"
@@ -189,6 +209,10 @@ async function save() {
 <style scoped>
 .settings-screen {
   background: var(--app-bg);
+}
+
+.settings-scroll {
+  scroll-padding-bottom: 110px;
 }
 
 .settings-form--editorial {
@@ -262,9 +286,15 @@ async function save() {
   cursor: pointer;
 }
 
-.settings-link-row > span {
+.settings-link-row__copy {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  flex: 1;
   display: grid;
+  place-items: initial;
   gap: 4px;
+  background: transparent;
 }
 
 .settings-link-row strong {
@@ -277,6 +307,16 @@ async function save() {
 }
 
 .learning-settings-save {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  box-shadow: none;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.settings-save-dock.is-dirty .learning-settings-save {
   background: var(--color-ink-900);
   color: var(--color-paper-50);
   box-shadow: var(--shadow-float);
@@ -292,6 +332,11 @@ async function save() {
   border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
   background: color-mix(in srgb, var(--app-bg) 92%, transparent);
   backdrop-filter: blur(16px);
+}
+
+.settings-save-dock.is-dirty {
+  border-top-color: var(--color-border-strong);
+  box-shadow: 0 -10px 30px rgba(26, 26, 24, .07);
 }
 
 .daily-goal-field {
@@ -332,5 +377,31 @@ async function save() {
 .daily-goal-field__control small {
   color: var(--color-text-tertiary);
   font-size: var(--text-caption);
+}
+
+.reminder-time {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+
+.reminder-time input {
+  min-height: 40px;
+  padding: 0 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+}
+
+.reminder-time input:disabled {
+  opacity: .5;
 }
 </style>

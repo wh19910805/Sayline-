@@ -12,10 +12,12 @@ import com.sayline.englishstudy.learning.LearningDtos.LearningState;
 import com.sayline.englishstudy.learning.LearningDtos.PositionRequest;
 import com.sayline.englishstudy.learning.LearningDtos.StatsResponse;
 import com.sayline.englishstudy.learning.ReviewDtos.ReviewCue;
+import com.sayline.englishstudy.learning.ReviewDtos.ReviewStateRequest;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -94,7 +96,19 @@ public class LearningController {
     }
 
     @GetMapping("/reviews")
-    public java.util.List<ReviewCue> reviews(@AuthenticationPrincipal AuthenticatedUser user) {
-        return reviewService.reviews(user.id());
+    public java.util.List<ReviewCue> reviews(
+        @AuthenticationPrincipal AuthenticatedUser user,
+        @RequestParam(defaultValue = "false") boolean includeMastered
+    ) {
+        return reviewService.reviews(user.id(), includeMastered);
+    }
+
+    @PatchMapping("/reviews/{cueId}")
+    public void updateReview(
+        @AuthenticationPrincipal AuthenticatedUser user,
+        @PathVariable Long cueId,
+        @Valid @RequestBody ReviewStateRequest request
+    ) {
+        reviewService.updateState(user.id(), cueId, request);
     }
 }

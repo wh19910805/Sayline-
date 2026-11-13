@@ -11,6 +11,7 @@ import java.util.Map;
 import com.sayline.englishstudy.admin.AdminDtos.BookAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.BookRequest;
 import com.sayline.englishstudy.admin.AdminDtos.BatchVisibilityRequest;
+import com.sayline.englishstudy.admin.AdminDtos.BatchCourseStatusRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CourseAdminView;
@@ -35,10 +36,12 @@ import com.sayline.englishstudy.catalog.SubtitleParser;
 import com.sayline.englishstudy.common.ApiException;
 import com.sayline.englishstudy.common.PageResponse;
 import com.sayline.englishstudy.learning.DictationAttemptRepository;
+import com.sayline.englishstudy.learning.CourseFavoriteRepository;
 import com.sayline.englishstudy.learning.LearningCueProgressRepository;
 import com.sayline.englishstudy.learning.LearningDailyStatRepository;
 import com.sayline.englishstudy.learning.LearningRecord;
 import com.sayline.englishstudy.learning.LearningRecordRepository;
+import com.sayline.englishstudy.learning.ReviewCueStateRepository;
 import com.sayline.englishstudy.learning.StudySessionRepository;
 import com.sayline.englishstudy.storage.CoverImageService;
 import com.sayline.englishstudy.storage.StorageService;
@@ -72,6 +75,8 @@ public class AdminService {
     private final LearningDailyStatRepository dailyStatRepository;
     private final StudySessionRepository sessionRepository;
     private final DictationAttemptRepository dictationRepository;
+    private final CourseFavoriteRepository courseFavoriteRepository;
+    private final ReviewCueStateRepository reviewCueStateRepository;
 
     public AdminService(
         CourseCategoryRepository categoryRepository,
@@ -87,7 +92,9 @@ public class AdminService {
         LearningCueProgressRepository cueProgressRepository,
         LearningDailyStatRepository dailyStatRepository,
         StudySessionRepository sessionRepository,
-        DictationAttemptRepository dictationRepository
+        DictationAttemptRepository dictationRepository,
+        CourseFavoriteRepository courseFavoriteRepository,
+        ReviewCueStateRepository reviewCueStateRepository
     ) {
         this.categoryRepository = categoryRepository;
         this.courseRepository = courseRepository;
@@ -103,6 +110,8 @@ public class AdminService {
         this.dailyStatRepository = dailyStatRepository;
         this.sessionRepository = sessionRepository;
         this.dictationRepository = dictationRepository;
+        this.courseFavoriteRepository = courseFavoriteRepository;
+        this.reviewCueStateRepository = reviewCueStateRepository;
     }
 
     @Transactional(readOnly = true)
@@ -278,11 +287,33 @@ public class AdminService {
     }
 
     @Transactional
+    public void batchCourseStatus(BatchCourseStatusRequest request) {
+        for (Long courseId : request.courseIds()) {
+            if (request.status() == CourseStatus.PUBLISHED) {
+                publish(courseId);
+            } else if (request.status() == CourseStatus.OFFLINE) {
+                offline(courseId);
+            } else {
+                throw new ApiException("COURSE_STATUS_INVALID", HttpStatus.UNPROCESSABLE_ENTITY, "批量操作仅支持发布或下架");
+            }
+        }
+    }
+
+    @Transactional
     public void deleteCourse(Long courseId) {
         Course course = requiredCourse(courseId);
         if (course.getStatus() == CourseStatus.PUBLISHED) {
             throw new ApiException("COURSE_PUBLISHED", HttpStatus.CONFLICT, "已发布课程需先下架才能删除");
         }
+        reviewCueStateRepository.deleteByCueCourseId(courseId);
+        cueProgressRepository.deleteByCourseId(courseId);
+        dictationRepository.deleteByCourseId(courseId);
+        dailyStatRepository.deleteByCourseId(courseId);
+        sessionRepository.deleteByCourseId(courseId);
+        recordRepository.deleteByCourseId(courseId);
+        courseFavoriteRepository.deleteByCourseId(courseId);
+        cueRepository.deleteByCourseId(courseId);
+        cueRepository.flush();
         courseRepository.delete(course);
     }
 
@@ -316,11 +347,23 @@ public class AdminService {
         int dictationAccuracy = attempts == 0 ? 0 : (int) Math.round(correct * 100.0 / attempts);
         LocalDate today = LocalDate.now(APP_ZONE);
         LocalDate trendStart = today.minusDays(6);
+        LocalDate comparisonStart = today.minusDays(13);
         Map<LocalDate, Object[]> trendRows = new HashMap<>();
-        for (Object[] row : dailyStatRepository.dailyTrend(trendStart, today)) {
+        for (Object[] row : dailyStatRepository.dailyTrend(comparisonStart, today)) {
             trendRows.put((LocalDate) row[0], row);
         }
         List<DailyStudyPoint> studyTrend = new ArrayList<>();
+        long previousWeekStudyMs = 0;
+        long thisWeekStudyMs = 0;
+        for (int day = 0; day < 14; day++) {
+            Object[] row = trendRows.get(comparisonStart.plusDays(day));
+            long studyMs = row == null ? 0 : ((Number) row[1]).longValue();
+            if (day < 7) {
+                previousWeekStudyMs += studyMs;
+            } else {
+                thisWeekStudyMs += studyMs;
+            }
+        }
         for (int day = 0; day < 7; day++) {
             LocalDate date = trendStart.plusDays(day);
             Object[] row = trendRows.get(date);
@@ -329,15 +372,19 @@ public class AdminService {
                 row == null ? 0 : ((Number) row[1]).longValue(),
                 row == null ? 0 : ((Number) row[2]).longValue()));
         }
+        Object[] yesterdayRow = trendRows.get(today.minusDays(1));
         return new DashboardView(
             learners,
             sessionRepository.countActiveUsersSince(
                 LocalDate.now(APP_ZONE).atStartOfDay(APP_ZONE).toInstant()),
+            yesterdayRow == null ? 0 : ((Number) yesterdayRow[2]).longValue(),
             courseRepository.countByStatus(CourseStatus.PUBLISHED),
             starts,
             completed,
             starts == 0 ? 0 : (int) Math.round(completed * 100.0 / starts),
             dailyStatRepository.totalStudyMs(),
+            thisWeekStudyMs,
+            previousWeekStudyMs,
             dictationAccuracy,
             cueProgressRepository.countBySpokenTrue(),
             studyTrend);
@@ -457,7 +504,8 @@ public class AdminService {
             book.getThemeColorPrimary(),
             book.getThemeColorSecondary(),
             book.getSortOrder(),
-            book.isVisible());
+            book.isVisible(),
+            book.getUpdatedAt());
     }
 
     private CourseAdminView toView(Course course) {
@@ -470,6 +518,7 @@ public class AdminService {
             course.getTitle(),
             course.getDescription(),
             course.getCoverObjectKey(),
+            coverUrl(course.getCoverObjectKey()),
             course.getAudioObjectKey(),
             course.getSubtitleObjectKey(),
             course.getThemeColorPrimary(),
@@ -477,7 +526,8 @@ public class AdminService {
             course.getDurationMs(),
             course.getSortOrder(),
             course.getStatus(),
-            course.getPublishedAt());
+            course.getPublishedAt(),
+            course.getUpdatedAt());
     }
 
     private UserAdminView toView(User user) {

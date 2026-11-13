@@ -13,7 +13,9 @@ const navItems = [
   { to: '/admin/categories', label: '分类管理', icon: 'git-branch' },
   { to: '/admin/books', label: '书籍管理', icon: 'book-open' },
   { to: '/admin/courses', label: '课时管理', icon: 'task' },
+  { to: '/admin/imports', label: '批量导入', icon: 'upload-2' },
   { to: '/admin/users', label: '用户管理', icon: 'group' },
+  { to: '/admin/operations', label: '运营监控', icon: 'settings-3' },
 ]
 
 async function logout() {

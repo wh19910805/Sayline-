@@ -160,6 +160,26 @@ function json(route: Route, body: unknown, status = 200) {
   })
 }
 
+function silentWav(seconds = 5) {
+  const sampleRate = 8_000
+  const dataSize = sampleRate * seconds * 2
+  const buffer = Buffer.alloc(44 + dataSize)
+  buffer.write('RIFF', 0)
+  buffer.writeUInt32LE(36 + dataSize, 4)
+  buffer.write('WAVE', 8)
+  buffer.write('fmt ', 12)
+  buffer.writeUInt32LE(16, 16)
+  buffer.writeUInt16LE(1, 20)
+  buffer.writeUInt16LE(1, 22)
+  buffer.writeUInt32LE(sampleRate, 24)
+  buffer.writeUInt32LE(sampleRate * 2, 28)
+  buffer.writeUInt16LE(2, 32)
+  buffer.writeUInt16LE(16, 34)
+  buffer.write('data', 36)
+  buffer.writeUInt32LE(dataSize, 40)
+  return buffer
+}
+
 export async function mockUserApi(
   page: Page,
   role: 'USER' | 'ADMIN',
@@ -167,6 +187,15 @@ export async function mockUserApi(
 ) {
   const learning = createLearning(options.listenProgress ?? 40)
   const adminBookVisibility = new Map(books.map((book) => [book.id, true]))
+  const importJobs: Array<Record<string, unknown>> = []
+  await page.route('**/upload/**', (route) => route.fulfill({ status: 200, body: '' }))
+  await page.route('**/audio/demo.wav', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'audio/wav',
+      body: silentWav(),
+    }),
+  )
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request()
     const url = new URL(request.url())
@@ -180,6 +209,9 @@ export async function mockUserApi(
         role,
         avatarUrl: null,
       })
+    }
+    if (path === '/api/v1/auth/password-reset') {
+      return route.fulfill({ status: 204 })
     }
     if (path === '/api/v1/me/interests') return json(route, categories)
     if (path === '/api/v1/categories') return json(route, categories)
@@ -243,6 +275,32 @@ export async function mockUserApi(
     if (path === '/api/v1/favorite-books') {
       return json(route, books.filter((book) => book.favorite))
     }
+    if (path === '/api/v1/recent-lessons') {
+      return json(route, [
+        {
+          id: 1,
+          bookId: 1,
+          title: 'Meeting a New Colleague',
+          bookTitle: '职场英语',
+          coverUrl: '/covers/work.jpg',
+          themeColorPrimary: '#65734f',
+          themeColorSecondary: '#9f5e31',
+          progress: 58,
+          lastStudiedAt: '2026-11-13T02:00:00Z',
+        },
+        {
+          id: 3,
+          bookId: 2,
+          title: 'Coffee Chat Basics',
+          bookTitle: '日常口语',
+          coverUrl: '/covers/spoken.jpg',
+          themeColorPrimary: '#8b6651',
+          themeColorSecondary: '#42271f',
+          progress: 24,
+          lastStudiedAt: '2026-11-12T09:00:00Z',
+        },
+      ])
+    }
     if (path === '/api/v1/courses') {
       const q = url.searchParams.get('q')?.toLowerCase()
       const categoryId = Number(url.searchParams.get('categoryId'))
@@ -268,6 +326,28 @@ export async function mockUserApi(
     if (path === '/api/v1/me/profile') {
       return json(route, { id: 1, phone: '13800138000', nickname: '林禾', avatarUrl: null })
     }
+    if (path === '/api/v1/me/phone') {
+      return json(route, { id: 1, phone: '13800138001', nickname: '林禾', avatarUrl: null })
+    }
+    if (path === '/api/v1/me/account' && request.method() === 'DELETE') {
+      return route.fulfill({ status: 204 })
+    }
+    if (path === '/api/v1/me/sessions') {
+      return json(route, [
+        {
+          id: 'session-current',
+          userAgent: 'Playwright Chromium',
+          ipAddress: '127.0.0.1',
+          createdAt: '2026-11-13T02:00:00Z',
+          lastUsedAt: '2026-11-13T02:30:00Z',
+          expiresAt: '2026-12-13T02:00:00Z',
+          current: true,
+        },
+      ])
+    }
+    if (/^\/api\/v1\/me\/sessions\/[^/]+$/.test(path) && request.method() === 'DELETE') {
+      return route.fulfill({ status: 204 })
+    }
     if (path === '/api/v1/me/settings') {
       const settings = {
         fontScale: 1,
@@ -278,6 +358,8 @@ export async function mockUserApi(
         showChineseWrite: true,
         showChineseSpeak: true,
         dailyGoalMinutes: 15,
+        reminderEnabled: true,
+        reminderTime: '20:00',
         defaultCategoryId: 1,
       }
       const payload =
@@ -285,6 +367,9 @@ export async function mockUserApi(
           ? (request.postDataJSON() as Partial<typeof settings>)
           : {}
       return json(route, { ...settings, ...payload })
+    }
+    if (/^\/api\/v1\/learning\/reviews\/\d+$/.test(path) && request.method() === 'PATCH') {
+      return route.fulfill({ status: 200 })
     }
     if (path === '/api/v1/learning/reviews') {
       return json(route, [
@@ -300,6 +385,9 @@ export async function mockUserApi(
           lastAnswer: 'Could we move the meeting to Friday?',
           wrongCount: 2,
           lastWrongAt: '2026-11-12T02:00:00Z',
+          status: 'LEARNING',
+          nextReviewAt: null,
+          due: true,
         },
       ])
     }
@@ -373,7 +461,21 @@ export async function mockUserApi(
       })
     }
     if (/^\/api\/v1\/learning\/courses\/\d+$/.test(path)) return json(route, learning)
-    if (/\/learning\/courses\/\d+\/(actions|position|confirm)$/.test(path)) return json(route, learning)
+    if (/\/learning\/courses\/\d+\/confirm$/.test(path)) {
+      const payload = request.postDataJSON() as {
+        mode: 'LISTEN' | 'READ' | 'WRITE' | 'SPEAK'
+        playbackCompleted?: boolean
+      }
+      if (payload.mode === 'LISTEN' && payload.playbackCompleted) {
+        learning.cues.forEach((cue) => { cue.heard = true })
+        learning.modes.listen.progress = 100
+      }
+      const key = payload.mode.toLowerCase() as 'listen' | 'read' | 'write' | 'speak'
+      learning.modes[key].confirmed = true
+      learning.lastMode = payload.mode
+      return json(route, learning)
+    }
+    if (/\/learning\/courses\/\d+\/(actions|position)$/.test(path)) return json(route, learning)
     if (/\/learning\/courses\/\d+\/heartbeat$/.test(path)) {
       return json(route, { sessionId: 'e2e', sessionActiveMs: 15_000, sessionCounted: false })
     }
@@ -381,11 +483,14 @@ export async function mockUserApi(
       return json(route, {
         totalLearners: 1284,
         activeToday: 236,
+        activeYesterday: 198,
         totalPublishedCourses: 42,
         courseStarts: 3180,
         completedCourses: 1726,
         completionRate: 54,
         totalStudyMs: 74_520_000,
+        thisWeekStudyMs: 31_620_000,
+        previousWeekStudyMs: 27_480_000,
         dictationAccuracy: 83,
         speakingCount: 9642,
         studyTrend: [
@@ -424,6 +529,7 @@ export async function mockUserApi(
           coverObjectKey: book.coverUrl,
           sortOrder: index + 1,
           visible: adminBookVisibility.get(book.id) ?? true,
+          updatedAt: '2026-11-12T08:00:00Z',
         }))
         .filter(
           (book) =>
@@ -441,13 +547,117 @@ export async function mockUserApi(
       payload.bookIds.forEach((id) => adminBookVisibility.set(id, payload.visible))
       return route.fulfill({ status: 200 })
     }
+    if (path === '/api/v1/admin/uploads/presign') {
+      const payload = request.postDataJSON() as { fileName: string }
+      return json(route, {
+        uploadUrl: `http://uploads.local/upload/${encodeURIComponent(payload.fileName)}`,
+        objectKey: `uploads/${payload.fileName}`,
+        expiresAt: '2026-11-13T12:00:00Z',
+      })
+    }
+    if (path === '/api/v1/admin/content-health') {
+      return json(route, {
+        publishedCourses: 204,
+        missingMediaCourses: 0,
+        missingSubtitleCourses: 0,
+        duplicateAudioGroups: 0,
+        orphanObjectCount: 2,
+        issues: [
+          { severity: 'LOW', type: 'ORPHAN_MEDIA', message: '对象存储中有 2 个未被课程引用的对象', entityId: null },
+        ],
+        failedImports: [],
+        auditLogs: [
+          { id: 1, actorId: 99, action: 'BATCH_CONTENT_IMPORT', entityType: 'CONTENT_IMPORT_JOB', entityId: '1', detail: 'success=1', createdAt: '2026-11-13T02:00:00Z' },
+        ],
+      })
+    }
+    if (path === '/api/v1/admin/imports/preview') {
+      const payload = request.postDataJSON() as {
+        items: Array<{ sourceName: string; title: string; durationMs: number }>
+      }
+      const items = payload.items.map((item, index) => ({
+        index,
+        sourceName: item.sourceName,
+        title: item.title,
+        status: item.sourceName.toLowerCase().includes('duplicate') ? 'DUPLICATE' : 'READY',
+        reason: item.sourceName.toLowerCase().includes('duplicate') ? '目标书籍已有同名课时' : null,
+        courseId: null,
+        courseTitle: null,
+        bookTitle: null,
+        previousSubtitleObjectKey: null,
+        error: null,
+      }))
+      const ready = items.filter((item) => item.status === 'READY').length
+      return json(route, {
+        total: items.length,
+        ready,
+        skipped: items.length - ready,
+        invalid: 0,
+        items,
+      })
+    }
+    if (path === '/api/v1/admin/imports' && request.method() === 'POST') {
+      const payload = request.postDataJSON() as {
+        type: 'CREATE' | 'SUBTITLE'
+        items: Array<{ sourceName: string; title: string }>
+      }
+      const items = payload.items.map((item, index) => ({
+        index,
+        sourceName: item.sourceName,
+        title: item.title,
+        status: payload.type === 'CREATE' ? 'CREATED' : 'UPDATED',
+        reason: null,
+        courseId: 10 + index,
+        courseTitle: item.title,
+        bookTitle: books[0]!.title,
+        previousSubtitleObjectKey: null,
+        error: null,
+      }))
+      const job = {
+        id: importJobs.length + 1,
+        type: payload.type,
+        status: 'COMPLETED',
+        bookId: 1,
+        total: items.length,
+        success: items.length,
+        skipped: 0,
+        failed: 0,
+        createdAt: '2026-11-13T02:00:00Z',
+        updatedAt: '2026-11-13T02:00:00Z',
+        items,
+      }
+      importJobs.unshift(job)
+      return json(route, job, 201)
+    }
+    if (path === '/api/v1/admin/imports' && request.method() === 'GET') {
+      return json(route, {
+        content: importJobs,
+        page: 0,
+        size: 20,
+        totalElements: importJobs.length,
+        totalPages: 1,
+      })
+    }
+    if (/^\/api\/v1\/admin\/imports\/\d+\/rollback$/.test(path)) {
+      const id = Number(path.split('/').at(-2))
+      const job = importJobs.find((item) => item.id === id)
+      if (job) job.status = 'ROLLED_BACK'
+      return json(route, job)
+    }
     if (path === '/api/v1/admin/courses') {
       const content = courses.map((course) => ({
         ...course,
+        coverUrl: course.coverUrl,
+        audioObjectKey: `audio/${course.id}.mp3`,
+        subtitleObjectKey: `subtitles/${course.id}.srt`,
         status: course.id === 2 ? 'DRAFT' : 'PUBLISHED',
         sortOrder: course.id,
+        updatedAt: '2026-11-12T08:00:00Z',
       }))
       return json(route, { content, page: 0, size: 50, totalElements: content.length, totalPages: 1 })
+    }
+    if (path === '/api/v1/admin/courses/batch-status') {
+      return route.fulfill({ status: 200 })
     }
     if (path === '/api/v1/admin/users') {
       return json(route, {
@@ -466,6 +676,12 @@ export async function mockUserApi(
         size: 50,
         totalElements: 1,
         totalPages: 1,
+      })
+    }
+    if (/^\/api\/v1\/admin\/users\/\d+\/password-reset-token$/.test(path)) {
+      return json(route, {
+        token: 'test-reset-token',
+        expiresAt: '2026-11-13T02:30:00Z',
       })
     }
     return json(route, { code: 'E2E_MOCK_MISS', status: 404, detail: path }, 404)

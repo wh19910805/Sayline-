@@ -32,10 +32,61 @@ test('book shelf renders the default category book and opens its lessons', async
   await page.goto('/')
 
   await expect(page.locator('.book3d')).toHaveCount(1)
-  await expect(page.getByText('职场英语')).toBeVisible()
+  await expect(page.locator('.book-selection-card').getByText('职场英语')).toBeVisible()
+  await expect(page.locator('.book-selection-card')).toContainText('2 课时')
+  await expect(page.locator('.book-selection-card')).not.toContainText('当前书籍')
+  await expect(page.locator('.book-selection-card')).not.toContainText('尚未开始')
+  await expect(page.locator('.book-selection-card__progress')).toHaveCount(0)
+  await expect(page.locator('.book-selection-card__cover-frame img')).toHaveAttribute('src', /work\.jpg/)
+  const firstBook = await page.locator('.book3d').first().boundingBox()
+  expect(firstBook?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(220)
+  const coverBox = await page.locator('.book-selection-card__cover-frame').boundingBox()
+  expect((coverBox?.width ?? 0) / (coverBox?.height ?? 1)).toBeCloseTo(1.4, 1)
+  await expect(page.locator('.book-selection-card')).toHaveCSS(
+    'backdrop-filter',
+    /blur\(22px\)/,
+  )
+  expect(
+    await page.locator('.book-selection-card').evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    ),
+  ).toMatch(/0\.8|80%/)
+  expect(await page.locator('.book-selection-card').evaluate((element) => {
+    const radius = Number.parseFloat(getComputedStyle(element).borderTopLeftRadius)
+    return radius >= element.getBoundingClientRect().height / 2 - 1
+  })).toBe(true)
+  expect(await page.locator('.book-selection-card__cover-frame').evaluate((element) => {
+    const radius = Number.parseFloat(getComputedStyle(element).borderTopLeftRadius)
+    return radius >= element.getBoundingClientRect().height / 2 - 1
+  })).toBe(true)
 
   await page.locator('.book3d').first().click()
   await expect(page).toHaveURL(/\/learn\/\d+/)
+})
+
+test('current book card disables learning when no lessons are published', async ({ page }) => {
+  await page.route('**/api/v1/books?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([{
+        id: 1,
+        title: '慢速听力·跟读训练',
+        categoryId: 1,
+        categoryName: '职场英语',
+        coverUrl: '/covers/work.jpg',
+        lessonCount: 0,
+        progress: 0,
+        favorite: false,
+      }]),
+    }),
+  )
+  await page.goto('/')
+
+  const card = page.locator('.book-selection-card')
+  await expect(card).toContainText('0 课时')
+  await expect(card).not.toContainText('尚未开始')
+  await expect(card.getByRole('button', { name: /内容准备中/ })).toBeDisabled()
 })
 
 test('unified search finds subtitle text and opens the matching cue', async ({ page }) => {
@@ -58,4 +109,74 @@ test('bookshelf uses uploaded cover thumbnails', async ({ page }) => {
 
   const topFace = page.locator('.book3d__top').first()
   await expect(topFace).toHaveCSS('background-image', /work\.jpg/)
+})
+
+test('current book card falls back to the original cover', async ({ page }) => {
+  await page.route('**/covers/missing-thumb.jpg', (route) => route.fulfill({ status: 404 }))
+  await page.route('**/api/v1/books?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([{
+        id: 1,
+        title: '职场英语',
+        categoryId: 1,
+        categoryName: '职场英语',
+        coverUrl: '/covers/work.jpg',
+        coverThumbnailUrl: '/covers/missing-thumb.jpg',
+        lessonCount: 2,
+        progress: 20,
+        favorite: false,
+      }]),
+    }),
+  )
+  await page.goto('/')
+
+  await expect(page.locator('.book-selection-card__cover-frame img')).toHaveAttribute(
+    'src',
+    /work\.jpg/,
+  )
+})
+
+test('adjacent books keep a compact gap', async ({ page }) => {
+  await page.route('**/api/v1/books?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { id: 1, title: '第一本', categoryId: 1, categoryName: '职场英语', lessonCount: 3, progress: 20, favorite: false },
+        { id: 2, title: '第二本', categoryId: 1, categoryName: '职场英语', lessonCount: 4, progress: 0, favorite: false },
+        { id: 3, title: '第三本', categoryId: 1, categoryName: '职场英语', lessonCount: 5, progress: 0, favorite: false },
+      ]),
+    }),
+  )
+  await page.goto('/')
+  await expect(page.locator('.book-slot')).toHaveCount(3)
+
+  const metrics = await page.locator('.book-slot').evaluateAll((slots) => {
+    const rects = slots.map((slot) => slot.getBoundingClientRect())
+    return rects.slice(1).map((rect, index) => rect.top - rects[index].bottom)
+  })
+
+  expect(metrics.every((gap) => gap <= 10)).toBe(true)
+
+  const card = page.locator('.book-selection-card')
+  await expect(card.locator('.book-selection-card__cover-fallback')).toBeVisible()
+  const scroller = page.locator('.home-scroll')
+  expect(await scroller.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true)
+  await scroller.evaluate((element) => {
+    element.scrollTop = 0
+    element.dispatchEvent(new Event('scroll'))
+  })
+  await expect(card).toContainText('第一本')
+
+  await scroller.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+    element.dispatchEvent(new Event('scroll'))
+  })
+  await expect(card).toContainText('第三本')
+
+  const cardBox = await card.boundingBox()
+  const navBox = await page.locator('.app-bottom-nav').boundingBox()
+  expect((cardBox?.y ?? 0) + (cardBox?.height ?? 0)).toBeLessThanOrEqual(navBox?.y ?? 0)
 })

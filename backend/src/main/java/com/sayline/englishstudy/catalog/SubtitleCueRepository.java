@@ -12,6 +12,14 @@ public interface SubtitleCueRepository extends JpaRepository<SubtitleCue, Long> 
 
     long countByCourseId(Long courseId);
 
+    @Query("""
+        select cue.course.id, count(cue)
+        from SubtitleCue cue
+        where cue.course.id in :courseIds
+        group by cue.course.id
+        """)
+    List<Object[]> countByCourseIds(@Param("courseIds") List<Long> courseIds);
+
     void deleteByCourseId(Long courseId);
 
     @Query("""

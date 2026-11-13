@@ -25,4 +25,8 @@ public interface LearningDailyStatRepository extends JpaRepository<LearningDaily
         order by stat.statDate
         """)
     List<Object[]> dailyTrend(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    void deleteByCourseId(Long courseId);
+
+    void deleteByUserId(Long userId);
 }

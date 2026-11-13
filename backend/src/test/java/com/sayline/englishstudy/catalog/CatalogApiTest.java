@@ -65,7 +65,8 @@ class CatalogApiTest {
     @BeforeEach
     void cleanDatabase() {
         for (String table : new String[] {
-            "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
+            "admin_audit_logs", "content_import_jobs", "password_reset_tokens",
+            "review_cue_states", "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
             "study_sessions", "learning_records", "course_favorites", "refresh_sessions",
             "subtitle_cues", "courses", "book_favorites", "books", "user_settings",
             "user_interests", "course_categories", "users"
@@ -201,6 +202,9 @@ class CatalogApiTest {
     void returnsLearnerProgressInCourseSummaries() throws Exception {
         CourseCategory category = createCategory("Work", 1, true);
         Course course = createCourse(category, "Progress Course", CourseStatus.PUBLISHED);
+        course.setDurationMs(10 * 60_000);
+        courseRepository.save(course);
+        SubtitleCue cue = createCue(course, 3, "Let's continue from here.", "从这里继续。");
         String token = createLearnerToken("13800138104");
         User user = userRepository.findByPhone("13800138104").orElseThrow();
 
@@ -208,6 +212,7 @@ class CatalogApiTest {
         record.setUser(user);
         record.setCourse(course);
         record.setLastMode(LearningMode.READ);
+        record.setLastCue(cue);
         record.setListenProgress(100);
         record.setReadProgress(50);
         record.setWriteProgress(0);
@@ -218,7 +223,10 @@ class CatalogApiTest {
                 .param("categoryId", category.getId().toString())
                 .header("Authorization", bearer(token)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.content[0].progress").value(50));
+            .andExpect(jsonPath("$.content[0].progress").value(50))
+            .andExpect(jsonPath("$.content[0].lastCueText").value("Let's continue from here."))
+            .andExpect(jsonPath("$.content[0].lastCueSequenceNo").value(3))
+            .andExpect(jsonPath("$.content[0].remainingDurationMs").value(300_000));
     }
 
     private void addFavorite(Course course, String token) throws Exception {
@@ -292,7 +300,7 @@ class CatalogApiTest {
         return courseRepository.save(course);
     }
 
-    private void createCue(Course course, int sequence, String english, String chinese) {
+    private SubtitleCue createCue(Course course, int sequence, String english, String chinese) {
         SubtitleCue cue = new SubtitleCue();
         cue.setCourse(course);
         cue.setSequenceNo(sequence);
@@ -300,7 +308,7 @@ class CatalogApiTest {
         cue.setEndMs(sequence * 3_000L);
         cue.setEnglishText(english);
         cue.setChineseText(chinese);
-        cueRepository.save(cue);
+        return cueRepository.save(cue);
     }
 
     private String bearer(String token) {

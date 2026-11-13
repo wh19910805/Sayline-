@@ -1,5 +1,5 @@
 :root {
-  --font-display: "Instrument Serif", "Songti SC", "STSong", serif; /* @kind font */
+  --font-display: "Manrope", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif; /* @kind font */
   --font-ui: "Manrope", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif; /* @kind font */
   --font-reading: "Manrope", "PingFang SC", "Microsoft YaHei", sans-serif; /* @kind font */
 

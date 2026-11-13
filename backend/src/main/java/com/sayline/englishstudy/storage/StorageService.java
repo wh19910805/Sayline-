@@ -11,4 +11,8 @@ public interface StorageService {
     byte[] readBytes(String objectKey);
 
     void uploadBytes(String objectKey, String contentType, byte[] bytes);
+
+    String objectMd5(String objectKey);
+
+    java.util.List<String> listObjectKeys(String prefix);
 }

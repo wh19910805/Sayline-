@@ -23,6 +23,14 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     long countByBookIdAndStatus(Long bookId, CourseStatus status);
 
+    @Query("""
+        select c from Course c
+        join fetch c.book
+        join fetch c.category
+        order by c.id asc
+        """)
+    List<Course> findAllForImport();
+
     List<Course> findByBookIdInAndStatusOrderBySortOrderAscIdAsc(List<Long> bookIds, CourseStatus status);
 
     @Query("""

@@ -42,11 +42,11 @@ test('primary learner controls meet the mobile touch target baseline', async ({ 
   await page.goto('/learn/1/1')
   await expect(page.locator('.player-header')).toBeVisible()
   await expectTouchTargets(page, [
-    '.player-more',
+    '.player-header__actions button',
+    '.player-mode-switch__item',
     '.speed-select',
     '.transport-round',
     '.transport-skip',
-    '.player-mode-dock .sl-mode',
   ])
   await page.locator('[aria-label="写"]').click()
   await expect(page.locator('.write-current')).toBeVisible()

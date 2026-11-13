@@ -53,7 +53,8 @@ class UploadApiTest {
     @BeforeEach
     void setUp() {
         for (String table : new String[] {
-            "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
+            "admin_audit_logs", "content_import_jobs", "password_reset_tokens",
+            "review_cue_states", "learning_cue_progress", "dictation_attempts", "learning_daily_stats",
             "study_sessions", "learning_records", "course_favorites", "refresh_sessions",
             "subtitle_cues", "courses", "book_favorites", "books", "user_settings",
             "user_interests", "course_categories", "users"

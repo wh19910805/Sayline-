@@ -1,6 +1,8 @@
 package com.sayline.englishstudy.user;
 
 import java.math.BigDecimal;
+import java.time.LocalTime;
+import java.time.Instant;
 import java.util.List;
 
 import jakarta.validation.constraints.DecimalMax;
@@ -34,6 +36,8 @@ public final class UserProfileDtos {
         boolean showChineseWrite,
         boolean showChineseSpeak,
         int dailyGoalMinutes,
+        boolean reminderEnabled,
+        LocalTime reminderTime,
         Long defaultCategoryId
     ) {
     }
@@ -47,10 +51,42 @@ public final class UserProfileDtos {
         Boolean showChineseWrite,
         Boolean showChineseSpeak,
         @Min(1) @Max(240) Integer dailyGoalMinutes,
+        Boolean reminderEnabled,
+        LocalTime reminderTime,
         Long defaultCategoryId
     ) {
     }
 
     public record InterestsUpdate(List<Long> categoryIds) {
+    }
+
+    public record PasswordResetRequest(
+        @NotBlank @Pattern(regexp = "^1\\d{10}$", message = "请输入 11 位手机号") String phone,
+        @NotBlank String token,
+        @NotBlank @Size(min = 8, max = 72, message = "密码长度需为 8-72 个字符") String newPassword
+    ) {
+    }
+
+    public record PhoneChangeRequest(
+        @NotBlank String currentPassword,
+        @NotBlank @Pattern(regexp = "^1\\d{10}$", message = "请输入 11 位手机号") String newPhone
+    ) {
+    }
+
+    public record PasswordConfirmation(@NotBlank String currentPassword) {
+    }
+
+    public record SessionView(
+        String id,
+        String userAgent,
+        String ipAddress,
+        Instant createdAt,
+        Instant lastUsedAt,
+        Instant expiresAt,
+        boolean current
+    ) {
+    }
+
+    public record PasswordResetTokenView(String token, Instant expiresAt) {
     }
 }

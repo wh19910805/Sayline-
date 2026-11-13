@@ -1,6 +1,7 @@
 package com.sayline.englishstudy.user;
 
 import java.math.BigDecimal;
+import java.time.LocalTime;
 
 import com.sayline.englishstudy.catalog.CourseCategory;
 import com.sayline.englishstudy.common.AuditableEntity;
@@ -57,6 +58,12 @@ public class UserSettings extends AuditableEntity {
 
     @Column(name = "daily_goal_minutes", nullable = false)
     private int dailyGoalMinutes = 15;
+
+    @Column(name = "reminder_enabled", nullable = false)
+    private boolean reminderEnabled;
+
+    @Column(name = "reminder_time", nullable = false)
+    private LocalTime reminderTime = LocalTime.of(20, 0);
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_category_id")

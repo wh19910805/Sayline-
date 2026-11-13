@@ -9,6 +9,7 @@ import com.sayline.englishstudy.user.UserRole;
 import com.sayline.englishstudy.user.UserStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -65,7 +66,8 @@ public final class AdminDtos {
         String themeColorPrimary,
         String themeColorSecondary,
         int sortOrder,
-        boolean visible
+        boolean visible,
+        Instant updatedAt
     ) {
     }
 
@@ -93,6 +95,7 @@ public final class AdminDtos {
         String title,
         String description,
         String coverObjectKey,
+        String coverUrl,
         String audioObjectKey,
         String subtitleObjectKey,
         String themeColorPrimary,
@@ -100,7 +103,8 @@ public final class AdminDtos {
         long durationMs,
         int sortOrder,
         CourseStatus status,
-        Instant publishedAt
+        Instant publishedAt,
+        Instant updatedAt
     ) {
     }
 
@@ -110,6 +114,12 @@ public final class AdminDtos {
     public record BatchVisibilityRequest(
         @NotNull List<Long> bookIds,
         boolean visible
+    ) {
+    }
+
+    public record BatchCourseStatusRequest(
+        @NotEmpty List<Long> courseIds,
+        @NotNull CourseStatus status
     ) {
     }
 
@@ -127,11 +137,14 @@ public final class AdminDtos {
     public record DashboardView(
         long totalLearners,
         long activeToday,
+        long activeYesterday,
         long totalPublishedCourses,
         long courseStarts,
         long completedCourses,
         int completionRate,
         long totalStudyMs,
+        long thisWeekStudyMs,
+        long previousWeekStudyMs,
         int dictationAccuracy,
         long speakingCount,
         List<DailyStudyPoint> studyTrend

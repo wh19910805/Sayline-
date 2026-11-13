@@ -7,6 +7,7 @@ import com.sayline.englishstudy.auth.AuthDtos.LoginRequest;
 import com.sayline.englishstudy.auth.AuthDtos.RefreshRequest;
 import com.sayline.englishstudy.auth.AuthDtos.RegisterRequest;
 import com.sayline.englishstudy.auth.AuthDtos.UserView;
+import com.sayline.englishstudy.user.UserProfileDtos.PasswordResetRequest;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -30,15 +31,18 @@ public class AuthController {
     private static final String REFRESH_COOKIE = "refresh_token";
 
     private final AuthService authService;
+    private final AccountSecurityService accountSecurityService;
     private final boolean secureCookie;
     private final long refreshTokenDays;
 
     public AuthController(
         AuthService authService,
+        AccountSecurityService accountSecurityService,
         @Value("${app.cookie-secure}") boolean secureCookie,
         @Value("${app.refresh-token-days}") long refreshTokenDays
     ) {
         this.authService = authService;
+        this.accountSecurityService = accountSecurityService;
         this.secureCookie = secureCookie;
         this.refreshTokenDays = refreshTokenDays;
     }
@@ -46,17 +50,33 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
         @Valid @RequestBody RegisterRequest request,
-        @RequestHeader(value = "X-Client-Type", defaultValue = "web") String clientType
+        @RequestHeader(value = "X-Client-Type", defaultValue = "web") String clientType,
+        @RequestHeader(value = "User-Agent", required = false) String userAgent,
+        HttpServletRequest servletRequest
     ) {
-        return authResponse(authService.register(request), HttpStatus.CREATED, clientType);
+        return authResponse(
+            authService.register(request, userAgent, servletRequest.getRemoteAddr()),
+            HttpStatus.CREATED,
+            clientType);
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
         @Valid @RequestBody LoginRequest request,
-        @RequestHeader(value = "X-Client-Type", defaultValue = "web") String clientType
+        @RequestHeader(value = "X-Client-Type", defaultValue = "web") String clientType,
+        @RequestHeader(value = "User-Agent", required = false) String userAgent,
+        HttpServletRequest servletRequest
     ) {
-        return authResponse(authService.login(request), HttpStatus.OK, clientType);
+        return authResponse(
+            authService.login(request, userAgent, servletRequest.getRemoteAddr()),
+            HttpStatus.OK,
+            clientType);
+    }
+
+    @PostMapping("/password-reset")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
+        accountSecurityService.resetPassword(request);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/refresh")

@@ -5,22 +5,32 @@ import { useRouter } from 'vue-router'
 
 import { apiErrorMessage } from '@/api/http'
 import { learnerApi } from '@/api/services'
-import type { Profile } from '@/api/types'
+import type { Profile, SessionInfo } from '@/api/types'
+import SlDialog from '@/components/ui/SlDialog.vue'
+import { useAuthStore } from '@/stores/auth'
 import { maskPhone } from '@/utils/format'
 
 const router = useRouter()
+const auth = useAuthStore()
 const profile = ref<Profile | null>(null)
 const nickname = ref('')
 const avatarObjectKey = ref('')
 const error = ref('')
 const saved = ref(false)
 const uploading = ref(false)
+const sessions = ref<SessionInfo[]>([])
+const newPhone = ref('')
+const phonePassword = ref('')
+const accountPassword = ref('')
+const deleteOpen = ref(false)
+const securityBusy = ref(false)
 
 onMounted(async () => {
   try {
     profile.value = await learnerApi.profile()
     nickname.value = profile.value.nickname
     avatarObjectKey.value = profile.value.avatarUrl || ''
+    sessions.value = await learnerApi.sessions()
   } catch (reason) {
     error.value = apiErrorMessage(reason)
   }
@@ -37,6 +47,47 @@ async function save() {
     saved.value = true
   } catch (reason) {
     error.value = apiErrorMessage(reason)
+  }
+}
+
+async function changePhone() {
+  securityBusy.value = true
+  error.value = ''
+  try {
+    profile.value = await learnerApi.changePhone({
+      currentPassword: phonePassword.value,
+      newPhone: newPhone.value,
+    })
+    phonePassword.value = ''
+    newPhone.value = ''
+    saved.value = true
+  } catch (reason) {
+    error.value = apiErrorMessage(reason)
+  } finally {
+    securityBusy.value = false
+  }
+}
+
+async function revokeSession(session: SessionInfo) {
+  try {
+    await learnerApi.revokeSession(session.id)
+    sessions.value = sessions.value.filter((item) => item.id !== session.id)
+  } catch (reason) {
+    error.value = apiErrorMessage(reason)
+  }
+}
+
+async function deleteAccount() {
+  securityBusy.value = true
+  error.value = ''
+  try {
+    await learnerApi.deleteAccount(accountPassword.value)
+    await auth.logout()
+    await router.replace('/login')
+  } catch (reason) {
+    error.value = apiErrorMessage(reason)
+  } finally {
+    securityBusy.value = false
   }
 }
 
@@ -98,13 +149,65 @@ async function uploadAvatar(event: Event) {
             <span class="sl-field__label">手机号</span>
             <input class="sl-field__control" :value="profile?.phone || ''" readonly />
           </label>
-          <p>手机号用于登录，首版暂不支持修改。</p>
+          <p>手机号用于登录。修改前需要验证当前密码。</p>
+          <div class="security-form">
+            <label class="sl-field">
+              <span class="sl-field__label">新手机号</span>
+              <input v-model="newPhone" class="sl-field__control" inputmode="tel" autocomplete="tel" />
+            </label>
+            <label class="sl-field">
+              <span class="sl-field__label">当前密码</span>
+              <input v-model="phonePassword" class="sl-field__control" type="password" autocomplete="current-password" />
+            </label>
+            <button class="sl-button sl-button--secondary" type="button" :disabled="securityBusy" @click="changePhone">
+              更新手机号
+            </button>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <span class="eyebrow settings-section__eyebrow">SESSIONS</span>
+          <h2>登录设备</h2>
+          <div class="session-list">
+            <article v-for="session in sessions" :key="session.id">
+              <div>
+                <strong>{{ session.current ? '当前设备' : '其他设备' }}</strong>
+                <small>{{ session.userAgent || '未知浏览器' }} · {{ session.ipAddress || '未知 IP' }}</small>
+                <small>最近使用：{{ new Date(session.lastUsedAt || session.createdAt).toLocaleString('zh-CN') }}</small>
+              </div>
+              <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="revokeSession(session)">
+                退出该设备
+              </button>
+            </article>
+            <p v-if="!sessions.length">当前没有可管理的登录会话。</p>
+          </div>
         </section>
         <p v-if="error" class="inline-error">{{ error }}</p>
         <p v-if="saved" class="inline-success">个人资料已保存</p>
         <button class="sl-button sl-button--lg sl-button--full profile-save" type="submit">保存资料</button>
+        <section class="danger-zone">
+          <div><strong>注销账号</strong><p>注销后会清除登录身份并停用账号，学习统计以匿名形式保留。</p></div>
+          <button class="sl-button sl-button--danger" type="button" @click="deleteOpen = true">注销账号</button>
+        </section>
       </form>
     </div>
+
+    <SlDialog
+      :open="deleteOpen"
+      title="确认注销账号？"
+      eyebrow="DELETE ACCOUNT"
+      description="账号会立即停用且无法恢复。请输入当前密码确认。"
+      @close="deleteOpen = false"
+    >
+      <label class="sl-field">
+        <span class="sl-field__label">当前密码</span>
+        <input v-model="accountPassword" class="sl-field__control" type="password" autocomplete="current-password" />
+      </label>
+      <template #actions>
+        <button class="sl-button sl-button--secondary" type="button" @click="deleteOpen = false">取消</button>
+        <button class="sl-button sl-button--danger" type="button" :disabled="securityBusy" @click="deleteAccount">确认注销</button>
+      </template>
+    </SlDialog>
   </main>
 </template>
 
@@ -151,5 +254,57 @@ async function uploadAvatar(event: Event) {
   background: var(--color-ink-900);
   color: var(--color-paper-50);
   box-shadow: var(--shadow-float);
+}
+
+.security-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.session-list {
+  display: grid;
+  gap: 8px;
+}
+
+.session-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.session-list article > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.session-list small,
+.session-list p {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.danger-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+}
+
+.danger-zone p {
+  max-width: 48ch;
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
 }
 </style>

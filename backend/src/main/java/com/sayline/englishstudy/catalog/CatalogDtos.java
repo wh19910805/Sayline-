@@ -30,6 +30,9 @@ public final class CatalogDtos {
         String themeColorSecondary,
         long durationMs,
         int progress,
+        String lastCueText,
+        int lastCueSequenceNo,
+        long remainingDurationMs,
         boolean favorite
     ) {
     }

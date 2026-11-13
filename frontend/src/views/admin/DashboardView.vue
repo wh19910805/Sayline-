@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import SlIcon from '@/components/ui/SlIcon.vue'
+import { RouterLink } from 'vue-router'
 
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
@@ -34,6 +35,24 @@ const trendSummary = computed(() => {
   )
   return `近七日共学习 ${total} 分钟，最高一天为 ${best.minutes} 分钟、${best.learners} 名学习者。`
 })
+function changePercent(current = 0, previous = 0) {
+  if (previous === 0) return current > 0 ? 100 : 0
+  return Math.round(((current - previous) / previous) * 100)
+}
+const activeChange = computed(() =>
+  changePercent(dashboard.value?.activeToday, dashboard.value?.activeYesterday),
+)
+const studyChange = computed(() =>
+  changePercent(dashboard.value?.thisWeekStudyMs, dashboard.value?.previousWeekStudyMs),
+)
+const anomaly = computed(() => {
+  if (!dashboard.value) return ''
+  const values = [
+    activeChange.value < -20 ? `今日活跃较昨日下降 ${Math.abs(activeChange.value)}%` : '',
+    studyChange.value < -20 ? `本周学习时长较上周下降 ${Math.abs(studyChange.value)}%` : '',
+  ].filter(Boolean)
+  return values.join('；')
+})
 
 async function load() {
   loading.value = true
@@ -66,27 +85,42 @@ onMounted(load)
       title="看板数据暂时没有加载出来"
       @retry="load"
     />
+    <div v-if="anomaly" class="admin-alert" role="status">
+      <SlIcon name="line-chart" :size="18" />
+      <span>{{ anomaly }}</span>
+      <RouterLink to="/admin/courses">查看课时</RouterLink>
+    </div>
     <div v-if="dashboard" class="admin-metrics">
-      <article class="admin-metric">
+      <RouterLink class="admin-metric" to="/admin/users">
         <SlIcon name="group" :size="21" />
         <strong>{{ dashboard.totalLearners }}</strong>
         <span>学习者总数 · 今日活跃 {{ dashboard.activeToday }}</span>
-      </article>
-      <article class="admin-metric">
+        <small :class="{ 'is-down': activeChange < 0 }">
+          {{ activeChange >= 0 ? '+' : '' }}{{ activeChange }}% 较昨日
+        </small>
+        <em>查看学习者</em>
+      </RouterLink>
+      <RouterLink class="admin-metric" to="/admin/courses">
         <SlIcon name="book-2" :size="21" />
         <strong>{{ dashboard.totalPublishedCourses }}</strong>
         <span>已发布课时 · {{ dashboard.courseStarts }} 次开始学习</span>
-      </article>
-      <article class="admin-metric">
+        <em>管理课时</em>
+      </RouterLink>
+      <RouterLink class="admin-metric" to="/admin/courses">
         <SlIcon name="line-chart" :size="21" />
         <strong>{{ dashboard.completionRate }}%</strong>
         <span>课时完成率 · {{ dashboard.completedCourses }} 门完成</span>
-      </article>
-      <article class="admin-metric">
+        <em>查看完成情况</em>
+      </RouterLink>
+      <RouterLink class="admin-metric" to="/admin/courses">
         <SlIcon name="time" :size="21" />
         <strong>{{ formatStudyDuration(dashboard.totalStudyMs) }}</strong>
-        <span>累计学习时长</span>
-      </article>
+        <span>累计学习时长 · 本周 {{ formatStudyDuration(dashboard.thisWeekStudyMs) }}</span>
+        <small :class="{ 'is-down': studyChange < 0 }">
+          {{ studyChange >= 0 ? '+' : '' }}{{ studyChange }}% 较上周
+        </small>
+        <em>查看学习数据</em>
+      </RouterLink>
     </div>
     <section v-if="dashboard" class="admin-card admin-trend">
       <div class="admin-trend__head">
@@ -94,7 +128,7 @@ onMounted(load)
           <p class="eyebrow">LAST 7 DAYS</p>
           <h2>七日学习趋势</h2>
         </div>
-        <span>{{ trendSummary }}</span>
+        <span>单位：分钟 · {{ trend[0]?.date }} 至 {{ trend.at(-1)?.date }}<br />{{ trendSummary }}</span>
       </div>
       <div class="admin-trend__chart" role="img" :aria-label="trendSummary">
         <div
@@ -102,6 +136,7 @@ onMounted(load)
           :key="day.date"
           class="admin-trend__day"
           :aria-label="`${day.date}，${day.learners} 名学习者，学习 ${day.minutes} 分钟`"
+          :title="`${day.date}：${day.learners} 名学习者，${day.minutes} 分钟`"
         >
           <strong>{{ day.minutes }}</strong>
           <div class="admin-trend__track">
@@ -131,6 +166,63 @@ onMounted(load)
 <style scoped>
 .admin-trend {
   padding: 20px;
+}
+
+.admin-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 32%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+.admin-alert a {
+  margin-left: auto;
+  font-weight: 700;
+}
+
+.admin-metric small,
+.admin-metric em {
+  font-size: 11px;
+  font-style: normal;
+}
+
+.admin-metric {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  text-decoration: none;
+}
+
+.admin-metric strong {
+  margin-top: 8px;
+}
+
+.admin-metric > span {
+  line-height: 1.5;
+}
+
+.admin-metric small {
+  width: fit-content;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  color: var(--color-success);
+}
+
+.admin-metric small.is-down {
+  color: var(--color-danger);
+}
+
+.admin-metric em {
+  margin-top: auto;
+  color: var(--color-action);
+  font-weight: 700;
 }
 
 .admin-trend__head {

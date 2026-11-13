@@ -39,6 +39,9 @@ export interface CourseSummary {
   themeColorSecondary?: string | null
   durationMs: number
   progress: number
+  lastCueText?: string | null
+  lastCueSequenceNo?: number
+  remainingDurationMs?: number
   favorite: boolean
 }
 
@@ -119,6 +122,9 @@ export interface ReviewCue {
   lastAnswer: string
   wrongCount: number
   lastWrongAt: string
+  status: 'LEARNING' | 'MASTERED' | 'SNOOZED'
+  nextReviewAt?: string | null
+  due: boolean
 }
 
 export interface PageResponse<T> {
@@ -176,6 +182,21 @@ export interface Profile {
   avatarUrl?: string | null
 }
 
+export interface SessionInfo {
+  id: string
+  userAgent?: string | null
+  ipAddress?: string | null
+  createdAt: string
+  lastUsedAt?: string | null
+  expiresAt: string
+  current: boolean
+}
+
+export interface PasswordResetToken {
+  token: string
+  expiresAt: string
+}
+
 export interface LearningSettings {
   fontScale: number
   subtitleColor: string
@@ -185,6 +206,8 @@ export interface LearningSettings {
   showChineseWrite: boolean
   showChineseSpeak: boolean
   dailyGoalMinutes: number
+  reminderEnabled: boolean
+  reminderTime: string
   defaultCategoryId?: number | null
 }
 
@@ -206,6 +229,7 @@ export interface AdminBook {
   themeColorSecondary?: string | null
   sortOrder: number
   visible: boolean
+  updatedAt: string
 }
 
 export interface AdminCourse {
@@ -217,6 +241,7 @@ export interface AdminCourse {
   title: string
   description?: string | null
   coverObjectKey?: string | null
+  coverUrl?: string | null
   audioObjectKey?: string | null
   subtitleObjectKey?: string | null
   themeColorPrimary?: string | null
@@ -225,6 +250,7 @@ export interface AdminCourse {
   sortOrder: number
   status: CourseStatus
   publishedAt?: string | null
+  updatedAt: string
 }
 
 export interface AdminUser {
@@ -240,11 +266,14 @@ export interface AdminUser {
 export interface Dashboard {
   totalLearners: number
   activeToday: number
+  activeYesterday: number
   totalPublishedCourses: number
   courseStarts: number
   completedCourses: number
   completionRate: number
   totalStudyMs: number
+  thisWeekStudyMs: number
+  previousWeekStudyMs: number
   dictationAccuracy: number
   speakingCount: number
   studyTrend: Array<{
@@ -258,4 +287,91 @@ export interface PresignResponse {
   uploadUrl: string
   objectKey: string
   expiresAt: string
+}
+
+export type ImportType = 'CREATE' | 'SUBTITLE'
+export type ImportStatus = 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'ROLLED_BACK'
+export type ImportItemStatus =
+  | 'READY'
+  | 'DUPLICATE'
+  | 'INVALID'
+  | 'UNCHANGED'
+  | 'CREATED'
+  | 'UPDATED'
+  | 'FAILED'
+
+export interface ImportItem {
+  sourceName: string
+  title: string
+  audioMd5?: string | null
+  subtitleMd5?: string | null
+  audioObjectKey?: string | null
+  subtitleObjectKey?: string | null
+  courseId?: number | null
+  durationMs: number
+}
+
+export interface ImportItemView {
+  index: number
+  sourceName: string
+  title: string
+  status: ImportItemStatus
+  reason?: string | null
+  courseId?: number | null
+  courseTitle?: string | null
+  bookTitle?: string | null
+  previousSubtitleObjectKey?: string | null
+  error?: string | null
+}
+
+export interface ImportPreview {
+  total: number
+  ready: number
+  skipped: number
+  invalid: number
+  items: ImportItemView[]
+}
+
+export interface ImportJob {
+  id: number
+  type: ImportType
+  status: ImportStatus
+  bookId?: number | null
+  total: number
+  success: number
+  skipped: number
+  failed: number
+  createdAt: string
+  updatedAt: string
+  items: ImportItemView[]
+}
+
+export interface ContentHealth {
+  publishedCourses: number
+  missingMediaCourses: number
+  missingSubtitleCourses: number
+  duplicateAudioGroups: number
+  orphanObjectCount: number
+  issues: Array<{
+    severity: 'HIGH' | 'MEDIUM' | 'LOW'
+    type: string
+    message: string
+    entityId?: number | null
+  }>
+  failedImports: Array<{
+    id: number
+    type: ImportType
+    status: ImportStatus
+    failed: number
+    createdAt: string
+  }>
+  auditLogs: Array<{
+    id: number
+    actorId?: number | null
+    action: string
+    entityType: string
+    entityId?: string | null
+    detail?: string | null
+    createdAt: string
+  }>
 }

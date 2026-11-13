@@ -40,8 +40,14 @@ class AuthFlowTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private AccountSecurityService accountSecurityService;
+
     @BeforeEach
     void cleanUsers() {
+        jdbcTemplate.update("delete from admin_audit_logs");
+        jdbcTemplate.update("delete from content_import_jobs");
+        jdbcTemplate.update("delete from password_reset_tokens");
         jdbcTemplate.update("delete from refresh_sessions");
         userRepository.deleteAll();
     }
@@ -125,6 +131,32 @@ class AuthFlowTest {
                     """))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.code").value("ACCOUNT_DISABLED"));
+    }
+
+    @Test
+    void resetsPasswordWithOneTimeAdminToken() throws Exception {
+        register("13800138005");
+        User user = userRepository.findByPhone("13800138005").orElseThrow();
+        String token = accountSecurityService.issuePasswordResetToken(user.getId()).token();
+
+        mockMvc.perform(post("/api/v1/auth/password-reset")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"phone":"13800138005","token":"%s","newPassword":"NewPassword123"}
+                    """.formatted(token)))
+            .andExpect(status().isNoContent());
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"phone":"13800138005","password":"NewPassword123"}
+                    """))
+            .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/auth/password-reset")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"phone":"13800138005","token":"%s","newPassword":"AnotherPassword123"}
+                    """.formatted(token)))
+            .andExpect(status().isUnauthorized());
     }
 
     private MvcResult register(String phone) throws Exception {

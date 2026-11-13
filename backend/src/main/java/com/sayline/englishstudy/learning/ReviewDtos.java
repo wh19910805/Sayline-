@@ -2,6 +2,8 @@ package com.sayline.englishstudy.learning;
 
 import java.time.Instant;
 
+import jakarta.validation.constraints.NotNull;
+
 public final class ReviewDtos {
 
     private ReviewDtos() {
@@ -18,7 +20,16 @@ public final class ReviewDtos {
         String chineseText,
         String lastAnswer,
         int wrongCount,
-        Instant lastWrongAt
+        Instant lastWrongAt,
+        ReviewStatus status,
+        Instant nextReviewAt,
+        boolean due
+    ) {
+    }
+
+    public record ReviewStateRequest(
+        @NotNull ReviewStatus status,
+        Instant nextReviewAt
     ) {
     }
 }

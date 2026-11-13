@@ -2,7 +2,9 @@
 import {
   computed,
   nextTick,
+  onActivated,
   onBeforeUnmount,
+  onDeactivated,
   onMounted,
   ref,
   watch,
@@ -29,11 +31,17 @@ import { useControlVisibility } from '@/composables/useControlVisibility'
 import { useCatalogStore } from '@/stores/catalog'
 import { formatClock, formatDuration } from '@/utils/format'
 import { createVisibleCueTimers } from '@/utils/visibleCueTimers'
+import { downloadCourse, getOfflineCourse } from '@/utils/offlineCourse'
+import { usePlayerSession, type PlaybackMode } from '@/composables/usePlayerSession'
+import { useGlobalAudio } from '@/composables/useGlobalAudio'
+
+defineOptions({ name: 'PlayerView' })
 
 const route = useRoute()
 const router = useRouter()
 const catalog = useCatalogStore()
-const audio = ref<HTMLAudioElement | null>(null)
+const playerSession = usePlayerSession()
+const { element: audio, setSource: setAudioSource, subscribe: subscribeAudio } = useGlobalAudio()
 const course = ref<CourseDetail | null>(null)
 const bookInfo = ref<BookDetail | null>(null)
 const learning = ref<LearningState | null>(null)
@@ -48,6 +56,9 @@ const speedMenuOpen = ref(false)
 const error = ref('')
 const notice = ref('')
 const loading = ref(true)
+const offlineAudioUrl = ref('')
+const offlineDownloaded = ref(false)
+const offlineBusy = ref(false)
 const modePanel = ref<HTMLElement | null>(null)
 const lyricsWindow = ref<HTMLElement | null>(null)
 const writeTranscript = ref<HTMLElement | null>(null)
@@ -79,6 +90,7 @@ let activeSince = performance.now()
 const sentActions = new Set<string>()
 const transcriptElements = new Map<number, HTMLElement>()
 let readObserver: IntersectionObserver | null = null
+let unsubscribeAudio: (() => void) | undefined
 const readTimers = createVisibleCueTimers({
   onElapsed: (cueId) => markCue(cueId, 'READ'),
 })
@@ -87,13 +99,39 @@ const autoHide = ref(true)
 const visibility = useControlVisibility({ autoHide, delay: 6_000 })
 
 const courseId = ref(Number(route.params.lessonId))
-const playMode = ref<'single' | 'sequential' | 'loop'>('single')
+const playMode = ref<PlaybackMode>('study')
 const activeCue = computed<Cue | null>(() => course.value?.cues[activeCueIndex.value] ?? null)
+const courseAudioSrc = computed(() => offlineAudioUrl.value || course.value?.audioUrl || undefined)
+const currentCueSpoken = computed(
+  () => !!learning.value?.cues[activeCueIndex.value]?.spoken,
+)
+const modeCompletedCues = computed(() => {
+  const key = {
+    LISTEN: 'heard',
+    READ: 'read',
+    WRITE: 'written',
+    SPEAK: 'spoken',
+  }[mode.value] as 'heard' | 'read' | 'written' | 'spoken'
+  return learning.value?.cues.filter((cue) => cue[key]).length ?? 0
+})
+const identitySubline = computed(() => {
+  if (!course.value) return ''
+  return [
+    formatDuration(course.value.durationMs),
+    `${course.value.cues.length} 句`,
+  ].join(' · ')
+})
+const playlistIds = computed(() =>
+  catalog.currentLessonIds.length
+    ? catalog.currentLessonIds
+    : course.value
+      ? [course.value.id]
+      : [],
+)
 const modeProgress = computed(() => {
   const key = mode.value.toLowerCase() as 'listen' | 'read' | 'write' | 'speak'
   return learning.value?.modes[key] ?? { progress: 0, confirmed: false }
 })
-const canConfirm = computed(() => modeProgress.value.progress >= 100)
 const showChinese = computed(() => {
   const override = chineseOverrides.value[mode.value]
   if (override !== null) return override
@@ -161,6 +199,7 @@ async function loadCourse(showLoader = true) {
       learnerApi.book(Number(route.params.bookId)).catch(() => null),
     ])
     bookInfo.value = book
+    if (book) catalog.enterBook(book, book.lessons)
     course.value = detail
     updateMediaSession()
     if (detail.themeColorPrimary) {
@@ -169,12 +208,17 @@ async function loadCourse(showLoader = true) {
     }
     learning.value = state
     settings.value = userSettings
+    const cached = await getOfflineCourse(courseId.value)
+    setOfflineAudio(cached?.audio)
+    offlineDownloaded.value = !!cached
+    setAudioSource(courseAudioSrc.value)
     playbackRate.value = userSettings.playbackRate ?? 1
     duration.value = detail.durationMs / 1_000
     const requestedMode = String(route.query.mode ?? '').toUpperCase() as LearningMode
     mode.value = ['LISTEN', 'READ', 'WRITE', 'SPEAK'].includes(requestedMode)
       ? requestedMode
       : state.lastMode || 'LISTEN'
+    if (playMode.value !== 'study') mode.value = 'LISTEN'
     autoHide.value = mode.value === 'LISTEN' || mode.value === 'READ'
     const requestedCueId = Number(route.query.cue)
     const requestedIndex = Number.isFinite(requestedCueId)
@@ -193,14 +237,90 @@ async function loadCourse(showLoader = true) {
     }
     visibility.show()
   } catch (reason) {
-    error.value = apiErrorMessage(reason)
+    const cached = await getOfflineCourse(courseId.value).catch(() => undefined)
+    if (cached) {
+      course.value = cached.course
+      learning.value = emptyLearning(cached.course)
+      settings.value = defaultSettings()
+      setOfflineAudio(cached.audio)
+      offlineDownloaded.value = true
+      setAudioSource(courseAudioSrc.value)
+      duration.value = cached.course.durationMs / 1_000
+      mode.value = 'LISTEN'
+      notice.value = '当前离线，已加载已下载的音频和字幕'
+      visibility.show()
+    } else {
+      error.value = apiErrorMessage(reason)
+    }
   } finally {
     loading.value = false
   }
 }
 
+function setOfflineAudio(audioBlob?: Blob) {
+  if (offlineAudioUrl.value) URL.revokeObjectURL(offlineAudioUrl.value)
+  offlineAudioUrl.value = audioBlob ? URL.createObjectURL(audioBlob) : ''
+}
+
+function defaultSettings(): LearningSettings {
+  return {
+    fontScale: 1,
+    subtitleColor: '#FFFAF0',
+    playbackRate: 1,
+    showChineseListen: true,
+    showChineseRead: true,
+    showChineseWrite: true,
+    showChineseSpeak: true,
+    dailyGoalMinutes: 15,
+    reminderEnabled: false,
+    reminderTime: '20:00',
+    defaultCategoryId: null,
+  }
+}
+
+function emptyLearning(detail: CourseDetail): LearningState {
+  return {
+    lastMode: 'LISTEN',
+    lastCueId: null,
+    lastPositionMs: 0,
+    modes: {
+      listen: { progress: 0, confirmed: false },
+      read: { progress: 0, confirmed: false },
+      write: { progress: 0, confirmed: false },
+      speak: { progress: 0, confirmed: false },
+    },
+    cues: detail.cues.map((cue) => ({
+      cueId: cue.id,
+      heard: false,
+      read: false,
+      written: false,
+      spoken: false,
+    })),
+    completed: false,
+  }
+}
+
+async function downloadOffline() {
+  if (!course.value || offlineBusy.value || offlineDownloaded.value) return
+  offlineBusy.value = true
+  try {
+    const record = await downloadCourse(course.value)
+    setOfflineAudio(record.audio)
+    setAudioSource(offlineAudioUrl.value)
+    offlineDownloaded.value = true
+    notice.value = '本课时已下载，可离线播放'
+  } catch (reason) {
+    notice.value = apiErrorMessage(reason)
+  } finally {
+    offlineBusy.value = false
+  }
+}
+
 function selectMode(next: LearningMode) {
   if (recording.value) return
+  if (next !== 'LISTEN' && playMode.value !== 'study') {
+    playMode.value = 'study'
+  }
   mode.value = next
   sentenceStopMs.value = null
   writeSubmitted.value = false
@@ -480,22 +600,16 @@ function beginModeAdvance() {
   }, 1_000)
 }
 
-async function finishModeAdvance(target: LearningMode | null) {
+async function finishModeAdvance(target: LearningMode | null, playbackCompleted = false) {
   try {
     const completedMode = mode.value
-    const state = await learnerApi.confirm(courseId.value, completedMode)
+    const state = await learnerApi.confirm(courseId.value, completedMode, playbackCompleted)
     learning.value = state
     if (state.completed) beginAutoNext()
     else if (target) selectMode(target)
   } catch (reason) {
     notice.value = apiErrorMessage(reason)
   }
-}
-
-async function confirmMode() {
-  cancelModeAdvance()
-  const target = learning.value ? nextUnconfirmedMode(learning.value, mode.value) : null
-  await finishModeAdvance(target)
 }
 
 function beginAutoNext() {
@@ -517,20 +631,19 @@ function cancelAutoNext() {
 }
 
 const playModeLabel = computed(() =>
-  playMode.value === 'single' ? '单播' : playMode.value === 'sequential' ? '连播' : '循环',
+  playMode.value === 'study' ? '学习' : playMode.value === 'sequential' ? '连播' : '循环',
+)
+const playModeIcon = computed(() =>
+  playMode.value === 'study' ? 'book-open' : playMode.value === 'sequential' ? 'play-list' : 'repeat',
 )
 
 function cyclePlayMode() {
   playMode.value =
-    playMode.value === 'single' ? 'sequential' : playMode.value === 'sequential' ? 'loop' : 'single'
+    playMode.value === 'study' ? 'sequential' : playMode.value === 'sequential' ? 'loop' : 'study'
 }
 
 function moveCourse(direction: 1 | -1, fromStart = false, loop = false) {
-  const ids = catalog.currentLessonIds.length
-    ? catalog.currentLessonIds
-    : course.value
-      ? [course.value.id]
-      : []
+  const ids = playlistIds.value
   const index = ids.indexOf(courseId.value)
   let target = index + direction
   if (target < 0) {
@@ -542,13 +655,18 @@ function moveCourse(direction: 1 | -1, fromStart = false, loop = false) {
   }
   if (target >= ids.length) {
     if (loop) target = 0
-    else return
+    else {
+      notice.value = '已播放完最后一课'
+      return
+    }
   }
   savePosition()
   const nextId = ids[target]
-  suppressRouteReload = true
   courseId.value = nextId
-  router.replace(`/learn/${route.params.bookId}/${nextId}`)
+  if (route.name === 'player') {
+    suppressRouteReload = true
+    router.replace(`/learn/${route.params.bookId}/${nextId}`)
+  }
   void loadCourse(false).then(() => {
     if (fromStart && audio.value) {
       audio.value.currentTime = 0
@@ -559,9 +677,19 @@ function moveCourse(direction: 1 | -1, fromStart = false, loop = false) {
 
 function onEnded() {
   playing.value = false
-  if (mode.value !== 'LISTEN') return
-  if (playMode.value === 'single') return
-  moveCourse(1, true, playMode.value === 'loop')
+  if (playMode.value === 'sequential') {
+    moveCourse(1, true, false)
+    return
+  }
+  if (playMode.value === 'loop') {
+    moveCourse(1, true, true)
+    return
+  }
+  if (mode.value === 'LISTEN' && learning.value && !learning.value.completed) {
+    cancelModeAdvance()
+    const target = nextUnconfirmedMode(learning.value, 'LISTEN')
+    if (target) void finishModeAdvance(target, true)
+  }
 }
 
 function updateMediaSession() {
@@ -698,11 +826,15 @@ function touchEnd(event: TouchEvent) {
 watch(
   () => route.params.lessonId,
   (value) => {
+    if (route.name !== 'player' || value === undefined || value === null || value === '') {
+      return
+    }
     if (suppressRouteReload) {
       suppressRouteReload = false
       return
     }
     const id = Number(value)
+    if (!Number.isSafeInteger(id) || id <= 0) return
     if (id === courseId.value) return
     courseId.value = id
     loadCourse()
@@ -724,15 +856,59 @@ watch(mode, () => {
   }
 })
 
+watch(playMode, (value) => {
+  if (value !== 'study') {
+    cancelModeAdvance()
+    mode.value = 'LISTEN'
+    if (audio.value?.paused) audio.value.play().catch(() => undefined)
+  }
+})
+
 watch(
   () => [mode.value, modeProgress.value.progress, modeProgress.value.confirmed] as const,
   ([, progress, confirmed]) => {
+      if (playMode.value !== 'study') {
+        cancelModeAdvance()
+        return
+      }
     if (progress >= 100 && !confirmed) {
       beginModeAdvance()
     } else {
       cancelModeAdvance()
     }
   },
+)
+
+watch(
+  () => [
+    course.value?.id,
+    course.value?.bookId,
+    course.value?.title,
+    bookInfo.value?.title,
+    course.value?.coverUrl,
+    playing.value,
+    currentTime.value,
+    duration.value,
+    mode.value,
+    playMode.value,
+  ] as const,
+  () => {
+    if (!course.value) return
+    playerSession.update({
+      active: true,
+      courseId: course.value.id,
+      bookId: course.value.bookId,
+      title: course.value.title,
+      bookTitle: bookInfo.value?.title || course.value.categoryName,
+      coverUrl: course.value.coverUrl || bookInfo.value?.coverUrl || null,
+      playing: playing.value,
+      currentTime: currentTime.value,
+      duration: duration.value,
+      mode: mode.value,
+      playMode: playMode.value,
+    })
+  },
+  { immediate: true },
 )
 
 watch(activeCueIndex, () => {
@@ -762,6 +938,13 @@ watch(
 
 onMounted(async () => {
   setThemeColor('#1a1a18')
+  playerSession.registerToggleHandler(togglePlayback)
+  unsubscribeAudio = subscribeAudio({
+    play: () => { playing.value = true },
+    pause: () => { playing.value = false },
+    timeupdate: onTimeUpdate,
+    ended: onEnded,
+  })
   window.addEventListener('keydown', handleKeydown)
   setupMediaSession()
   await loadCourse()
@@ -774,7 +957,20 @@ onMounted(async () => {
   positionTimer = setInterval(savePosition, 10_000)
 })
 
+onActivated(() => {
+  visibility.show()
+  if (mode.value === 'READ') startReadObservation()
+})
+
+onDeactivated(() => {
+  savePosition()
+  stopReadObservation()
+  cacheDelete('recentLessons')
+})
+
 onBeforeUnmount(() => {
+  playerSession.registerToggleHandler(null)
+  unsubscribeAudio?.()
   window.removeEventListener('keydown', handleKeydown)
   clearInterval(heartbeatTimer)
   clearInterval(progressTimer)
@@ -784,7 +980,9 @@ onBeforeUnmount(() => {
   stopReadObservation()
   mediaRecorder?.stream?.getTracks().forEach((track) => track.stop())
   if (audioRecordingUrl.value) URL.revokeObjectURL(audioRecordingUrl.value)
+  if (offlineAudioUrl.value) URL.revokeObjectURL(offlineAudioUrl.value)
   cacheDelete('recentLessons')
+  playerSession.clear()
   syncThemeColor()
 })
 </script>
@@ -814,41 +1012,34 @@ onBeforeUnmount(() => {
         </button>
         <div class="player-header__title">
           <span>{{ bookInfo?.title || course.categoryName || 'NOW LEARNING' }}</span>
-          <strong>{{ course.title }}</strong>
+          <strong>正在学习</strong>
         </div>
-        <button class="sl-icon-button" :class="{ 'sl-icon-button--active': course.favorite }" type="button" aria-label="收藏课程" @click.stop="toggleFavorite">
-          <SlIcon name="heart" :size="20" :weight="course.favorite ? 'fill' : 'line'" />
-        </button>
+        <div class="player-header__actions" role="group" aria-label="课程操作">
+          <button
+            class="sl-icon-button"
+            type="button"
+            :disabled="offlineBusy || offlineDownloaded"
+            :aria-label="offlineBusy ? '正在下载' : offlineDownloaded ? '已下载本课时' : '下载本课时供离线学习'"
+            @click.stop="downloadOffline"
+          >
+            <SlIcon :name="offlineDownloaded ? 'check' : 'arrow-down'" :size="19" />
+          </button>
+          <button class="sl-icon-button" :class="{ 'sl-icon-button--active': course.favorite }" type="button" aria-label="收藏课程" @click.stop="toggleFavorite">
+            <SlIcon name="heart" :size="20" :weight="course.favorite ? 'fill' : 'line'" />
+          </button>
+        </div>
       </header>
 
       <section class="player-identity" @click.stop>
         <div class="player-identity__cover" :style="playerCoverStyle" />
         <div class="player-identity__copy">
-          <p class="player-identity__meta">{{ bookInfo?.title || course.categoryName }} · {{ formatDuration(course.durationMs) }}</p>
-          <h1>{{ course.title }}</h1>
-          <p>{{ course.description || '逐句听、读、写、说' }}</p>
+          <h1>
+            {{ course.title }}
+            <span>（已完成 {{ modeCompletedCues }}/{{ course.cues.length }}）</span>
+          </h1>
+          <p class="player-identity__subline">{{ identitySubline }}</p>
         </div>
-        <button
-          class="sl-icon-button player-more play-mode-toggle"
-          :class="{ 'is-on': playMode !== 'single', 'is-loop': playMode === 'loop' }"
-          type="button"
-          :aria-label="`播放模式：${playModeLabel}`"
-          :title="`播放模式：${playModeLabel}`"
-          @click="cyclePlayMode"
-        >
-          <SlIcon name="repeat" :size="20" :weight="playMode === 'single' ? 'line' : 'fill'" />
-        </button>
       </section>
-
-      <div class="mode-progress-strip" @click.stop>
-        <span
-          v-for="item in modes"
-          :key="item.value"
-          :class="{ 'is-active': mode === item.value, 'is-complete': modeState(item.value).progress === 100 }"
-        >
-          <i :style="{ width: `${modeState(item.value).progress}%` }" />
-        </span>
-      </div>
 
       <section
         ref="modePanel"
@@ -873,15 +1064,16 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-else-if="mode === 'READ'" class="read-mode">
-          <div class="read-mode__head">
-            <div>
-              <p class="eyebrow">双语原文</p>
-              <h2>逐句原文</h2>
-            </div>
-            <button class="translation-toggle" type="button" @click.stop="toggleChinese">
-              {{ showChinese ? '隐藏中文' : '显示中文' }}
-            </button>
-          </div>
+          <button
+            class="translation-toggle"
+            type="button"
+            :aria-label="showChinese ? '隐藏中文翻译' : '显示中文翻译'"
+            :aria-pressed="showChinese"
+            @click.stop="toggleChinese"
+          >
+            <SlIcon name="closed-captioning" :size="16" />
+            中文
+          </button>
           <div class="transcript-list">
             <button
               v-for="(cue, index) in course.cues"
@@ -904,12 +1096,6 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-else-if="mode === 'WRITE' && activeCue" class="write-mode" @click.stop>
-          <div class="mode-copy">
-            <div>
-              <p class="eyebrow">听写 · {{ activeCueIndex + 1 }}/{{ course.cues.length }}</p>
-              <h2>把听见的写下来</h2>
-            </div>
-          </div>
           <div ref="writeTranscript" class="write-transcript">
             <template v-for="(cue, index) in course.cues" :key="cue.id">
               <div
@@ -963,43 +1149,48 @@ onBeforeUnmount(() => {
                   {{ cue.englishText }}
                 </p>
                 <div class="word-input-card">
-                  <div class="word-input-card__head">
-                    <span>逐词填写</span>
-                    <small>离开输入区自动提交</small>
-                  </div>
                   <WordDictation
                     :key="cue.id"
                     :sentence="cue.englishText"
                     :submitted="writeSubmitted"
-                    @submit="(answer) => recordWriting(cue.id, answer)"
+                    @submit="(answer) => submitWriting(cue.id, answer)"
                     @complete="(answer) => handleDictationComplete(cue.id, answer)"
-                  />
+                    @retry="writeSubmitted = false"
+                  >
+                    <template #secondary-action>
+                      <button class="skip-link" type="button" @click.stop="moveCue(1)">
+                        跳过本句
+                      </button>
+                    </template>
+                  </WordDictation>
                 </div>
-                <button
-                  class="skip-link"
-                  type="button"
-                  @click.stop="moveCue(1)"
-                >
-                  暂时跳过这一句
-                </button>
               </section>
             </template>
           </div>
         </div>
 
         <div v-else-if="mode === 'SPEAK' && activeCue" class="speak-mode" @click.stop>
-          <div class="mode-copy">
-            <div>
-              <p class="eyebrow">跟读 · {{ activeCueIndex + 1 }}/{{ course.cues.length }}</p>
-              <h2>让这一句从你口中经过</h2>
-            </div>
-            <span class="record-state">{{ recording ? '录音中' : audioRecordingUrl ? '已录音' : '未录音' }}</span>
+          <div class="speak-mode__status">
+            <span>{{ activeCueIndex + 1 }}/{{ course.cues.length }} 句</span>
+            <span class="record-state" :class="{ 'is-complete': currentCueSpoken }">
+              <SlIcon :name="currentCueSpoken ? 'check' : 'mic'" :size="14" />
+              {{ currentCueSpoken ? '本句已完成' : '本句待跟读' }}
+            </span>
           </div>
           <div class="speak-quote">
             <span lang="en">{{ activeCue.englishText }}</span>
             <small v-if="showChinese" lang="zh">{{ activeCue.chineseText }}</small>
+            <button
+              class="speak-previous"
+              type="button"
+              :disabled="activeCueIndex === 0"
+              @click="moveCue(-1)"
+            >
+              <SlIcon name="arrow-left" :size="15" />
+              上一句
+            </button>
           </div>
-          <div class="record-stage">
+          <div class="speak-workbench">
             <div class="record-wave" :class="{ 'is-live': recording }" aria-hidden="true">
               <i
                 v-for="(height, index) in [18, 29, 42, 34, 52, 28, 44, 23, 35, 20]"
@@ -1007,43 +1198,41 @@ onBeforeUnmount(() => {
                 :style="{ height: `${height}px` }"
               />
             </div>
-            <button
-              class="record-button"
-              :class="{ 'is-recording': recording }"
-              type="button"
-              :aria-label="recording ? '停止录音' : '开始录音'"
-              :aria-pressed="recording"
-              @click="toggleRecording"
-            >
-              <SlIcon name="stop" v-if="recording" :size="22" />
-              <SlIcon name="mic" v-else :size="26" />
-            </button>
-            <p>{{ recording ? `正在录音 · ${recordSeconds}s` : audioRecordingUrl ? '可以回听刚才的跟读' : '点击后跟读当前句' }}</p>
-          </div>
-          <div class="voice-compare">
-            <button type="button" @click="replayCue"><SlIcon name="play" :size="14" /> 原句</button>
-            <audio v-if="audioRecordingUrl" ref="recordingAudio" :src="audioRecordingUrl" controls />
-            <button type="button" :disabled="!audioRecordingUrl" @click="playRecording">
-              <SlIcon name="play" :size="14" /> 我的录音
-            </button>
-          </div>
-          <div class="mode-actions mode-actions--row">
-            <button
-              class="sl-button sl-button--secondary"
-              type="button"
-              :disabled="activeCueIndex === 0"
-              @click="moveCue(-1)"
-            >
-              上一句
-            </button>
-            <button
-              class="sl-button sl-button--accent"
-              type="button"
-              :disabled="activeCueIndex === course.cues.length - 1"
-              @click="moveCue(1)"
-            >
-              下一句
-            </button>
+            <p class="record-duration" aria-live="polite">
+              <strong>{{ recording ? `${recordSeconds}s` : audioRecordingUrl ? '录音已就绪' : '等待录音' }}</strong>
+              <span>{{ recording ? '再次点击结束录音' : '建议跟读 1 秒以上' }}</span>
+            </p>
+            <div class="speak-actions" aria-label="跟读操作">
+              <button type="button" @click="replayCue">
+                <SlIcon name="play" :size="19" />
+                <span>听原句</span>
+              </button>
+              <button
+                type="button"
+                class="speak-action--record record-button"
+                :class="{ 'is-recording': recording }"
+                :aria-label="recording ? '停止录音' : '开始录音'"
+                :aria-pressed="recording"
+                @click="toggleRecording"
+              >
+                <SlIcon name="stop" v-if="recording" :size="21" />
+                <SlIcon name="mic" v-else :size="21" />
+                <span>{{ recording ? '停止录音' : '开始录音' }}</span>
+              </button>
+              <button type="button" :disabled="!audioRecordingUrl" @click="playRecording">
+                <SlIcon name="headphone" :size="19" />
+                <span>听自己</span>
+              </button>
+              <button
+                type="button"
+                :disabled="activeCueIndex === course.cues.length - 1"
+                @click="moveCue(1)"
+              >
+                <SlIcon name="skip-forward" :size="19" />
+                <span>下一句</span>
+              </button>
+            </div>
+            <audio v-if="audioRecordingUrl" ref="recordingAudio" :src="audioRecordingUrl" />
           </div>
         </div>
       </section>
@@ -1053,30 +1242,42 @@ onBeforeUnmount(() => {
           <div class="audio-deck">
             <div class="audio-deck__times">
               <span>{{ formatClock(currentTime * 1_000) }}</span>
-              <div class="audio-deck__speed">
+              <div class="player-audio-settings">
+                <div class="audio-deck__speed">
+                  <button
+                    class="speed-select"
+                    type="button"
+                    aria-label="播放速度"
+                    :aria-expanded="speedMenuOpen"
+                    @click.stop="toggleSpeedMenu"
+                  >
+                    {{ playbackRate.toFixed(2).replace(/0$/, '') }}×
+                  </button>
+                  <Transition name="speed-menu">
+                    <div v-if="speedMenuOpen" class="speed-menu" role="menu" @click.stop>
+                      <button
+                        v-for="rate in [0.25, 0.5, 0.75, 1, 1.25, 1.5]"
+                        :key="rate"
+                        type="button"
+                        role="menuitem"
+                        :aria-current="playbackRate === rate"
+                        @click="chooseRate(rate)"
+                      >
+                        {{ rate }}×
+                      </button>
+                    </div>
+                  </Transition>
+                </div>
                 <button
-                  class="speed-select"
+                  class="playback-mode-button"
+                  :data-mode="playMode"
                   type="button"
-                  aria-label="播放速度"
-                  :aria-expanded="speedMenuOpen"
-                  @click.stop="toggleSpeedMenu"
+                  :aria-label="`播放模式：${playModeLabel}`"
+                  @click="cyclePlayMode"
                 >
-                  {{ playbackRate.toFixed(2).replace(/0$/, '') }}×
+                  <SlIcon :name="playModeIcon" :size="16" />
+                  <span>{{ playModeLabel }}</span>
                 </button>
-                <Transition name="speed-menu">
-                  <div v-if="speedMenuOpen" class="speed-menu" role="menu" @click.stop>
-                    <button
-                      v-for="rate in [0.25, 0.5, 0.75, 1, 1.25, 1.5]"
-                      :key="rate"
-                      type="button"
-                      role="menuitem"
-                      :aria-current="playbackRate === rate"
-                      @click="chooseRate(rate)"
-                    >
-                      {{ rate }}×
-                    </button>
-                  </div>
-                </Transition>
               </div>
               <span>{{ formatClock(duration * 1_000) }}</span>
             </div>
@@ -1129,53 +1330,37 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div class="player-complete-row">
-          <span
-            v-if="modeCountdown !== null && pendingMode"
-            class="mode-transition-prompt"
-            role="status"
-            aria-live="polite"
-          >
-            {{ modeCountdown }} 秒后进入{{ pendingModeLabel }}模式
-          </span>
+        <div
+          v-if="modeCountdown !== null && pendingMode"
+          class="player-transition-status"
+          role="status"
+          aria-live="polite"
+        >
+          已完成本环节，{{ modeCountdown }} 秒后进入{{ pendingModeLabel }}模式
+        </div>
+        <nav class="player-mode-switch" role="tablist" aria-label="学习环节" @click.stop>
           <button
-            v-else
-            class="sl-button sl-button--sm player-complete-button"
+            v-for="item in modes"
+            :key="item.value"
+            class="player-mode-switch__item"
+            :class="{
+              'is-active': mode === item.value,
+              'is-complete': modeState(item.value).progress === 100,
+            }"
             type="button"
-            :disabled="!canConfirm || modeProgress.confirmed"
-            @click="confirmMode"
+            role="tab"
+            :aria-label="item.label"
+            :aria-selected="mode === item.value"
+            @click="selectMode(item.value)"
           >
-            {{ modeProgress.confirmed ? '已完成' : '完成本环节' }}
+            <span class="player-mode-switch__icon">
+              <SlIcon :name="item.icon" :size="20" />
+              <i v-if="modeState(item.value).progress === 100" aria-hidden="true">✓</i>
+            </span>
+            <span>{{ item.label }}</span>
           </button>
-        </div>
-        <div class="player-mode-dock">
-          <div class="sl-mode-switch sl-mode-switch--icon-only">
-            <button
-              v-for="item in modes"
-              :key="item.value"
-              class="sl-mode"
-              type="button"
-              role="tab"
-              :aria-label="item.label"
-              :aria-selected="mode === item.value"
-              @click="selectMode(item.value)"
-            >
-              <SlIcon :name="item.icon" :size="22" />
-              <span class="sl-mode__label">{{ item.label }}</span>
-            </button>
-          </div>
-        </div>
+        </nav>
       </div>
-
-      <audio
-        ref="audio"
-        :src="course.audioUrl || undefined"
-        preload="metadata"
-        @play="playing = true"
-        @pause="playing = false"
-        @timeupdate="onTimeUpdate"
-        @ended="onEnded"
-      />
 
       <div v-if="countdown !== null" class="player-complete-row" @click.stop>
         <span>本课已完成，{{ countdown }} 秒后进入下一课</span>
@@ -1487,42 +1672,21 @@ onBeforeUnmount(() => {
   color: #fffaf0;
 }
 
-.player-mode-dock {
-  padding: 6px 24px calc(12px + var(--safe-bottom));
-}
-
-.player-mode-dock .sl-mode-switch {
-  gap: 0;
-}
-
-.player-mode-dock .sl-mode {
-  min-height: 48px;
-}
-
-.player-mode-dock .sl-mode[aria-selected="true"]::after {
-  bottom: 1px;
-  width: 14px;
-  height: 2px;
-}
-
-.player-mode-dock .sl-mode > svg {
-  transform: none;
-}
-
 .player-stage {
   min-height: 0;
   flex: 1;
-  padding-bottom: 150px;
+  padding-bottom: 180px;
   transition: padding-bottom var(--duration-base) var(--ease-out);
 }
 
 .player-mode-read .player-stage {
-  padding-bottom: 130px;
+  padding-top: 4px;
+  padding-bottom: 146px;
 }
 
 .player-mode-write .player-stage,
 .player-mode-speak .player-stage {
-  padding-bottom: 110px;
+  padding-bottom: 94px;
 }
 
 .player-screen:not(.controls-visible) .player-stage {
@@ -1538,17 +1702,8 @@ onBeforeUnmount(() => {
 .read-mode,
 .write-mode,
 .speak-mode {
-  margin-inline: 7px;
-}
-
-.mode-copy h2,
-.read-mode__head h2 {
-  font-size: 22px;
-}
-
-.speak-mode .mode-copy h2 {
-  font-size: clamp(18px, 5.5vw, 22px);
-  white-space: nowrap;
+  margin-left: 7px;
+  margin-right: 7px;
 }
 
 .transcript-list {
@@ -1574,25 +1729,24 @@ onBeforeUnmount(() => {
   padding: 14px 12px;
 }
 
-.write-current > .skip-link {
-  width: 100%;
-  text-align: center;
-}
-
-.write-mode :deep(.sl-word-input) {
-  row-gap: 18px;
-}
-
 .speak-mode {
   padding: 8px 0 4px;
 }
 
 .record-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 5px 9px;
   border: 1px solid rgba(255, 250, 240, .16);
   border-radius: 99px;
-  color: rgba(255, 250, 240, .58);
-  font-size: 11px;
+  color: rgba(255, 250, 240, .72);
+  font-size: 12px;
+}
+
+.record-state.is-complete {
+  border-color: rgba(201,200,194,.58);
+  color: var(--color-oat-500);
 }
 
 .record-wave {
@@ -1629,71 +1783,12 @@ onBeforeUnmount(() => {
   to { transform: scaleY(.46); opacity: .5; }
 }
 
-.record-button {
-  width: 72px;
-  height: 72px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(255,250,240,.94);
-  color: var(--color-ink-900);
-  box-shadow: 0 14px 34px rgba(0,0,0,.24);
-  cursor: pointer;
-}
-
-.record-button.is-recording {
-  background: var(--color-ember-500);
-  color: white;
-  animation: record-breathe 1.2s var(--ease-in-out) infinite alternate;
-}
-
 .speak-quote span {
   font-size: calc(20px * var(--caption-scale, 1));
 }
 
 @keyframes record-breathe {
   to { box-shadow: 0 0 0 11px rgba(26,26,24,.16), 0 14px 34px rgba(0,0,0,.24); }
-}
-
-.voice-compare audio {
-  grid-column: 1 / -1;
-  width: 100%;
-  height: 34px;
-}
-
-.player-complete-row {
-  width: min(100%, 680px);
-  display: flex;
-  justify-content: flex-end;
-  margin: 0 auto;
-  padding: 4px 25px 2px;
-}
-
-.player-complete-button {
-  min-height: 44px;
-  padding: 0 15px;
-  border: 0;
-  background: rgba(255, 250, 240, .68);
-  color: var(--color-ink-900);
-  font-size: 11px;
-}
-
-.player-complete-button:disabled {
-  opacity: .55;
-}
-
-.mode-transition-prompt {
-  min-height: 34px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 15px;
-  border: 1px solid rgba(255, 250, 240, .14);
-  border-radius: 99px;
-  background: rgba(255, 250, 240, .08);
-  color: rgba(255, 250, 240, .68);
-  font-size: 11px;
-  animation: mode-prompt-in 180ms var(--ease-out);
 }
 
 @keyframes mode-prompt-in {

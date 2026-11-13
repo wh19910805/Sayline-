@@ -16,6 +16,10 @@ public interface CourseFavoriteRepository extends JpaRepository<CourseFavorite, 
 
     long deleteByUserIdAndCourseId(Long userId, Long courseId);
 
+    void deleteByCourseId(Long courseId);
+
+    void deleteByUserId(Long userId);
+
     @Query("""
         select favorite.course.id from CourseFavorite favorite
         where favorite.user.id = :userId and favorite.course.id in :courseIds

@@ -101,13 +101,13 @@ public class CourseCatalogService {
                 PageRequest.of(0, 12))
             .getContent();
         Set<Long> lessonFavorites = favoriteIds(userId, lessons);
-        Map<Long, Integer> progress = progressByCourse(userId, lessons);
+        Map<Long, LearningRecord> records = recordsByCourse(userId, lessons);
         return new SearchResponse(
             toBookSummaries(userId, books),
             lessons.stream()
                 .map(lesson -> toSummary(
                     lesson,
-                    progress.getOrDefault(lesson.getId(), 0),
+                    records.get(lesson.getId()),
                     lessonFavorites.contains(lesson.getId())))
                 .toList(),
             cueRepository.searchPublished(normalizedQuery).stream()
@@ -132,12 +132,12 @@ public class CourseCatalogService {
             .orElseThrow(() -> new ApiException("BOOK_NOT_FOUND", HttpStatus.NOT_FOUND, "书籍不存在或已隐藏"));
         List<Course> lessons = courseRepository.findByBookIdAndStatusOrderBySortOrderAscIdAsc(
             bookId, CourseStatus.PUBLISHED);
-        Map<Long, Integer> progress = progressByCourse(userId, lessons);
+        Map<Long, LearningRecord> records = recordsByCourse(userId, lessons);
         Set<Long> favoriteIds = favoriteIds(userId, lessons);
         List<CourseSummary> lessonViews = lessons.stream()
             .map(lesson -> toSummary(
                 lesson,
-                progress.getOrDefault(lesson.getId(), 0),
+                records.get(lesson.getId()),
                 favoriteIds.contains(lesson.getId())))
             .toList();
         int lessonCount = lessons.size();
@@ -201,10 +201,10 @@ public class CourseCatalogService {
             CourseStatus.PUBLISHED,
             pageRequest(page, size));
         Set<Long> favoriteIds = favoriteIds(userId, courses.getContent());
-        Map<Long, Integer> progress = progressByCourse(userId, courses.getContent());
+        Map<Long, LearningRecord> records = recordsByCourse(userId, courses.getContent());
         return PageResponse.from(courses.map(course -> toSummary(
             course,
-            progress.getOrDefault(course.getId(), 0),
+            records.get(course.getId()),
             favoriteIds.contains(course.getId()))));
     }
 
@@ -213,12 +213,12 @@ public class CourseCatalogService {
         PageRequest pageRequest = pageRequest(page, size)
             .withSort(Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
         Page<CourseFavorite> favorites = favoriteRepository.findPublishedFavorites(userId, pageRequest);
-        Map<Long, Integer> progress = progressByCourse(
+        Map<Long, LearningRecord> records = recordsByCourse(
             userId,
             favorites.getContent().stream().map(CourseFavorite::getCourse).toList());
         return PageResponse.from(favorites.map(favorite -> toSummary(
             favorite.getCourse(),
-            progress.getOrDefault(favorite.getCourse().getId(), 0),
+            records.get(favorite.getCourse().getId()),
             true)));
     }
 
@@ -318,7 +318,7 @@ public class CourseCatalogService {
             userId, courses.stream().map(Course::getId).toList()));
     }
 
-    private Map<Long, Integer> progressByCourse(Long userId, List<Course> courses) {
+    private Map<Long, LearningRecord> recordsByCourse(Long userId, List<Course> courses) {
         if (courses.isEmpty()) {
             return Map.of();
         }
@@ -328,9 +328,13 @@ public class CourseCatalogService {
             .stream()
             .collect(Collectors.toMap(
                 record -> record.getCourse().getId(),
-                record -> Math.round(
-                    (record.getListenProgress() + record.getReadProgress()
-                        + record.getWriteProgress() + record.getSpeakProgress()) / 4.0f)));
+                record -> record));
+    }
+
+    private int recordProgress(LearningRecord record) {
+        return Math.round(
+            (record.getListenProgress() + record.getReadProgress()
+                + record.getWriteProgress() + record.getSpeakProgress()) / 4.0f);
     }
 
     private PageRequest pageRequest(int page, int size) {
@@ -385,6 +389,27 @@ public class CourseCatalogService {
     }
 
     private CourseSummary toSummary(Course course, int progress, boolean favorite) {
+        return toSummary(course, progress, null, favorite);
+    }
+
+    private CourseSummary toSummary(Course course, LearningRecord record, boolean favorite) {
+        return toSummary(course, record == null ? 0 : recordProgress(record), record, favorite);
+    }
+
+    private CourseSummary toSummary(
+        Course course,
+        int progress,
+        LearningRecord record,
+        boolean favorite
+    ) {
+        String lastCueText = record != null && record.getLastCue() != null
+            ? record.getLastCue().getEnglishText()
+            : null;
+        int lastCueSequenceNo = record != null && record.getLastCue() != null
+            ? record.getLastCue().getSequenceNo()
+            : 0;
+        long remainingDurationMs = Math.round(
+            course.getDurationMs() * Math.max(0, 100 - progress) / 100.0);
         return new CourseSummary(
             course.getId(),
             course.getBook().getId(),
@@ -397,6 +422,9 @@ public class CourseCatalogService {
             course.getThemeColorSecondary(),
             course.getDurationMs(),
             progress,
+            lastCueText,
+            lastCueSequenceNo,
+            remainingDurationMs,
             favorite);
     }
 
