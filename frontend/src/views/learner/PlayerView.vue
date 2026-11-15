@@ -100,6 +100,8 @@ const visibility = useControlVisibility({ autoHide, delay: 6_000 })
 
 const courseId = ref(Number(route.params.lessonId))
 const playMode = ref<PlaybackMode>('study')
+const prefetchedCourses = new Map<number, CourseDetail>()
+const prefetchedAudio = new Map<number, HTMLAudioElement>()
 const activeCue = computed<Cue | null>(() => course.value?.cues[activeCueIndex.value] ?? null)
 const courseAudioSrc = computed(() => offlineAudioUrl.value || course.value?.audioUrl || undefined)
 const currentCueSpoken = computed(
@@ -188,12 +190,12 @@ const pendingModeLabel = computed(
   () => modes.find((item) => item.value === pendingMode.value)?.label ?? '',
 )
 
-async function loadCourse(showLoader = true) {
+async function loadCourse(showLoader = true, knownDetail?: CourseDetail) {
   if (showLoader) loading.value = true
   error.value = ''
   try {
     const [detail, state, userSettings, book] = await Promise.all([
-      learnerApi.course(courseId.value),
+      knownDetail ? Promise.resolve(knownDetail) : learnerApi.course(courseId.value),
       learnerApi.learningState(courseId.value),
       learnerApi.settings(),
       learnerApi.book(Number(route.params.bookId)).catch(() => null),
@@ -236,6 +238,7 @@ async function loadCourse(showLoader = true) {
       audio.value.playbackRate = playbackRate.value
     }
     visibility.show()
+    prefetchNextCourse()
   } catch (reason) {
     const cached = await getOfflineCourse(courseId.value).catch(() => undefined)
     if (cached) {
@@ -642,6 +645,53 @@ function cyclePlayMode() {
     playMode.value === 'study' ? 'sequential' : playMode.value === 'sequential' ? 'loop' : 'study'
 }
 
+function prefetchNextCourse() {
+  if (playMode.value === 'study') return
+  const ids = playlistIds.value
+  const currentIndex = ids.indexOf(courseId.value)
+  if (currentIndex < 0) return
+  let nextIndex = currentIndex + 1
+  if (nextIndex >= ids.length) {
+    if (playMode.value === 'sequential') return
+    nextIndex = 0
+  }
+  const nextId = ids[nextIndex]
+  if (!nextId || nextId === courseId.value || prefetchedCourses.has(nextId)) return
+
+  learnerApi.course(nextId)
+    .then((detail) => {
+      prefetchedCourses.set(nextId, detail)
+      if (detail.audioUrl) {
+        const preloader = new Audio(detail.audioUrl)
+        preloader.preload = 'auto'
+        preloader.load()
+        prefetchedAudio.set(nextId, preloader)
+      }
+    })
+    .catch(() => undefined)
+}
+
+function startPrefetchedCourse(detail: CourseDetail) {
+  setOfflineAudio(undefined)
+  course.value = detail
+  updateMediaSession()
+  if (detail.themeColorPrimary) {
+    setAmbient(
+      detail.themeColorPrimary,
+      detail.themeColorSecondary || detail.themeColorPrimary,
+      detail.coverUrl || null,
+    )
+    setThemeColor(playerSurface.value)
+  }
+  setAudioSource(detail.audioUrl)
+  duration.value = detail.durationMs / 1_000
+  if (audio.value) {
+    audio.value.currentTime = 0
+    audio.value.playbackRate = playbackRate.value
+    audio.value.play().catch(() => undefined)
+  }
+}
+
 function moveCourse(direction: 1 | -1, fromStart = false, loop = false) {
   const ids = playlistIds.value
   const index = ids.indexOf(courseId.value)
@@ -662,16 +712,22 @@ function moveCourse(direction: 1 | -1, fromStart = false, loop = false) {
   }
   savePosition()
   const nextId = ids[target]
+  const knownDetail = prefetchedCourses.get(nextId)
+  if (knownDetail) {
+    prefetchedCourses.delete(nextId)
+    prefetchedAudio.delete(nextId)
+  }
   courseId.value = nextId
   if (route.name === 'player') {
     suppressRouteReload = true
     router.replace(`/learn/${route.params.bookId}/${nextId}`)
   }
-  void loadCourse(false).then(() => {
+  if (knownDetail) startPrefetchedCourse(knownDetail)
+  void loadCourse(false, knownDetail).then(() => {
     if (fromStart && audio.value) {
       audio.value.currentTime = 0
     }
-    audio.value?.play().catch(() => undefined)
+    if (!knownDetail) audio.value?.play().catch(() => undefined)
   })
 }
 
@@ -861,6 +917,7 @@ watch(playMode, (value) => {
     cancelModeAdvance()
     mode.value = 'LISTEN'
     if (audio.value?.paused) audio.value.play().catch(() => undefined)
+    prefetchNextCourse()
   }
 })
 

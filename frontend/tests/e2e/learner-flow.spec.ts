@@ -227,6 +227,22 @@ test('continuous and loop modes listen and advance lessons', async ({ page }) =>
   await expect(page).toHaveURL(/\/learn\/1\/1$/)
 })
 
+test('continuous mode prefetches the next lesson before the current audio ends', async ({ page }) => {
+  const nextLessonRequests: string[] = []
+  page.on('request', (request) => {
+    if (/\/api\/v1\/courses\/2(?:\?|$)/.test(request.url())) {
+      nextLessonRequests.push(request.url())
+    }
+  })
+
+  await page.goto('/learn/1/1')
+  await page.getByRole('button', { name: '播放模式：学习' }).click()
+  await expect(page.getByRole('button', { name: '播放模式：连播' })).toBeVisible()
+  await page.locator('audio').evaluate((element) => (element as HTMLAudioElement).pause())
+
+  await expect.poll(() => nextLessonRequests.length, { timeout: 2_000 }).toBeGreaterThan(0)
+})
+
 test('leaving the player keeps playback state on the lesson page', async ({ page }) => {
   const invalidLearningRequests: string[] = []
   page.on('request', (request) => {
