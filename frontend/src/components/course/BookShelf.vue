@@ -39,7 +39,7 @@ function getScrollContainer(element: HTMLElement | null) {
 }
 
 function selectionAnchor() {
-  return Math.min(190, Math.max(132, window.innerHeight * 0.17))
+  return Math.min(420, Math.max(240, window.innerHeight * 0.42))
 }
 
 function updateBooks() {
@@ -255,6 +255,18 @@ onBeforeUnmount(() => {
           <span class="book3d__face book3d__side" />
           <span class="book3d__face book3d__side-left" />
           <span class="book3d__face book3d__back" />
+          <span class="book3d__front" :style="coverImageStyle(book)">
+            <span
+              v-if="!book.coverThumbnailUrl && !book.coverUrl"
+              class="book3d__cover-mark"
+            >
+              EN
+            </span>
+          </span>
+          <span class="book3d__front-edge book3d__front-right" />
+          <span class="book3d__front-edge book3d__front-left" />
+          <span class="book3d__front-edge book3d__front-bottom" />
+          <span class="book3d__front-back" />
         </span>
         <span class="book-shadow" />
       </button>
@@ -314,25 +326,26 @@ onBeforeUnmount(() => {
 }
 
 .book-shelf__stage {
+  --bw: clamp(280px, calc(100vw - 96px), 450px);
+  --bd: calc(var(--bw) * 240 / 340);
+  --bh: 24px;
+  --active-gap: calc(var(--bd) * .32);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding-top: clamp(24px, 4dvh, 40px);
+  padding-top: max(48px, calc(42dvh - var(--bd) / 2 - var(--active-gap)));
   padding-bottom: calc(72dvh + 96px);
 }
 
 .book-shelf__stage.is-single {
   min-height: 0;
   justify-content: flex-start;
-  padding-top: clamp(24px, 4dvh, 40px);
+  padding-top: max(48px, calc(42dvh - var(--bd) / 2 - var(--active-gap)));
   padding-bottom: 40px;
 }
 
 .book-slot {
-  --bw: clamp(280px, calc(100vw - 96px), 450px);
-  --bd: calc(var(--bw) * 240 / 340);
-  --bh: 24px;
   position: relative;
   flex: 0 0 auto;
   display: flex;
@@ -347,6 +360,7 @@ onBeforeUnmount(() => {
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
+  transition: min-height 220ms var(--ease-out);
 }
 
 .book-shadow {
@@ -368,7 +382,9 @@ onBeforeUnmount(() => {
   transform: rotateX(14deg);
   will-change: transform;
   cursor: pointer;
-  transition: filter var(--duration-fast) var(--ease-out);
+  transition:
+    filter var(--duration-fast) var(--ease-out),
+    transform 220ms var(--ease-out);
 }
 
 .book3d:active {
@@ -387,6 +403,72 @@ onBeforeUnmount(() => {
   top: 50%;
   backface-visibility: hidden;
   border: 1px solid transparent;
+  transition: opacity 180ms var(--ease-out);
+}
+
+.book3d__front,
+.book3d__front-edge,
+.book3d__front-back {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  opacity: 0;
+  pointer-events: none;
+  backface-visibility: hidden;
+  transition: opacity 180ms var(--ease-out);
+}
+
+.book3d__front {
+  z-index: 9;
+  width: var(--bw);
+  height: var(--bd);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 3px;
+  background: linear-gradient(150deg, var(--book-a), var(--book-b));
+  background-position: center;
+  background-size: cover;
+  box-shadow:
+    0 22px 42px rgba(26, 26, 24, .28),
+    0 5px 14px rgba(26, 26, 24, .2),
+    inset 0 0 0 1px rgba(255, 255, 255, .12);
+  transform: translate(-50%, -50%) translateZ(calc(var(--bh) / 2));
+}
+
+.book3d__front-back {
+  width: var(--bw);
+  height: var(--bd);
+  background: color-mix(in srgb, var(--book-b) 72%, #e8dfcd);
+  transform: translate(-50%, -50%) translateZ(calc(-1 * var(--bh) / 2));
+}
+
+.book3d__front-right {
+  width: var(--bh);
+  height: var(--bd);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      #f6f0e2 0,
+      #f6f0e2 2px,
+      #d7cdb8 3px,
+      #f6f0e2 4px
+    );
+  transform: translate(-50%, -50%) rotateY(90deg) translateZ(calc(var(--bw) / 2));
+}
+
+.book3d__front-left {
+  width: var(--bh);
+  height: var(--bd);
+  background: linear-gradient(90deg, var(--spine-dark, var(--book-a)), var(--spine-color, var(--book-a)));
+  transform: translate(-50%, -50%) rotateY(-90deg) translateZ(calc(var(--bw) / 2));
+}
+
+.book3d__front-bottom {
+  width: var(--bw);
+  height: var(--bh);
+  background: linear-gradient(#f4eddf, #d8ceba);
+  transform: translate(-50%, -50%) rotateX(-90deg) translateZ(calc(var(--bd) / 2));
 }
 
 .book3d__spine {
@@ -472,6 +554,33 @@ onBeforeUnmount(() => {
     inset 0 1px 0 rgba(255, 255, 255, .38),
     inset 0 -1px 0 rgba(0, 0, 0, .38),
     0 0 0 1px rgba(255, 250, 240, .2);
+}
+
+.book-slot.is-active .book3d {
+  z-index: 20;
+  transform: rotateX(3deg) scale(1) !important;
+}
+
+.book-slot.is-active {
+  min-height: calc(var(--bd) + 24px);
+  justify-content: center;
+  margin-block: var(--active-gap);
+}
+
+.book-slot.is-active .book3d__face,
+.book-slot.is-active .book3d__front-back {
+  opacity: 0;
+}
+
+.book-slot.is-active .book3d__front,
+.book-slot.is-active .book3d__front-edge {
+  opacity: 1;
+}
+
+.book-slot.is-active .book-shadow {
+  width: calc(var(--bw) * .78);
+  opacity: .3 !important;
+  transform: translateY(calc(var(--bd) / 2 + 8px)) scaleX(1) !important;
 }
 
 .book-selection-card {
@@ -615,7 +724,11 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .book3d {
+  .book3d,
+  .book3d__face,
+  .book3d__front,
+  .book3d__front-edge,
+  .book3d__front-back {
     transition: none;
   }
 

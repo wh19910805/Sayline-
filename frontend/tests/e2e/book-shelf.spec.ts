@@ -38,8 +38,7 @@ test('book shelf renders the default category book and opens its lessons', async
   await expect(page.locator('.book-selection-card')).not.toContainText('尚未开始')
   await expect(page.locator('.book-selection-card__progress')).toHaveCount(0)
   await expect(page.locator('.book-selection-card__cover-frame img')).toHaveAttribute('src', /work\.jpg/)
-  const firstBook = await page.locator('.book3d').first().boundingBox()
-  expect(firstBook?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(220)
+  await expect(page.locator('.book3d__front').first()).toBeVisible()
   const coverBox = await page.locator('.book-selection-card__cover-frame').boundingBox()
   expect((coverBox?.width ?? 0) / (coverBox?.height ?? 1)).toBeCloseTo(1.4, 1)
   await expect(page.locator('.book-selection-card')).toHaveCSS(
@@ -129,6 +128,68 @@ test('bookshelf uses uploaded cover thumbnails', async ({ page }) => {
   await expect(topFace).not.toHaveCSS('background-image', /work-full\.jpg/)
 })
 
+test('active shelf book presents its full width 3D face at the shelf center', async ({ page }) => {
+  await page.route('**/api/v1/books?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: 1,
+          title: '第一本',
+          categoryId: 1,
+          categoryName: '职场英语',
+          coverUrl: '/covers/work.jpg',
+          coverThumbnailUrl: '/covers/work-thumb.jpg',
+          lessonCount: 2,
+          progress: 20,
+          favorite: false,
+        },
+        {
+          id: 2,
+          title: '第二本',
+          categoryId: 1,
+          categoryName: '职场英语',
+          coverUrl: '/covers/spoken.jpg',
+          coverThumbnailUrl: '/covers/spoken-thumb.jpg',
+          lessonCount: 2,
+          progress: 0,
+          favorite: false,
+        },
+      ]),
+    }),
+  )
+  await page.goto('/')
+
+  const active = page.locator('.book-slot.is-active').first()
+  await expect(active.locator('.book3d__front')).toBeVisible()
+  await expect(active.locator('.book3d__front')).toHaveCSS('background-image', /work-thumb\.jpg/)
+  await expect(active.locator('.book3d__spine')).toHaveCSS('opacity', '0')
+
+  const neighbor = page.locator('.book-slot').nth(1)
+  await expect(neighbor.locator('.book3d__front')).toHaveCSS('opacity', '0')
+  await expect(neighbor.locator('.book3d__spine')).toHaveCSS('opacity', '1')
+
+  const metrics = await page.evaluate(() => {
+    const activeSlot = document.querySelector('.book-slot.is-active')!
+    const front = activeSlot.querySelector('.book3d__front')!
+    const neighborSpine = document.querySelectorAll('.book-slot')[1]!.querySelector('.book3d__spine')!
+    const rect = front.getBoundingClientRect()
+    return {
+      frontWidth: Number.parseFloat(getComputedStyle(front).width),
+      spineWidth: Number.parseFloat(getComputedStyle(neighborSpine).width),
+      centerY: rect.top + rect.height / 2,
+      viewportHeight: window.innerHeight,
+      marginTop: Number.parseFloat(getComputedStyle(activeSlot).marginTop),
+      marginBottom: Number.parseFloat(getComputedStyle(activeSlot).marginBottom),
+    }
+  })
+
+  expect(metrics.frontWidth).toBeCloseTo(metrics.spineWidth, 0)
+  expect(metrics.marginTop).toBeCloseTo(metrics.marginBottom, 0)
+  expect(Math.abs(metrics.centerY - metrics.viewportHeight * 0.5)).toBeLessThan(90)
+})
+
 test('current book card falls back to the original cover', async ({ page }) => {
   await page.route('**/covers/missing-thumb.jpg', (route) => route.fulfill({ status: 404 }))
   await page.route('**/api/v1/books?*', (route) =>
@@ -156,7 +217,7 @@ test('current book card falls back to the original cover', async ({ page }) => {
   )
 })
 
-test('adjacent books keep a compact gap', async ({ page }) => {
+test('active book gets breathing room while adjacent spines stay compact', async ({ page }) => {
   await page.route('**/api/v1/books?*', (route) =>
     route.fulfill({
       status: 200,
@@ -176,7 +237,8 @@ test('adjacent books keep a compact gap', async ({ page }) => {
     return rects.slice(1).map((rect, index) => rect.top - rects[index].bottom)
   })
 
-  expect(metrics.every((gap) => gap <= 10)).toBe(true)
+  expect(metrics[0]).toBeGreaterThan(20)
+  expect(metrics.slice(1).every((gap) => gap <= 10)).toBe(true)
 
   const card = page.locator('.book-selection-card')
   await expect(card.locator('.book-selection-card__cover-fallback')).toBeVisible()
