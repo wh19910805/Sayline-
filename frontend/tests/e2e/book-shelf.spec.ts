@@ -170,6 +170,7 @@ test('active shelf book presents its full width 3D face at the shelf center', as
   const active = page.locator('.book-slot.is-active')
   await expect(active.locator('.book3d__front')).toBeVisible()
   await expect(active.locator('.book3d__front')).toHaveCSS('background-image', /work-thumb\.jpg/)
+  await expect(active.locator('.book3d__front-pages')).toBeVisible()
 
   const neighbor = page.locator('.book-slot').nth(1)
   await expect(neighbor.locator('.book3d__front')).toHaveCSS('opacity', '0')
@@ -177,14 +178,18 @@ test('active shelf book presents its full width 3D face at the shelf center', as
 
   const metrics = await page.evaluate(() => {
     const front = document.querySelector('.book-slot.is-active .book3d__front')!
+    const pages = document.querySelector('.book-slot.is-active .book3d__front-pages')!
     const neighborSpine = document.querySelectorAll('.book-slot')[1]!.querySelector('.book3d__spine')!
     return {
       frontWidth: Number.parseFloat(getComputedStyle(front).width),
+      pageThickness: pages.getBoundingClientRect().bottom - front.getBoundingClientRect().bottom,
       spineWidth: Number.parseFloat(getComputedStyle(neighborSpine).width),
     }
   })
 
   expect(metrics.frontWidth).toBeCloseTo(metrics.spineWidth, 0)
+  expect(metrics.pageThickness).toBeGreaterThan(2)
+  expect(metrics.pageThickness).toBeLessThan(8)
   await expect.poll(() => page.evaluate(() => {
     const rect = document.querySelector('.book-slot.is-active .book3d__front')!.getBoundingClientRect()
     const anchor = Math.min(720, Math.max(280, window.innerHeight * 0.48))
@@ -287,7 +292,22 @@ test('centered shelf keeps equal focus gaps and paints later books above earlier
   })
   expect(neighborMetrics.previousCoverHeight).toBeGreaterThan(80)
   expect(neighborMetrics.nextTitleHeight).toBeGreaterThan(20)
-  expect(Math.abs(neighborMetrics.topGap - neighborMetrics.bottomGap)).toBeLessThan(12)
+  await expect.poll(() => page.evaluate(() => {
+    const slots = Array.from(document.querySelectorAll<HTMLElement>('.book-slot'))
+    const activeIndex = slots.findIndex((slot) => slot.classList.contains('is-active'))
+    const activeCover = slots[activeIndex]!.querySelector<HTMLElement>('.book3d__front')!
+      .getBoundingClientRect()
+    const previousFaces = Array.from(
+      slots[activeIndex - 1]!.querySelectorAll<HTMLElement>('.book3d__top, .book3d__bottom, .book3d__spine'),
+      (face) => face.getBoundingClientRect(),
+    )
+    const nextTitle = slots[activeIndex + 1]!.querySelector<HTMLElement>('.book3d__spine')!
+      .getBoundingClientRect()
+    return Math.abs(
+      activeCover.top - Math.max(...previousFaces.map((face) => face.bottom))
+      - (nextTitle.top - activeCover.bottom),
+    )
+  })).toBeLessThan(12)
 
   const card = page.locator('.book-selection-card')
   await expect(card.locator('.book-selection-card__cover-fallback')).toBeVisible()

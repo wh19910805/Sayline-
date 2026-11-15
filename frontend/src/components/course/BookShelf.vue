@@ -154,17 +154,20 @@ function balanceActiveGaps() {
   activeSlot.style.setProperty('--active-gap-bottom', '0px')
   if (!nextSlot) return
 
-  const activeCover = activeSlot.querySelector<HTMLElement>('.book3d__front')
-  if (!activeCover) return
+  const activeParts = activeSlot.querySelectorAll<HTMLElement>(
+    '.book3d__front, .book3d__front-pages',
+  )
   const faceSelector = '.book3d__top, .book3d__bottom, .book3d__spine'
   const nextFaces = nextSlot.querySelectorAll<HTMLElement>(faceSelector)
-  const coverRect = activeCover.getBoundingClientRect()
+  const activeRects = Array.from(activeParts, (part) => part.getBoundingClientRect())
+  const activeTop = Math.min(...activeRects.map((rect) => rect.top))
+  const activeBottom = Math.max(...activeRects.map((rect) => rect.bottom))
   const nextTop = Math.min(
     ...Array.from(nextFaces, (face) => face.getBoundingClientRect().top),
   )
-  const bottomGap = nextTop - coverRect.bottom
+  const bottomGap = nextTop - activeBottom
   const targetGap = previousSlot
-    ? coverRect.top - Math.max(
+    ? activeTop - Math.max(
       ...Array.from(
         previousSlot.querySelectorAll<HTMLElement>(faceSelector),
         (face) => face.getBoundingClientRect().bottom,
@@ -331,6 +334,7 @@ onBeforeUnmount(() => {
               EN
             </span>
           </span>
+          <span class="book3d__front-pages" />
           <span class="book3d__front-edge book3d__front-right" />
           <span class="book3d__front-edge book3d__front-left" />
           <span class="book3d__front-edge book3d__front-bottom" />
@@ -476,6 +480,7 @@ onBeforeUnmount(() => {
 }
 
 .book3d__front,
+.book3d__front-pages,
 .book3d__front-edge,
 .book3d__front-back {
   position: absolute;
@@ -485,6 +490,26 @@ onBeforeUnmount(() => {
   pointer-events: none;
   backface-visibility: hidden;
   transition: opacity 180ms var(--ease-out);
+}
+
+.book3d__front-pages {
+  z-index: 8;
+  width: calc(var(--bw) - 2px);
+  height: calc(var(--bd) - 2px);
+  overflow: hidden;
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      #f7f1e4 0,
+      #f7f1e4 1px,
+      #d6cbb6 1px,
+      #d6cbb6 2px
+    );
+  box-shadow: 0 3px 6px rgba(26, 26, 24, .24);
+  transform:
+    translate(-50%, -50%)
+    translate3d(0, 4px, calc(var(--bh) / 2 - 2px));
 }
 
 .book3d__front {
@@ -635,6 +660,7 @@ onBeforeUnmount(() => {
 }
 
 .book-slot.is-active .book3d__front,
+.book-slot.is-active .book3d__front-pages,
 .book-slot.is-active .book3d__front-edge {
   opacity: 1;
 }
@@ -789,6 +815,7 @@ onBeforeUnmount(() => {
   .book3d,
   .book3d__face,
   .book3d__front,
+  .book3d__front-pages,
   .book3d__front-edge,
   .book3d__front-back {
     transition: none;
