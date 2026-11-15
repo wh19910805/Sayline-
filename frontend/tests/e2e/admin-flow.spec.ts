@@ -49,7 +49,7 @@ test('admin account can enter the learner experience', async ({ page }) => {
   await mockUserApi(page, 'ADMIN')
   await page.goto('/')
 
-  await expect(page.locator('.book3d').first()).toBeVisible()
+  await expect(page.locator('.book-slot.is-active .book3d__front')).toBeVisible()
   await expect(page.locator('.admin-sidebar')).toHaveCount(0)
 })
 

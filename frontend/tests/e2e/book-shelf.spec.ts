@@ -10,28 +10,23 @@ test('3D book faces stay visible under prefers-reduced-motion', async ({ page })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
 
-  const first = page.locator('.book3d').first()
-  await expect(first).toBeVisible()
+  const activeBook = page.locator('.book-slot.is-active')
+  await expect(activeBook.locator('.book3d__front')).toBeVisible()
 
   // 关键回归：reduced-motion 下不能把书压成 transform:none（否则封面/封底高度为 0）
-  await expect(first).not.toHaveCSS('transform', 'none')
+  await expect(activeBook.locator('.book3d')).not.toHaveCSS('transform', 'none')
 
-  const faceHeights = await first.evaluate((book) => {
-    const top = book.querySelector('.book3d__top')
-    const bottom = book.querySelector('.book3d__bottom')
-    return [
-      top?.getBoundingClientRect().height ?? 0,
-      bottom?.getBoundingClientRect().height ?? 0,
-    ]
-  })
-
-  expect(faceHeights[0] + faceHeights[1]).toBeGreaterThan(0)
+  const coverHeight = await activeBook.locator('.book3d__front').evaluate(
+    (cover) => cover.getBoundingClientRect().height,
+  )
+  expect(coverHeight).toBeGreaterThan(0)
 })
 
 test('book shelf renders the default category book and opens its lessons', async ({ page }) => {
   await page.goto('/')
 
   await expect(page.locator('.book3d')).toHaveCount(1)
+  await expect(page.locator('.book3d__back')).toHaveCount(0)
   await expect(page.locator('.book-selection-card').getByText('职场英语')).toBeVisible()
   await expect(page.locator('.book-selection-card')).toContainText('2 课时')
   await expect(page.locator('.book-selection-card')).not.toContainText('当前书籍')
@@ -59,7 +54,7 @@ test('book shelf renders the default category book and opens its lessons', async
     return radius >= element.getBoundingClientRect().height / 2 - 1
   })).toBe(true)
 
-  await page.locator('.book3d').first().click()
+  await page.locator('.book-slot.is-active').click()
   await expect(page).toHaveURL(/\/learn\/\d+/)
 })
 
@@ -123,9 +118,9 @@ test('bookshelf uses uploaded cover thumbnails', async ({ page }) => {
   )
   await page.goto('/')
 
-  const topFace = page.locator('.book3d__top').first()
-  await expect(topFace).toHaveCSS('background-image', /work-thumb\.jpg/)
-  await expect(topFace).not.toHaveCSS('background-image', /work-full\.jpg/)
+  const focusCover = page.locator('.book-slot.is-active .book3d__front')
+  await expect(focusCover).toHaveCSS('background-image', /work-thumb\.jpg/)
+  await expect(focusCover).not.toHaveCSS('background-image', /work-full\.jpg/)
 })
 
 test('active shelf book presents its full width 3D face at the shelf center', async ({ page }) => {
@@ -156,38 +151,45 @@ test('active shelf book presents its full width 3D face at the shelf center', as
           progress: 0,
           favorite: false,
         },
+        {
+          id: 3,
+          title: '第三本',
+          categoryId: 1,
+          categoryName: '职场英语',
+          coverUrl: '/covers/listening.jpg',
+          coverThumbnailUrl: '/covers/listening-thumb.jpg',
+          lessonCount: 2,
+          progress: 0,
+          favorite: false,
+        },
       ]),
     }),
   )
   await page.goto('/')
 
-  const active = page.locator('.book-slot.is-active').first()
+  const active = page.locator('.book-slot.is-active')
   await expect(active.locator('.book3d__front')).toBeVisible()
   await expect(active.locator('.book3d__front')).toHaveCSS('background-image', /work-thumb\.jpg/)
-  await expect(active.locator('.book3d__spine')).toHaveCSS('opacity', '0')
 
   const neighbor = page.locator('.book-slot').nth(1)
   await expect(neighbor.locator('.book3d__front')).toHaveCSS('opacity', '0')
   await expect(neighbor.locator('.book3d__spine')).toHaveCSS('opacity', '1')
 
   const metrics = await page.evaluate(() => {
-    const activeSlot = document.querySelector('.book-slot.is-active')!
-    const front = activeSlot.querySelector('.book3d__front')!
+    const front = document.querySelector('.book-slot.is-active .book3d__front')!
     const neighborSpine = document.querySelectorAll('.book-slot')[1]!.querySelector('.book3d__spine')!
-    const rect = front.getBoundingClientRect()
     return {
       frontWidth: Number.parseFloat(getComputedStyle(front).width),
       spineWidth: Number.parseFloat(getComputedStyle(neighborSpine).width),
-      centerY: rect.top + rect.height / 2,
-      viewportHeight: window.innerHeight,
-      marginTop: Number.parseFloat(getComputedStyle(activeSlot).marginTop),
-      marginBottom: Number.parseFloat(getComputedStyle(activeSlot).marginBottom),
     }
   })
 
   expect(metrics.frontWidth).toBeCloseTo(metrics.spineWidth, 0)
-  expect(metrics.marginTop).toBeCloseTo(metrics.marginBottom, 0)
-  expect(Math.abs(metrics.centerY - metrics.viewportHeight * 0.5)).toBeLessThan(90)
+  await expect.poll(() => page.evaluate(() => {
+    const rect = document.querySelector('.book-slot.is-active .book3d__front')!.getBoundingClientRect()
+    const anchor = Math.min(720, Math.max(280, window.innerHeight * 0.48))
+    return Math.abs(rect.top + rect.height / 2 - anchor)
+  })).toBeLessThan(8)
 })
 
 test('current book card falls back to the original cover', async ({ page }) => {
@@ -217,7 +219,8 @@ test('current book card falls back to the original cover', async ({ page }) => {
   )
 })
 
-test('active book gets breathing room while adjacent spines stay compact', async ({ page }) => {
+test('centered focus book does not expand or insert blank rows into the spine list', async ({ page }) => {
+  await page.setViewportSize({ width: 607, height: 1349 })
   await page.route('**/api/v1/books?*', (route) =>
     route.fulfill({
       status: 200,
@@ -232,13 +235,42 @@ test('active book gets breathing room while adjacent spines stay compact', async
   await page.goto('/')
   await expect(page.locator('.book-slot')).toHaveCount(3)
 
-  const metrics = await page.locator('.book-slot').evaluateAll((slots) => {
-    const rects = slots.map((slot) => slot.getBoundingClientRect())
-    return rects.slice(1).map((rect, index) => rect.top - rects[index].bottom)
+  const slotHeights = await page.locator('.book-slot').evaluateAll((elements) => {
+    const active = elements.find((element) => element.classList.contains('is-active'))!
+    const neighbor = elements.find((element) => !element.classList.contains('is-active'))!
+    return {
+      active: active.getBoundingClientRect().height,
+      neighbor: neighbor.getBoundingClientRect().height,
+    }
   })
 
-  expect(metrics[0]).toBeGreaterThan(20)
-  expect(metrics.slice(1).every((gap) => gap <= 10)).toBe(true)
+  expect(slotHeights.active).toBeGreaterThan(slotHeights.neighbor)
+
+  await page.mouse.move(300, 700)
+  await page.mouse.wheel(0, 240)
+  await expect(page.locator('.book-selection-card')).toContainText('第二本')
+
+  const neighborMetrics = await page.evaluate(() => {
+    const slots = Array.from(document.querySelectorAll<HTMLElement>('.book-slot'))
+    const activeIndex = slots.findIndex((slot) => slot.classList.contains('is-active'))
+    const activeCover = slots[activeIndex]!.querySelector<HTMLElement>('.book3d__front')!
+      .getBoundingClientRect()
+    const previousFaces = Array.from(
+      slots[activeIndex - 1]!.querySelectorAll<HTMLElement>('.book3d__top, .book3d__bottom'),
+      (face) => face.getBoundingClientRect(),
+    )
+    const nextTitle = slots[activeIndex + 1]!.querySelector<HTMLElement>('.book3d__spine')!
+      .getBoundingClientRect()
+    return {
+      previousCoverHeight: Math.max(...previousFaces.map((face) => face.height)),
+      nextTitleHeight: nextTitle.height,
+      topGap: activeCover.top - Math.max(...previousFaces.map((face) => face.bottom)),
+      bottomGap: nextTitle.top - activeCover.bottom,
+    }
+  })
+  expect(neighborMetrics.previousCoverHeight).toBeGreaterThan(100)
+  expect(neighborMetrics.nextTitleHeight).toBeGreaterThan(20)
+  expect(Math.abs(neighborMetrics.topGap - neighborMetrics.bottomGap)).toBeLessThan(12)
 
   const card = page.locator('.book-selection-card')
   await expect(card.locator('.book-selection-card__cover-fallback')).toBeVisible()

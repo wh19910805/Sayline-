@@ -13,7 +13,7 @@ test('learner browses books, favorites one and opens a lesson', async ({ page })
   await expect(page.locator('.book3d')).toHaveCount(1)
   await expect(page.locator('.book-selection-card')).toContainText('职场英语')
 
-  await page.locator('.book3d').first().click()
+  await page.locator('.book-slot.is-active').click()
   await expect(page).toHaveURL(/\/learn\/\d+$/)
   await expect(page.locator('.lesson-row')).toHaveCount(2)
 
@@ -68,7 +68,7 @@ test('display and interface typography use one sans-serif family', async ({ page
 
 test('book shelf supports Space keyboard activation', async ({ page }) => {
   await page.goto('/')
-  const book = page.locator('.book-slot').first()
+  const book = page.locator('.book-slot.is-active')
   await book.focus()
   await page.keyboard.press('Space')
   await expect(page).toHaveURL(/\/learn\/\d+$/)
@@ -251,7 +251,7 @@ test('leaving the player keeps playback state on the lesson page', async ({ page
     }
   })
   await page.goto('/')
-  await page.locator('.book3d').first().click()
+  await page.locator('.book-slot.is-active').click()
   await page.locator('.lesson-row').first().click()
   await page.locator('audio').evaluate((element) => {
     ;(window as Window & { __testAudio?: HTMLAudioElement }).__testAudio = element as HTMLAudioElement
@@ -356,7 +356,7 @@ test('mini player falls back to the book cover when course artwork is missing', 
     }),
   )
   await page.goto('/')
-  await page.locator('.book3d').first().click()
+  await page.locator('.book-slot.is-active').click()
   await page.locator('.lesson-row').first().click()
   await page.getByRole('button', { name: '返回' }).click()
   await page.goBack()

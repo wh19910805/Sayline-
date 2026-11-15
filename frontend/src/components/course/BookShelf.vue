@@ -22,8 +22,9 @@ const activeBookCoverUrl = computed(() => {
     .find((url): url is string => typeof url === 'string' && !failedCardCovers.value.includes(url)) ?? null
 })
 
-const MAX_TILT = 20
-const TILT_FACTOR = 0.1
+const MIN_TILT = 18
+const MAX_TILT = 24
+const TILT_FACTOR = 0.06
 let raf = 0
 let snapTimer: ReturnType<typeof setTimeout> | undefined
 let scrollContainer: HTMLElement | null = null
@@ -39,7 +40,7 @@ function getScrollContainer(element: HTMLElement | null) {
 }
 
 function selectionAnchor() {
-  return Math.min(420, Math.max(240, window.innerHeight * 0.42))
+  return Math.min(720, Math.max(280, window.innerHeight * 0.48))
 }
 
 function updateBooks() {
@@ -61,7 +62,7 @@ function updateBooks() {
     const rect = el.getBoundingClientRect()
     const center = rect.top + rect.height / 2
     const y = center - eye
-    const tilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, -(y * TILT_FACTOR)))
+    const tilt = Math.min(MAX_TILT, MIN_TILT + Math.abs(y * TILT_FACTOR))
     const distance = Math.abs(y) / eye
     const scale = Math.max(0.85, 1 - distance * 0.15)
     const slot = el.parentElement
@@ -76,7 +77,9 @@ function updateBooks() {
   }
 
   for (const { el, slot, shadow, tilt, distance, scale } of measurements) {
-    el.style.transform = reduceMotion ? 'rotateX(14deg)' : `rotateX(${tilt}deg) scale(${scale})`
+    el.style.transform = reduceMotion
+      ? `rotateX(${MIN_TILT}deg)`
+      : `rotateX(${tilt}deg) scale(${scale})`
     if (slot) {
       slot.style.zIndex = String(Math.max(0, Math.round((1 - distance) * 100)))
       if (shadow) {
@@ -131,10 +134,21 @@ function snapToNearest() {
     }
   }
   if (!nearest) return
-  const rect = nearest.el.getBoundingClientRect()
+  snapElementToAnchor(nearest.el)
+}
+
+function snapActiveToAnchor() {
+  const active = scrollEl.value?.querySelector<HTMLElement>('.book-slot.is-active .book3d')
+  if (active) snapElementToAnchor(active)
+}
+
+function snapElementToAnchor(el: HTMLElement) {
+  const container = scrollContainer
+  if (!container) return
+  const eye = selectionAnchor()
+  const rect = el.getBoundingClientRect()
   const target = rect.top + rect.height / 2 - eye
-  const snapThreshold = Math.min(110, Math.max(56, eye * 0.5))
-  if (nearest.distance > snapThreshold) return
+  if (Math.abs(target) < 1) return
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   container.scrollBy({ top: target, behavior: reduceMotion ? 'auto' : 'smooth' })
 }
@@ -207,6 +221,10 @@ onMounted(() => {
   scrollContainer = getScrollContainer(scrollEl.value)
   scrollContainer?.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('resize', onScroll, { passive: true })
+  nextTick(() => {
+    updateBooks()
+    snapToNearest()
+  })
 })
 
 watch(
@@ -218,6 +236,10 @@ watch(
     nextTick(updateBooks)
   },
 )
+
+watch(activeBookId, () => {
+  nextTick(snapActiveToAnchor)
+})
 
 onBeforeUnmount(() => {
   if (raf) cancelAnimationFrame(raf)
@@ -254,7 +276,6 @@ onBeforeUnmount(() => {
           <span class="book3d__face book3d__bottom" :style="coverImageStyle(book)" />
           <span class="book3d__face book3d__side" />
           <span class="book3d__face book3d__side-left" />
-          <span class="book3d__face book3d__back" />
           <span class="book3d__front" :style="coverImageStyle(book)">
             <span
               v-if="!book.coverThumbnailUrl && !book.coverUrl"
@@ -316,6 +337,9 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .book-shelf {
+  --bw: clamp(280px, calc(100vw - 96px), 450px);
+  --bd: calc(var(--bw) * 240 / 340);
+  --bh: 32px;
   position: relative;
   padding: 10px 20px 30px;
   scrollbar-width: none;
@@ -326,22 +350,18 @@ onBeforeUnmount(() => {
 }
 
 .book-shelf__stage {
-  --bw: clamp(280px, calc(100vw - 96px), 450px);
-  --bd: calc(var(--bw) * 240 / 340);
-  --bh: 24px;
-  --active-gap: calc(var(--bd) * .32);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding-top: max(48px, calc(42dvh - var(--bd) / 2 - var(--active-gap)));
-  padding-bottom: calc(72dvh + 96px);
+  padding-top: max(80px, calc(50dvh - var(--bd) * .8));
+  padding-bottom: calc(50dvh + 96px);
 }
 
 .book-shelf__stage.is-single {
   min-height: 0;
   justify-content: flex-start;
-  padding-top: max(48px, calc(42dvh - var(--bd) / 2 - var(--active-gap)));
+  padding-top: max(80px, calc(50dvh - var(--bd) * .8));
   padding-bottom: 40px;
 }
 
@@ -353,14 +373,16 @@ onBeforeUnmount(() => {
   align-items: center;
   perspective: 800px;
   width: var(--bw);
-  min-height: 84px;
+  min-height: calc(var(--bd) * .4);
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
-  transition: min-height 220ms var(--ease-out);
+  transition:
+    min-height 220ms var(--ease-out),
+    opacity 160ms var(--ease-out);
 }
 
 .book-shadow {
@@ -439,7 +461,7 @@ onBeforeUnmount(() => {
 .book3d__front-back {
   width: var(--bw);
   height: var(--bd);
-  background: color-mix(in srgb, var(--book-b) 72%, #e8dfcd);
+  background: linear-gradient(150deg, var(--book-b), var(--book-a));
   transform: translate(-50%, -50%) translateZ(calc(-1 * var(--bh) / 2));
 }
 
@@ -542,13 +564,6 @@ onBeforeUnmount(() => {
   background: #f1ece0;
 }
 
-.book3d__back {
-  width: var(--bw);
-  height: var(--bh);
-  transform: translate(-50%, -50%) translateZ(calc(-1 * var(--bd) / 2));
-  background: #ece5d6;
-}
-
 .book-slot.is-active .book3d__spine {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .38),
@@ -556,15 +571,15 @@ onBeforeUnmount(() => {
     0 0 0 1px rgba(255, 250, 240, .2);
 }
 
+.book-slot.is-active {
+  min-height: calc(var(--bd) + 24px);
+  margin-bottom: 104px;
+  justify-content: center;
+}
+
 .book-slot.is-active .book3d {
   z-index: 20;
   transform: rotateX(3deg) scale(1) !important;
-}
-
-.book-slot.is-active {
-  min-height: calc(var(--bd) + 24px);
-  justify-content: center;
-  margin-block: var(--active-gap);
 }
 
 .book-slot.is-active .book3d__face,
