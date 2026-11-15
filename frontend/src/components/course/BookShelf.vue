@@ -27,6 +27,7 @@ const MAX_TILT = 24
 const TILT_FACTOR = 0.06
 let raf = 0
 let snapTimer: ReturnType<typeof setTimeout> | undefined
+let gapTimer: ReturnType<typeof setTimeout> | undefined
 let scrollContainer: HTMLElement | null = null
 
 function getScrollContainer(element: HTMLElement | null) {
@@ -53,12 +54,13 @@ function updateBooks() {
     el: HTMLElement
     slot: HTMLElement | null
     shadow: HTMLElement | null
+    order: number
     tilt: number
     distance: number
     scale: number
   }> = []
 
-  for (const el of els) {
+  for (const [index, el] of Array.from(els).entries()) {
     const rect = el.getBoundingClientRect()
     const center = rect.top + rect.height / 2
     const y = center - eye
@@ -70,18 +72,19 @@ function updateBooks() {
       el,
       slot,
       shadow: slot?.querySelector<HTMLElement>('.book-shadow') ?? null,
+      order: index + 1,
       tilt,
       distance,
       scale,
     })
   }
 
-  for (const { el, slot, shadow, tilt, distance, scale } of measurements) {
+  for (const { el, slot, shadow, order, tilt, distance, scale } of measurements) {
     el.style.transform = reduceMotion
       ? `rotateX(${MIN_TILT}deg)`
       : `rotateX(${tilt}deg) scale(${scale})`
     if (slot) {
-      slot.style.zIndex = String(Math.max(0, Math.round((1 - distance) * 100)))
+      slot.style.zIndex = String(order)
       if (shadow) {
         shadow.style.opacity = String(Math.max(0.15, 0.55 - distance * 0.4))
         shadow.style.transform = `scaleX(${Math.max(0.5, 1 - distance * 0.35)})`
@@ -140,6 +143,48 @@ function snapToNearest() {
 function snapActiveToAnchor() {
   const active = scrollEl.value?.querySelector<HTMLElement>('.book-slot.is-active .book3d')
   if (active) snapElementToAnchor(active)
+}
+
+function balanceActiveGaps() {
+  const activeSlot = scrollEl.value?.querySelector<HTMLElement>('.book-slot.is-active')
+  const previousSlot = activeSlot?.previousElementSibling as HTMLElement | null
+  const nextSlot = activeSlot?.nextElementSibling as HTMLElement | null
+  if (!activeSlot) return
+
+  activeSlot.style.setProperty('--active-gap-bottom', '0px')
+  if (!nextSlot) return
+
+  const activeCover = activeSlot.querySelector<HTMLElement>('.book3d__front')
+  if (!activeCover) return
+  const faceSelector = '.book3d__top, .book3d__bottom, .book3d__spine'
+  const nextFaces = nextSlot.querySelectorAll<HTMLElement>(faceSelector)
+  const coverRect = activeCover.getBoundingClientRect()
+  const nextTop = Math.min(
+    ...Array.from(nextFaces, (face) => face.getBoundingClientRect().top),
+  )
+  const bottomGap = nextTop - coverRect.bottom
+  const targetGap = previousSlot
+    ? coverRect.top - Math.max(
+      ...Array.from(
+        previousSlot.querySelectorAll<HTMLElement>(faceSelector),
+        (face) => face.getBoundingClientRect().bottom,
+      ),
+    )
+    : 24
+
+  activeSlot.style.setProperty(
+    '--active-gap-bottom',
+    `${Math.max(0, targetGap - bottomGap)}px`,
+  )
+}
+
+function scheduleGapBalance() {
+  if (gapTimer) clearTimeout(gapTimer)
+  gapTimer = setTimeout(() => {
+    gapTimer = undefined
+    balanceActiveGaps()
+    snapActiveToAnchor()
+  }, 260)
 }
 
 function snapElementToAnchor(el: HTMLElement) {
@@ -223,6 +268,7 @@ onMounted(() => {
   window.addEventListener('resize', onScroll, { passive: true })
   nextTick(() => {
     updateBooks()
+    scheduleGapBalance()
     snapToNearest()
   })
 })
@@ -238,12 +284,13 @@ watch(
 )
 
 watch(activeBookId, () => {
-  nextTick(snapActiveToAnchor)
+  scheduleGapBalance()
 })
 
 onBeforeUnmount(() => {
   if (raf) cancelAnimationFrame(raf)
   if (snapTimer) clearTimeout(snapTimer)
+  if (gapTimer) clearTimeout(gapTimer)
   scrollContainer?.removeEventListener('scroll', onScroll)
   window.removeEventListener('resize', onScroll)
 })
@@ -573,13 +620,13 @@ onBeforeUnmount(() => {
 
 .book-slot.is-active {
   min-height: calc(var(--bd) + 24px);
-  margin-bottom: 104px;
+  margin-bottom: var(--active-gap-bottom, 0px);
   justify-content: center;
 }
 
 .book-slot.is-active .book3d {
   z-index: 20;
-  transform: rotateX(3deg) scale(1) !important;
+  transform: rotateX(5deg) scale(1) !important;
 }
 
 .book-slot.is-active .book3d__face,

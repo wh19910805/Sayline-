@@ -219,8 +219,8 @@ test('current book card falls back to the original cover', async ({ page }) => {
   )
 })
 
-test('centered focus book does not expand or insert blank rows into the spine list', async ({ page }) => {
-  await page.setViewportSize({ width: 607, height: 1349 })
+test('centered shelf keeps equal focus gaps and paints later books above earlier books', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
   await page.route('**/api/v1/books?*', (route) =>
     route.fulfill({
       status: 200,
@@ -234,6 +234,7 @@ test('centered focus book does not expand or insert blank rows into the spine li
   )
   await page.goto('/')
   await expect(page.locator('.book-slot')).toHaveCount(3)
+  await page.waitForTimeout(400)
 
   const slotHeights = await page.locator('.book-slot').evaluateAll((elements) => {
     const active = elements.find((element) => element.classList.contains('is-active'))!
@@ -246,8 +247,24 @@ test('centered focus book does not expand or insert blank rows into the spine li
 
   expect(slotHeights.active).toBeGreaterThan(slotHeights.neighbor)
 
-  await page.mouse.move(300, 700)
-  await page.mouse.wheel(0, 240)
+  const initialLayout = await page.evaluate(() => {
+    const slots = Array.from(document.querySelectorAll<HTMLElement>('.book-slot'))
+    const activeCover = slots[0]!.querySelector<HTMLElement>('.book3d__front')!
+      .getBoundingClientRect()
+    const nextTop = Math.min(...Array.from(
+      slots[1]!.querySelectorAll<HTMLElement>('.book3d__top, .book3d__bottom, .book3d__spine'),
+      (face) => face.getBoundingClientRect().top,
+    ))
+    return {
+      firstGap: nextTop - activeCover.bottom,
+      zIndexes: slots.map((slot) => Number(getComputedStyle(slot).zIndex)),
+    }
+  })
+  expect(initialLayout.firstGap).toBeGreaterThanOrEqual(20)
+  expect(initialLayout.zIndexes).toEqual([1, 2, 3])
+
+  await page.mouse.move(190, 500)
+  await page.mouse.wheel(0, 100)
   await expect(page.locator('.book-selection-card')).toContainText('第二本')
 
   const neighborMetrics = await page.evaluate(() => {
@@ -268,7 +285,7 @@ test('centered focus book does not expand or insert blank rows into the spine li
       bottomGap: nextTitle.top - activeCover.bottom,
     }
   })
-  expect(neighborMetrics.previousCoverHeight).toBeGreaterThan(100)
+  expect(neighborMetrics.previousCoverHeight).toBeGreaterThan(80)
   expect(neighborMetrics.nextTitleHeight).toBeGreaterThan(20)
   expect(Math.abs(neighborMetrics.topGap - neighborMetrics.bottomGap)).toBeLessThan(12)
 
