@@ -98,6 +98,7 @@ let modeCountdownTimer: ReturnType<typeof setInterval> | undefined
 let positionTimer: ReturnType<typeof setInterval> | undefined
 let focusSyncTimer: ReturnType<typeof setTimeout> | undefined
 let keyboardFocusFrame: number | undefined
+let viewportBaselineHeight = 0
 let activeSince = performance.now()
 let cueSelectionLockUntil = 0
 const sentActions = new Set<string>()
@@ -1019,12 +1020,11 @@ function ensureFocusedInputVisible() {
 function syncKeyboardFocus() {
   const viewport = window.visualViewport
   const viewportHeight = viewport?.height ?? window.innerHeight
-  const keyboardOpen = viewportHeight < window.innerHeight * 0.82
-  const active = document.activeElement
-  const inputFocused = active instanceof HTMLElement
-    && !!modePanel.value?.contains(active)
-    && active.matches('input')
-  keyboardFocus.value = mode.value === 'WRITE' && keyboardOpen && inputFocused
+  if (!keyboardFocus.value && viewportHeight > viewportBaselineHeight) {
+    viewportBaselineHeight = viewportHeight
+  }
+  const keyboardOpen = viewportHeight < viewportBaselineHeight * 0.82
+  keyboardFocus.value = mode.value === 'WRITE' && keyboardOpen
 
   if (!keyboardFocus.value) return
   if (keyboardFocusFrame) cancelAnimationFrame(keyboardFocusFrame)
@@ -1045,6 +1045,7 @@ function handleWriteFocusOut() {
 }
 
 function finishKeyboardFocus() {
+  keyboardFocus.value = false
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
 }
 
@@ -1200,6 +1201,7 @@ watch(
 
 onMounted(async () => {
   setThemeColor('#1a1a18')
+  viewportBaselineHeight = window.visualViewport?.height ?? window.innerHeight
   playerSession.registerToggleHandler(togglePlayback)
   unsubscribeAudio = subscribeAudio({
     play: () => { playing.value = true },

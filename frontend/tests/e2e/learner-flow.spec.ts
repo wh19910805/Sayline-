@@ -393,6 +393,18 @@ test('keyboard focus keeps sentence context and scrolls only the write transcrip
   expect(contextVisibility.after).toBeGreaterThan(0)
 
   const inputs = page.locator('.write-current .sl-word-input input')
+  const words = ['Could', 'we', 'move', 'the', 'meeting', 'to', 'Friday', 'morning']
+  await inputs.first().fill(words[0]!)
+  await inputs.first().press('Space')
+  await expect(inputs.nth(1)).toBeFocused()
+  await expect(player).toHaveClass(/keyboard-focus/)
+
+  for (let index = 1; index < words.length; index += 1) {
+    await inputs.nth(index).fill(words[index]!)
+  }
+  await expect(page.locator('.player-header__title')).toContainText('第 04 句')
+  await expect(player).toHaveClass(/keyboard-focus/)
+
   await inputs.last().focus()
   const inputClearance = await page.evaluate(() => {
     const input = document.querySelectorAll<HTMLElement>('.write-current .sl-word-input input')
