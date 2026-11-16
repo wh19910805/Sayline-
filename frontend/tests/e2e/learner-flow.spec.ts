@@ -27,6 +27,116 @@ test('learner browses books, favorites one and opens a lesson', async ({ page })
   await expect(page.getByText("Nice to meet you. I'm Alex from the design team.")).toBeVisible()
 })
 
+test('book cover thumbnail is reused across lesson and player navigation', async ({ page }) => {
+  const thumbnailUrl = '/covers/work.jpg?thumb=1'
+  const fullUrl = '/covers/work.jpg?full=1'
+  const coverRequests: string[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('/covers/work.jpg')) coverRequests.push(request.url())
+  })
+
+  const lesson = {
+    id: 1,
+    bookId: 1,
+    title: 'Meeting a New Colleague',
+    description: '认识新同事',
+    categoryId: 1,
+    categoryName: '职场英语',
+    coverUrl: fullUrl,
+    coverThumbnailUrl: thumbnailUrl,
+    themeColorPrimary: '#65734f',
+    themeColorSecondary: '#9f5e31',
+    durationMs: 20_000,
+    progress: 20,
+    lastCueText: 'Nice to meet you.',
+    lastCueSequenceNo: 1,
+    remainingDurationMs: 16_000,
+    favorite: false,
+  }
+  await page.route('**/api/v1/books?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([{
+        id: 1,
+        title: '职场英语',
+        description: '会议、协作与真实职场表达',
+        categoryId: 1,
+        categoryName: '职场英语',
+        coverUrl: fullUrl,
+        coverThumbnailUrl: thumbnailUrl,
+        themeColorPrimary: '#65734f',
+        themeColorSecondary: '#9f5e31',
+        lessonCount: 1,
+        progress: 20,
+        favorite: false,
+      }]),
+    }),
+  )
+  await page.route('**/api/v1/books/1', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 1,
+        title: '职场英语',
+        description: '会议、协作与真实职场表达',
+        categoryId: 1,
+        categoryName: '职场英语',
+        coverUrl: fullUrl,
+        coverThumbnailUrl: thumbnailUrl,
+        themeColorPrimary: '#65734f',
+        themeColorSecondary: '#9f5e31',
+        lessonCount: 1,
+        progress: 20,
+        favorite: false,
+        lessons: [lesson],
+      }),
+    }),
+  )
+  await page.route('**/api/v1/courses/1', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...lesson,
+        coverThumbnailUrl: null,
+        audioUrl: '/audio/demo.wav',
+        cues: [
+          {
+            id: 1,
+            sequenceNo: 1,
+            startMs: 0,
+            endMs: 3_000,
+            englishText: 'Nice to meet you.',
+            chineseText: '很高兴认识你。',
+          },
+        ],
+      }),
+    }),
+  )
+
+  await page.goto('/')
+  await page.locator('.book-slot.is-active').click()
+  await expect(page.locator('.book-head__cover')).toHaveCSS(
+    'background-image',
+    /thumb=1/,
+  )
+  await expect(page.locator('.lesson-row')).toHaveCount(1)
+  expect(coverRequests.some((url) => url.includes('full=1'))).toBe(false)
+
+  await page.route('**/covers/work.jpg?full=1', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    await route.continue()
+  })
+  await page.locator('.lesson-row__main').click()
+  await expect(page.locator('.player-cover-backdrop')).toHaveCSS(
+    'background-image',
+    /thumb=1/,
+  )
+  await expect(page.locator('.player-identity__cover img')).toHaveAttribute('src', /full=1/)
+})
+
 test('motion continuity keeps route layers visible and measure the book handoff', async ({ page }) => {
   await page.goto('/')
   await page.locator('.book-slot.is-active').waitFor()

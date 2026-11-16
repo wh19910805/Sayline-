@@ -147,13 +147,14 @@ function toggleSearch() {
 
 function openBook(book: BookSummary) {
   rememberSearch()
+  catalog.rememberBookCover(book)
   performance.clearMarks('book-open-start')
   performance.clearMarks('lesson-visible')
   performance.clearMeasures('learner-home-to-lesson')
   performance.mark('book-open-start')
   enter(
     {
-      coverUrl: book.coverUrl || null,
+      coverUrl: book.coverThumbnailUrl || book.coverUrl || null,
       primary: book.themeColorPrimary || '#53634e',
       secondary: book.themeColorSecondary || '#263128',
     },

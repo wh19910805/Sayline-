@@ -4,6 +4,13 @@ import { defineStore } from 'pinia'
 import { learnerApi } from '@/api/services'
 import type { BookSummary, Category, CourseSummary } from '@/api/types'
 
+interface BookCoverAsset {
+  coverUrl: string | null
+  thumbnailUrl: string | null
+  primary: string | null
+  secondary: string | null
+}
+
 export const useCatalogStore = defineStore('catalog', () => {
   const interests = ref<Category[]>([])
   const allCategories = ref<Category[]>([])
@@ -11,6 +18,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   const selectedCategoryId = ref<number | 'favorite'>('favorite')
   const currentBookId = ref<number | null>(null)
   const currentLessonIds = ref<number[]>([])
+  const bookCovers = ref<Record<number, BookCoverAsset>>({})
   const loading = ref(true)
   let interestsResolved = false
   let booksGeneration = 0
@@ -18,6 +26,19 @@ export const useCatalogStore = defineStore('catalog', () => {
   const selectedCategory = computed(() =>
     interests.value.find((category) => category.id === selectedCategoryId.value),
   )
+
+  function rememberBookCover(book: BookSummary) {
+    bookCovers.value[book.id] = {
+      coverUrl: book.coverUrl || null,
+      thumbnailUrl: book.coverThumbnailUrl || null,
+      primary: book.themeColorPrimary || null,
+      secondary: book.themeColorSecondary || null,
+    }
+  }
+
+  function getBookCover(bookId: number) {
+    return bookCovers.value[bookId] ?? null
+  }
 
   async function loadInterests() {
     const [saved, categories, settings] = await Promise.all([
@@ -62,6 +83,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       const result = await fetchBooks(categoryId)
       if (generation === booksGeneration && categoryId === selectedCategoryId.value) {
         books.value = result
+        result.forEach(rememberBookCover)
       }
     } finally {
       if (generation === booksGeneration) loading.value = false
@@ -85,6 +107,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       const result = await provisionalBooks
       if (result && provisionalCategory === selectedCategoryId.value) {
         books.value = result
+        result.forEach(rememberBookCover)
         loading.value = false
         return saved
       }
@@ -114,6 +137,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   function enterBook(book: BookSummary, lessons: CourseSummary[]) {
+    rememberBookCover(book)
     currentBookId.value = book.id
     currentLessonIds.value = lessons.map((lesson) => lesson.id)
   }
@@ -126,7 +150,10 @@ export const useCatalogStore = defineStore('catalog', () => {
     selectedCategory,
     currentBookId,
     currentLessonIds,
+    bookCovers,
     loading,
+    getBookCover,
+    rememberBookCover,
     loadInterests,
     loadHome,
     loadBooks,

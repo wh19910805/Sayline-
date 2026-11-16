@@ -86,7 +86,11 @@ onBeforeUnmount(() => cancelPlayerPrefetch?.())
 
 function applyAmbient(book: BookDetail) {
   if (book.themeColorPrimary) {
-    setAmbient(book.themeColorPrimary, book.themeColorSecondary || book.themeColorPrimary, book.coverUrl || null)
+    setAmbient(
+      book.themeColorPrimary,
+      book.themeColorSecondary || book.themeColorPrimary,
+      book.coverThumbnailUrl || book.coverUrl || null,
+    )
   }
   syncThemeColor()
 }
@@ -118,7 +122,7 @@ function coverStyle() {
 }
 
 function coverImageStyle() {
-  const url = book.value?.coverUrl
+  const url = book.value?.coverThumbnailUrl || book.value?.coverUrl
   return url
     ? { backgroundImage: `url("${url}")`, backgroundPosition: 'center', backgroundSize: 'cover' }
     : undefined

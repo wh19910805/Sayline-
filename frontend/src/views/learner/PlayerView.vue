@@ -99,6 +99,7 @@ let positionTimer: ReturnType<typeof setInterval> | undefined
 let focusSyncTimer: ReturnType<typeof setTimeout> | undefined
 let keyboardFocusFrame: number | undefined
 let viewportBaselineHeight = 0
+let coverPreloadGeneration = 0
 let activeSince = performance.now()
 let cueSelectionLockUntil = 0
 const sentActions = new Set<string>()
@@ -113,6 +114,7 @@ const autoHide = ref(true)
 const visibility = useControlVisibility({ autoHide, delay: 6_000 })
 
 const courseId = ref(Number(route.params.lessonId))
+const cachedBookCover = catalog.getBookCover(Number(route.params.bookId))
 const playMode = ref<PlaybackMode>('study')
 const prefetchedCourses = new Map<number, CourseDetail>()
 const prefetchedAudio = new Map<number, HTMLAudioElement>()
@@ -173,22 +175,28 @@ function mixWithBlack(hex: string, amount: number): string {
 }
 
 const playerSurface = computed(() => {
-  const base = course.value?.themeColorSecondary || course.value?.themeColorPrimary || '#1a1a18'
+  const base = course.value?.themeColorSecondary
+    || course.value?.themeColorPrimary
+    || cachedBookCover?.secondary
+    || cachedBookCover?.primary
+    || '#1a1a18'
   return mixWithBlack(base, 0.45)
 })
 const backgroundStyle = computed(() => ({
-  '--player-course-a': course.value?.themeColorPrimary || '#53634e',
-  '--player-course-b': course.value?.themeColorSecondary || '#1f2a22',
+  '--player-course-a': course.value?.themeColorPrimary || cachedBookCover?.primary || '#53634e',
+  '--player-course-b': course.value?.themeColorSecondary || cachedBookCover?.secondary || '#1f2a22',
   '--player-surface': playerSurface.value,
 }))
 const audioProgress = computed(() =>
   duration.value > 0 ? Math.min(100, (currentTime.value / duration.value) * 100) : 0,
 )
 const coverFailed = ref(false)
-const playerCoverUrl = ref<string | null>(null)
+const playerCoverUrl = ref<string | null>(
+  cachedBookCover?.thumbnailUrl || cachedBookCover?.coverUrl || null,
+)
 const playerCoverStyle = computed(() => {
-  const primary = course.value?.themeColorPrimary || '#53634e'
-  const secondary = course.value?.themeColorSecondary || '#1f2a22'
+  const primary = course.value?.themeColorPrimary || cachedBookCover?.primary || '#53634e'
+  const secondary = course.value?.themeColorSecondary || cachedBookCover?.secondary || '#1f2a22'
   const gradient = `linear-gradient(145deg, ${primary}, ${secondary})`
   return {
     backgroundImage: gradient,
@@ -198,16 +206,45 @@ const coverBackdropStyle = computed(() => ({
   backgroundImage: playerCoverUrl.value ? `url("${playerCoverUrl.value}")` : undefined,
 }))
 watch(
-  () => [course.value?.id, course.value?.coverUrl, bookInfo.value?.coverUrl] as const,
+  () => [
+    course.value?.id,
+    course.value?.coverThumbnailUrl,
+    course.value?.coverUrl,
+    bookInfo.value?.coverThumbnailUrl,
+    bookInfo.value?.coverUrl,
+  ] as const,
   () => {
     coverFailed.value = false
-    playerCoverUrl.value = course.value?.coverUrl || bookInfo.value?.coverUrl || null
+    const cachedCover = bookInfo.value?.coverThumbnailUrl
+      || bookInfo.value?.coverUrl
+      || cachedBookCover?.thumbnailUrl
+      || cachedBookCover?.coverUrl
+      || null
+    const thumbnail = course.value?.coverThumbnailUrl || cachedCover
+    playerCoverUrl.value = thumbnail || course.value?.coverUrl || null
+
+    const courseCover = course.value?.coverUrl
+    if (
+      !courseCover
+      || course.value?.coverThumbnailUrl
+      || courseCover === playerCoverUrl.value
+    ) {
+      return
+    }
+    const generation = ++coverPreloadGeneration
+    const image = new Image()
+    image.onload = () => {
+      if (generation === coverPreloadGeneration) playerCoverUrl.value = courseCover
+    }
+    image.src = courseCover
   },
   { immediate: true },
 )
 
 function handlePlayerCoverError() {
-  const fallback = bookInfo.value?.coverUrl
+  const fallback = bookInfo.value?.coverThumbnailUrl
+    ? bookInfo.value.coverUrl
+    : course.value?.coverUrl
   if (fallback && fallback !== playerCoverUrl.value) {
     playerCoverUrl.value = fallback
     return
@@ -240,7 +277,11 @@ async function loadCourse(showLoader = true, knownDetail?: CourseDetail) {
     course.value = detail
     updateMediaSession()
     if (detail.themeColorPrimary) {
-      setAmbient(detail.themeColorPrimary, detail.themeColorSecondary || detail.themeColorPrimary, detail.coverUrl || null)
+      setAmbient(
+        detail.themeColorPrimary,
+        detail.themeColorSecondary || detail.themeColorPrimary,
+        detail.coverUrl || book?.coverUrl || null,
+      )
       setThemeColor(playerSurface.value)
     }
     learning.value = state
@@ -877,7 +918,7 @@ function onEnded() {
 
 function updateMediaSession() {
   if (!('mediaSession' in navigator) || !course.value) return
-  const cover = course.value.coverUrl
+  const cover = playerCoverUrl.value
   navigator.mediaSession.metadata = new MediaMetadata({
     title: course.value.title,
     artist: bookInfo.value?.title || course.value.categoryName || 'Sayline 逐句英语',
