@@ -2161,7 +2161,7 @@ button {
 }
 
 .keyboard-focus-done {
-  min-width: 44px;
+  min-width: 72px;
   min-height: 44px;
   padding: 0 4px;
   border: 0;
@@ -2265,12 +2265,6 @@ button {
 
 .player-screen.keyboard-focus .write-current .dictation-actions .sl-button {
   width: 100%;
-}
-
-.player-screen.keyboard-focus .write-current .dictation-actions .skip-link {
-  min-width: 76px;
-  margin-left: 0;
-  padding: 0 12px;
 }
 
 .player-header {
@@ -2785,9 +2779,31 @@ button {
   gap: 10px;
 }
 
+.write-current__tools {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .write-current__actions {
   display: flex;
   gap: 4px;
+}
+
+.write-skip-button {
+  min-width: 56px;
+  min-height: 44px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 250, 240, .58);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.write-skip-button:active {
+  background: rgba(255, 255, 255, .08);
 }
 
 .write-current__actions button {
@@ -2875,13 +2891,6 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-}
-
-.player-screen .dictation-actions .skip-link {
-  margin-left: auto;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 11px;
 }
 
 .player-screen .sl-word-input__cell {

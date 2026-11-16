@@ -1346,7 +1346,7 @@ onBeforeUnmount(() => {
             type="button"
             @click.stop="finishKeyboardFocus"
           >
-            完成
+            收起键盘
           </button>
           <template v-else>
             <button
@@ -1479,29 +1479,38 @@ onBeforeUnmount(() => {
               <section v-else class="write-current">
                 <div class="write-current__head">
                   <span class="write-current__label">当前句 · {{ String(index + 1).padStart(2, '0') }}</span>
-                  <div class="write-current__actions">
-                    <button type="button" :aria-label="playing ? '暂停当前句' : '播放当前句'" @click.stop="replayCue">
-                      <SlIcon name="pause" v-if="playing" :size="17" weight="fill" />
-                      <SlIcon name="play" v-else :size="17" weight="fill" />
-                      <span>{{ playing ? '暂停' : '听原句' }}</span>
-                    </button>
+                  <div class="write-current__tools">
+                    <div class="write-current__actions">
+                      <button type="button" :aria-label="playing ? '暂停当前句' : '播放当前句'" @click.stop="replayCue">
+                        <SlIcon name="pause" v-if="playing" :size="17" weight="fill" />
+                        <SlIcon name="play" v-else :size="17" weight="fill" />
+                        <span>{{ playing ? '暂停' : '听原句' }}</span>
+                      </button>
+                      <button
+                        type="button"
+                        :aria-pressed="showChinese"
+                        :class="{ 'is-active': showChinese }"
+                        @click.stop="toggleChinese"
+                      >
+                        <SlIcon name="closed-captioning" :size="17" />
+                        <span>中文</span>
+                      </button>
+                      <button
+                        type="button"
+                        :aria-pressed="showEnglishWrite"
+                        :class="{ 'is-active': showEnglishWrite }"
+                        @click.stop="showEnglishWrite = !showEnglishWrite"
+                      >
+                        <SlIcon name="book-open" :size="17" />
+                        <span>英文</span>
+                      </button>
+                    </div>
                     <button
+                      class="write-skip-button"
                       type="button"
-                      :aria-pressed="showChinese"
-                      :class="{ 'is-active': showChinese }"
-                      @click.stop="toggleChinese"
+                      @click.stop="moveCue(1)"
                     >
-                      <SlIcon name="closed-captioning" :size="17" />
-                      <span>中文</span>
-                    </button>
-                    <button
-                      type="button"
-                      :aria-pressed="showEnglishWrite"
-                      :class="{ 'is-active': showEnglishWrite }"
-                      @click.stop="showEnglishWrite = !showEnglishWrite"
-                    >
-                      <SlIcon name="book-open" :size="17" />
-                      <span>英文</span>
+                      跳过本句
                     </button>
                   </div>
                 </div>
@@ -1519,13 +1528,7 @@ onBeforeUnmount(() => {
                     @submit="(answer) => submitWriting(cue.id, answer)"
                     @complete="(answer) => handleDictationComplete(cue.id, answer)"
                     @retry="writeSubmitted = false"
-                  >
-                    <template #secondary-action>
-                      <button class="skip-link" type="button" @click.stop="moveCue(1)">
-                        跳过本句
-                      </button>
-                    </template>
-                  </WordDictation>
+                  />
                 </div>
               </section>
             </template>

@@ -20,6 +20,7 @@ const inputs = ref<Record<number, HTMLInputElement>>({})
 const words = computed(() => dictationWords(props.sentence))
 let completeTimer: ReturnType<typeof setTimeout> | undefined
 let leaveTimer: ReturnType<typeof setTimeout> | undefined
+let validationTimer: ReturnType<typeof setTimeout> | undefined
 const reviewed = ref(false)
 const attemptCount = ref(0)
 
@@ -47,7 +48,7 @@ function setInput(index: number, event: Event) {
 function handleKeydown(index: number, event: KeyboardEvent) {
   if (event.key === 'Enter') {
     event.preventDefault()
-    submitAnswer()
+    validateAnswer()
     return
   }
   if (event.key === ' ') {
@@ -103,6 +104,15 @@ function submitAnswer() {
   emit('submit', answerText())
 }
 
+function validateAnswer() {
+  if (!allWordsFilled.value || props.submitted) return
+  if (correct.value) {
+    emit('complete', answerText())
+  } else {
+    submitAnswer()
+  }
+}
+
 function retry() {
   reviewed.value = false
   values.value = words.value.map(() => '')
@@ -138,7 +148,7 @@ const incorrectWordNumbers = computed(() =>
 const feedbackText = computed(() => {
   if (correct.value) return '这句写对了。'
   const positions = incorrectWordNumbers.value
-  if (!positions.length) return '有单词需要修改，可以重新填写后再提交。'
+  if (!positions.length) return '有单词需要修改，请重新填写后再检查。'
   if (attemptCount.value >= 3) return `正确答案：${words.value.join(' ')}`
   if (attemptCount.value >= 2) {
     const hints = positions.map((position) => {
@@ -147,24 +157,32 @@ const feedbackText = computed(() => {
     })
     return `还需要修改：${hints.join('；')}。`
   }
-  return `第 ${positions.join('、')} 个单词需要修改，可以重新填写后再提交。`
+  return `第 ${positions.join('、')} 个单词需要修改，请重新填写后再检查。`
 })
 
-watch(correct, (isCorrect) => {
+watch([allWordsFilled, correct, () => props.submitted], ([filled, isCorrect, submitted]) => {
   if (completeTimer) {
     clearTimeout(completeTimer)
     completeTimer = undefined
   }
-  if (isCorrect && !props.submitted) {
+  if (validationTimer) {
+    clearTimeout(validationTimer)
+    validationTimer = undefined
+  }
+  if (!filled || submitted) return
+  if (isCorrect) {
     completeTimer = setTimeout(() => {
       emit('complete', answerText())
     }, 500)
+  } else {
+    validationTimer = setTimeout(submitAnswer, 300)
   }
 })
 
 onBeforeUnmount(() => {
   if (completeTimer) clearTimeout(completeTimer)
   if (leaveTimer) clearTimeout(leaveTimer)
+  if (validationTimer) clearTimeout(validationTimer)
 })
 </script>
 
@@ -219,25 +237,14 @@ onBeforeUnmount(() => {
         <span class="visually-hidden">{{ wordStateLabel(word, wordIndex) }}</span>
       </label>
     </div>
-    <div class="dictation-actions">
+    <div v-if="submitted && !correct" class="dictation-actions">
       <button
-        v-if="!submitted"
-        class="sl-button sl-button--accent sl-button--sm"
-        type="button"
-        :disabled="!allWordsFilled"
-        @click="submitAnswer"
-      >
-        提交本句
-      </button>
-      <button
-        v-else-if="!correct"
         class="sl-button sl-button--secondary sl-button--sm"
         type="button"
         @click="retry"
       >
         重新填写
       </button>
-      <slot name="secondary-action" />
     </div>
     <p
       v-if="submitted"

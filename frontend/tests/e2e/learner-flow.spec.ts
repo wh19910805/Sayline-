@@ -293,35 +293,35 @@ test('learner writes a sentence and controls auto-hide', async ({ page }) => {
   await expect(page.locator('.player-bottom-ui')).not.toHaveClass(/is-hidden/)
 })
 
-test('write mode exposes clear input, submit, error and retry states', async ({ page }) => {
+test('write mode auto-validates completed answers and offers retry only after errors', async ({ page }) => {
   await page.goto('/learn/1/1')
   await page.locator('[aria-label="写"]').click()
   const firstWord = page.locator('.sl-word-input__word').first()
   const submit = page.getByRole('button', { name: '提交本句' })
 
   await expect(firstWord).toHaveClass(/is-empty/)
-  await expect(submit).toBeDisabled()
+  await expect(submit).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '跳过本句' })).toBeVisible()
 
   await page.locator('.sl-word-input input').first().fill('Ni')
   await expect(firstWord).toHaveClass(/is-filling/)
-  await expect(submit).toBeDisabled()
+  await expect(page.locator('.dictation-feedback')).toHaveCount(0)
 
   const words = ['Nice', 'to', 'meet', 'you', "I'm", 'Alex', 'from', 'the', 'design', 'team']
   for (let index = 1; index < words.length; index++) {
     await page.locator('.sl-word-input input').nth(index).fill(words[index]!)
   }
-  await expect(submit).toBeEnabled()
 
-  await submit.click()
   await expect(page.locator('.dictation-feedback')).toHaveClass(/is-wrong/)
   await expect(page.getByRole('button', { name: '重新填写' })).toBeVisible()
   const retry = await page.getByRole('button', { name: '重新填写' }).boundingBox()
   const skip = await page.getByRole('button', { name: '跳过本句' }).boundingBox()
-  expect(Math.abs((retry?.y ?? 0) - (skip?.y ?? 0))).toBeLessThan(8)
+  expect(retry?.y ?? 0).toBeGreaterThan(skip?.y ?? 0)
 
   await page.getByRole('button', { name: '重新填写' }).click()
   await expect(page.locator('.sl-word-input input').first()).toBeEnabled()
   await expect(page.locator('.sl-word-input input').first()).toHaveValue('')
+  await expect(page.locator('.dictation-feedback')).toHaveCount(0)
 })
 
 test('write mode names incorrect words and adds a second-attempt hint', async ({ page }) => {
@@ -332,7 +332,6 @@ test('write mode names incorrect words and adds a second-attempt hint', async ({
   for (let index = 1; index < words.length; index++) {
     await page.locator('.sl-word-input input').nth(index).fill(words[index]!)
   }
-  await page.getByRole('button', { name: '提交本句' }).click()
 
   await expect(page.locator('.dictation-feedback')).toContainText('第 1 个单词需要修改')
 
@@ -341,7 +340,6 @@ test('write mode names incorrect words and adds a second-attempt hint', async ({
   for (let index = 1; index < words.length; index++) {
     await page.locator('.sl-word-input input').nth(index).fill(words[index]!)
   }
-  await page.getByRole('button', { name: '提交本句' }).click()
 
   await expect(page.locator('.dictation-feedback')).toContainText('首字母 N，共 4 个字母')
 })
@@ -474,18 +472,14 @@ test('keyboard focus keeps sentence context and scrolls only the write transcrip
   const player = page.locator('.player-screen')
   await expect(player).toHaveClass(/keyboard-focus/)
   await expect(page.locator('.player-header__title')).toContainText('输入中')
-  await expect(page.locator('.keyboard-focus-done')).toBeVisible()
+  await expect(page.locator('.keyboard-focus-done')).toHaveText('收起键盘')
   await expect(page.locator('.player-mode-switch')).toBeHidden()
-  const keyboardLayout = await page.evaluate(() => {
-    const screen = document.querySelector<HTMLElement>('.player-screen')!.getBoundingClientRect()
-    const actions = document.querySelector<HTMLElement>('.dictation-actions')!.getBoundingClientRect()
-    return {
-      actionsBottom: actions.bottom,
-      screenBottom: screen.bottom,
-    }
-  })
-  expect(keyboardLayout.actionsBottom).toBeLessThanOrEqual(keyboardLayout.screenBottom)
-  expect(keyboardLayout.screenBottom - keyboardLayout.actionsBottom).toBeLessThan(80)
+  await expect(page.locator('.dictation-actions')).toHaveCount(0)
+  const skipButton = page.locator('.write-current__head').getByRole('button', { name: '跳过本句' })
+  await expect(skipButton).toBeVisible()
+  const skipBox = await skipButton.boundingBox()
+  expect(skipBox?.width ?? 0).toBeGreaterThanOrEqual(44)
+  expect(skipBox?.height ?? 0).toBeGreaterThanOrEqual(44)
 
   await page.waitForTimeout(100)
   const contextVisibility = await page.evaluate(() => {
@@ -519,8 +513,8 @@ test('keyboard focus keeps sentence context and scrolls only the write transcrip
   const inputClearance = await page.evaluate(() => {
     const input = document.querySelectorAll<HTMLElement>('.write-current .sl-word-input input')
     const lastInput = input[input.length - 1]!.getBoundingClientRect()
-    const actions = document.querySelector<HTMLElement>('.dictation-actions')!.getBoundingClientRect()
-    return actions.top - lastInput.bottom
+    const transcript = document.querySelector<HTMLElement>('.write-transcript')!.getBoundingClientRect()
+    return transcript.bottom - lastInput.bottom
   })
   expect(inputClearance).toBeGreaterThan(0)
 
@@ -1430,7 +1424,6 @@ test('offline learning action syncs after reconnection', async ({ browser }) => 
   for (let index = 0; index < words.length; index++) {
     await offlinePage.locator('.sl-word-input input').nth(index).fill(words[index]!)
   }
-  await offlinePage.getByRole('button', { name: '提交本句' }).click()
   await expect(offlinePage.locator('.dictation-feedback')).toBeVisible()
 
   apiDown = false

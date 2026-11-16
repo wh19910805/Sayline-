@@ -50,7 +50,7 @@ test('primary learner controls meet the mobile touch target baseline', async ({ 
   ])
   await page.locator('[aria-label="写"]').click()
   await expect(page.locator('.write-current')).toBeVisible()
-  await expectTouchTargets(page, ['.write-current__actions button', '.skip-link'])
+  await expectTouchTargets(page, ['.write-current__actions button', '.write-skip-button'])
   await page.locator('[aria-label="读"]').click()
   await expectTouchTargets(page, ['.translation-toggle'])
   await page.locator('[aria-label="说"]').click()
