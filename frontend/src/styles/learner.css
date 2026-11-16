@@ -2127,6 +2127,84 @@ button {
   z-index: 4;
 }
 
+.player-screen.keyboard-focus .player-header {
+  flex-basis: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.player-screen.keyboard-focus .player-header__title,
+.player-screen.keyboard-focus .player-header__actions,
+.player-screen.keyboard-focus .player-identity,
+.player-screen.keyboard-focus .player-bottom-ui {
+  display: none;
+}
+
+.player-screen.keyboard-focus .player-stage {
+  padding: 4px 12px 0;
+}
+
+.player-screen.keyboard-focus .read-mode,
+.player-screen.keyboard-focus .write-mode,
+.player-screen.keyboard-focus .speak-mode {
+  margin-inline: 0;
+}
+
+.player-screen.keyboard-focus .write-mode {
+  padding: 0;
+}
+
+.player-screen.keyboard-focus .write-context-row {
+  min-height: 32px;
+  align-items: center;
+  padding: 5px 8px;
+}
+
+.player-screen.keyboard-focus .write-context-row p {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-screen.keyboard-focus .write-context-row small {
+  display: none;
+}
+
+.player-screen.keyboard-focus .write-current {
+  padding: 10px;
+}
+
+.player-screen.keyboard-focus .write-current__actions {
+  display: none;
+}
+
+.player-screen.keyboard-focus .write-current__translation {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.player-screen.keyboard-focus .word-input-card {
+  margin-top: 6px;
+  padding-top: 8px;
+}
+
+.player-screen.keyboard-focus .write-current .dictation {
+  gap: 8px;
+}
+
+.player-screen.keyboard-focus .write-current .dictation-actions {
+  position: sticky;
+  z-index: 3;
+  bottom: 0;
+  margin: 0 -4px -4px;
+  padding: 8px 4px 4px;
+  background: color-mix(in srgb, var(--player-surface) 84%, transparent);
+  backdrop-filter: blur(12px);
+}
+
 .player-header {
   flex: 0 0 48px;
   display: flex;

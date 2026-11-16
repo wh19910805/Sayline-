@@ -329,6 +329,78 @@ test('write mode keeps the app inside the visible viewport when the keyboard ope
   expect(await page.evaluate(() => window.scrollY)).toBe(0)
 })
 
+test('keyboard focus keeps sentence context and scrolls only the write transcript', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.addInitScript(() => {
+    const viewport = new EventTarget() as EventTarget & {
+      height: number
+      width: number
+      offsetTop: number
+      offsetLeft: number
+    }
+    Object.defineProperties(viewport, {
+      height: { value: window.innerHeight, writable: true },
+      width: { value: window.innerWidth, writable: true },
+      offsetTop: { value: 0, writable: true },
+      offsetLeft: { value: 0, writable: true },
+    })
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: viewport,
+    })
+  })
+
+  await page.goto('/learn/1/1')
+  await page.locator('[aria-label="写"]').click()
+  await page.locator('.write-context-row[data-cue-id="3"]').click()
+  const firstInput = page.locator('.write-current .sl-word-input input').first()
+  await firstInput.focus()
+  await page.evaluate(() => {
+    const viewport = window.visualViewport as VisualViewport & { height: number }
+    viewport.height = 430
+    viewport.dispatchEvent(new Event('resize'))
+  })
+
+  const player = page.locator('.player-screen')
+  await expect(player).toHaveClass(/keyboard-focus/)
+  await expect(page.locator('.player-header__actions')).toBeHidden()
+  await expect(page.locator('.player-mode-switch')).toBeHidden()
+
+  await page.waitForTimeout(100)
+  const contextVisibility = await page.evaluate(() => {
+    const container = document.querySelector<HTMLElement>('.write-transcript')!.getBoundingClientRect()
+    const current = document.querySelector<HTMLElement>('.write-current')!.getBoundingClientRect()
+    const rows = Array.from(document.querySelectorAll<HTMLElement>('.write-context-row'))
+      .map((row) => row.getBoundingClientRect())
+      .filter((rect) => rect.bottom > container.top && rect.top < container.bottom)
+    return {
+      before: rows.filter((rect) => rect.bottom <= current.top).length,
+      after: rows.filter((rect) => rect.top >= current.bottom).length,
+    }
+  })
+  expect(contextVisibility.before).toBeGreaterThan(0)
+  expect(contextVisibility.after).toBeGreaterThan(0)
+
+  const transcript = page.locator('.write-transcript')
+  await transcript.evaluate((element) => {
+    element.scrollTop = 0
+  })
+  const inputs = page.locator('.write-current .sl-word-input input')
+  await inputs.last().focus()
+  await expect.poll(() => transcript.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+
+  await page.evaluate(() => {
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    const viewport = window.visualViewport as VisualViewport & { height: number }
+    viewport.height = 844
+    viewport.dispatchEvent(new Event('resize'))
+  })
+  await expect(player).not.toHaveClass(/keyboard-focus/)
+  await expect(page.locator('.player-header__actions')).toBeVisible()
+  await expect(page.locator('.player-mode-switch')).toBeVisible()
+})
+
 test('write mode plays the selected sentence when switching lines', async ({ page }) => {
   await page.goto('/learn/1/1')
   await page.locator('[aria-label="写"]').click()

@@ -74,6 +74,7 @@ const audioRecordingUrl = ref('')
 const recordingAudio = ref<HTMLAudioElement | null>(null)
 const writeSubmitted = ref(false)
 const showEnglishWrite = ref(false)
+const keyboardFocus = ref(false)
 const countdown = ref<number | null>(null)
 const modeCountdown = ref<number | null>(null)
 const pendingMode = ref<LearningMode | null>(null)
@@ -95,6 +96,8 @@ let countdownTimer: ReturnType<typeof setInterval> | undefined
 let suppressRouteReload = false
 let modeCountdownTimer: ReturnType<typeof setInterval> | undefined
 let positionTimer: ReturnType<typeof setInterval> | undefined
+let focusSyncTimer: ReturnType<typeof setTimeout> | undefined
+let keyboardFocusFrame: number | undefined
 let activeSince = performance.now()
 let cueSelectionLockUntil = 0
 const sentActions = new Set<string>()
@@ -985,13 +988,57 @@ function scrollWriteToCurrent() {
   const container = writeTranscript.value
   const current = container?.querySelector<HTMLElement>('.write-current')
   if (!container || !current) return
-  container.scrollTop = Math.max(0, current.offsetTop - container.clientHeight * 0.16)
+  const centeredOffset = Math.max(24, (container.clientHeight - current.offsetHeight) / 2)
+  container.scrollTop = Math.max(0, current.offsetTop - centeredOffset)
 }
 
 function focusFirstWriteInput() {
   writeTranscript.value
     ?.querySelector<HTMLInputElement>('.write-current .sl-word-input input')
     ?.focus()
+}
+
+function ensureFocusedInputVisible() {
+  const container = writeTranscript.value
+  const active = document.activeElement
+  if (!container || !(active instanceof HTMLElement) || !container.contains(active)) return
+  const containerRect = container.getBoundingClientRect()
+  const inputRect = active.getBoundingClientRect()
+  const topInset = 48
+  const bottomInset = 92
+  if (inputRect.top < containerRect.top + topInset) {
+    container.scrollTop -= containerRect.top + topInset - inputRect.top
+  } else if (inputRect.bottom > containerRect.bottom - bottomInset) {
+    container.scrollTop += inputRect.bottom - (containerRect.bottom - bottomInset)
+  }
+}
+
+function syncKeyboardFocus() {
+  const viewport = window.visualViewport
+  const viewportHeight = viewport?.height ?? window.innerHeight
+  const keyboardOpen = viewportHeight < window.innerHeight * 0.82
+  const active = document.activeElement
+  const inputFocused = active instanceof HTMLElement
+    && !!modePanel.value?.contains(active)
+    && active.matches('input')
+  keyboardFocus.value = mode.value === 'WRITE' && keyboardOpen && inputFocused
+
+  if (!keyboardFocus.value) return
+  if (keyboardFocusFrame) cancelAnimationFrame(keyboardFocusFrame)
+  keyboardFocusFrame = requestAnimationFrame(() => {
+    scrollWriteToCurrent()
+    ensureFocusedInputVisible()
+  })
+}
+
+function handleWriteFocusIn() {
+  syncKeyboardFocus()
+  requestAnimationFrame(ensureFocusedInputVisible)
+}
+
+function handleWriteFocusOut() {
+  if (focusSyncTimer) clearTimeout(focusSyncTimer)
+  focusSyncTimer = setTimeout(syncKeyboardFocus, 0)
 }
 
 let touchStartY = 0
@@ -1054,7 +1101,12 @@ watch(mode, () => {
     stopReadObservation()
   }
   if (mode.value === 'WRITE') {
-    nextTick(scrollWriteToCurrent)
+    nextTick(() => {
+      scrollWriteToCurrent()
+      syncKeyboardFocus()
+    })
+  } else {
+    keyboardFocus.value = false
   }
 })
 
@@ -1149,6 +1201,8 @@ onMounted(async () => {
     ended: onEnded,
   })
   window.addEventListener('keydown', handleKeydown)
+  window.visualViewport?.addEventListener('resize', syncKeyboardFocus)
+  window.visualViewport?.addEventListener('scroll', syncKeyboardFocus)
   setupMediaSession()
   await loadCourse()
   heartbeatTimer = setInterval(() => {
@@ -1175,6 +1229,10 @@ onBeforeUnmount(() => {
   playerSession.registerToggleHandler(null)
   unsubscribeAudio?.()
   window.removeEventListener('keydown', handleKeydown)
+  window.visualViewport?.removeEventListener('resize', syncKeyboardFocus)
+  window.visualViewport?.removeEventListener('scroll', syncKeyboardFocus)
+  if (focusSyncTimer) clearTimeout(focusSyncTimer)
+  if (keyboardFocusFrame) cancelAnimationFrame(keyboardFocusFrame)
   clearInterval(heartbeatTimer)
   clearInterval(progressTimer)
   clearInterval(positionTimer)
@@ -1195,7 +1253,13 @@ onBeforeUnmount(() => {
 <template>
   <main
     class="app-screen player-screen"
-    :class="[`player-mode-${mode.toLowerCase()}`, { 'controls-visible': visibility.visible.value }]"
+    :class="[
+      `player-mode-${mode.toLowerCase()}`,
+      {
+        'controls-visible': visibility.visible.value,
+        'keyboard-focus': keyboardFocus,
+      },
+    ]"
     :style="backgroundStyle"
     @click="handleSurfaceClick"
   >
@@ -1266,6 +1330,8 @@ onBeforeUnmount(() => {
         class="player-stage"
         @touchstart.passive="touchStart"
         @touchend="touchEnd"
+        @focusin="handleWriteFocusIn"
+        @focusout="handleWriteFocusOut"
       >
         <div class="player-mode-panel-stack">
           <Transition name="mode-panel">
