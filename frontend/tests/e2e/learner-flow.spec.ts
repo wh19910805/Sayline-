@@ -311,6 +311,10 @@ test('write mode auto-validates completed answers and offers retry only after er
   for (let index = 1; index < words.length; index++) {
     await page.locator('.sl-word-input input').nth(index).fill(words[index]!)
   }
+  await page.waitForTimeout(450)
+  await expect(page.locator('.dictation-feedback')).toHaveCount(0)
+  await expect(page.locator('.sl-word-input input').last()).toBeEnabled()
+  await page.locator('.sl-word-input input').last().evaluate((element) => element.blur())
 
   await expect(page.locator('.dictation-feedback')).toHaveClass(/is-wrong/)
   await expect(page.getByRole('button', { name: '重新填写' })).toBeVisible()
@@ -332,6 +336,7 @@ test('write mode names incorrect words and adds a second-attempt hint', async ({
   for (let index = 1; index < words.length; index++) {
     await page.locator('.sl-word-input input').nth(index).fill(words[index]!)
   }
+  await page.locator('.sl-word-input input').last().evaluate((element) => element.blur())
 
   await expect(page.locator('.dictation-feedback')).toContainText('第 1 个单词需要修改')
 
@@ -340,6 +345,7 @@ test('write mode names incorrect words and adds a second-attempt hint', async ({
   for (let index = 1; index < words.length; index++) {
     await page.locator('.sl-word-input input').nth(index).fill(words[index]!)
   }
+  await page.locator('.sl-word-input input').last().evaluate((element) => element.blur())
 
   await expect(page.locator('.dictation-feedback')).toContainText('首字母 N，共 4 个字母')
 })
@@ -876,6 +882,7 @@ test('mini player falls back to the book cover when course artwork is missing', 
   await page.locator('.book-slot.is-active').click()
   await page.locator('.lesson-row').first().click()
   await page.getByRole('button', { name: '返回' }).click()
+  await expect(page).toHaveURL(/\/learn\/1$/)
   await page.goBack()
 
   await expect(page).toHaveURL(/\/$/)
@@ -1424,6 +1431,7 @@ test('offline learning action syncs after reconnection', async ({ browser }) => 
   for (let index = 0; index < words.length; index++) {
     await offlinePage.locator('.sl-word-input input').nth(index).fill(words[index]!)
   }
+  await offlinePage.locator('.sl-word-input input').last().evaluate((element) => element.blur())
   await expect(offlinePage.locator('.dictation-feedback')).toBeVisible()
 
   apiDown = false

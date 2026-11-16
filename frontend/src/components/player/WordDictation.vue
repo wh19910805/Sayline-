@@ -53,7 +53,12 @@ function handleKeydown(index: number, event: KeyboardEvent) {
   }
   if (event.key === ' ') {
     event.preventDefault()
-    inputs.value[index + 1]?.focus()
+    const next = inputs.value[index + 1]
+    if (next) {
+      next.focus()
+    } else if ((values.value[index] ?? '').trim()) {
+      (event.target as HTMLInputElement).blur()
+    }
     return
   }
   if (event.key === 'Backspace' && !(values.value[index] ?? '')) {
@@ -126,9 +131,27 @@ function submitIfLeaving() {
     if (root.value?.contains(document.activeElement)) return
     const answer = answerText()
     if (allWordsFilled.value && answer.trim() && !props.submitted) {
-      submitAnswer()
+      validateAnswer()
     }
   }, 0)
+}
+
+function hasFocusedInput() {
+  const active = document.activeElement
+  return active instanceof HTMLElement
+    && !!root.value?.contains(active)
+    && active.matches('input')
+}
+
+function cancelScheduledValidation() {
+  if (validationTimer) {
+    clearTimeout(validationTimer)
+    validationTimer = undefined
+  }
+  if (completeTimer) {
+    clearTimeout(completeTimer)
+    completeTimer = undefined
+  }
 }
 
 const correct = computed(() =>
@@ -174,7 +197,7 @@ watch([allWordsFilled, correct, () => props.submitted], ([filled, isCorrect, sub
     completeTimer = setTimeout(() => {
       emit('complete', answerText())
     }, 500)
-  } else {
+  } else if (!hasFocusedInput()) {
     validationTimer = setTimeout(submitAnswer, 300)
   }
 })
@@ -188,7 +211,12 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="dictation">
-    <div ref="root" class="sl-word-input" @focusout="submitIfLeaving">
+    <div
+      ref="root"
+      class="sl-word-input"
+      @focusin="cancelScheduledValidation"
+      @focusout="submitIfLeaving"
+    >
       <label
         v-for="(word, wordIndex) in words"
         :key="`${word}-${wordIndex}`"
