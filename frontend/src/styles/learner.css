@@ -2133,15 +2133,61 @@ button {
   padding: 0 12px;
 }
 
-.player-screen.keyboard-focus .player-header__title,
-.player-screen.keyboard-focus .player-header__actions,
 .player-screen.keyboard-focus .player-identity,
 .player-screen.keyboard-focus .player-bottom-ui {
   display: none;
 }
 
+.player-screen.keyboard-focus .player-header__title {
+  display: grid;
+  gap: 1px;
+}
+
+.player-screen.keyboard-focus .player-header__title span {
+  color: rgba(255, 250, 240, .92);
+  font-size: 12px;
+  font-weight: var(--weight-semibold);
+}
+
+.player-screen.keyboard-focus .player-header__title strong {
+  color: rgba(255, 250, 240, .46);
+  font-size: 8px;
+  letter-spacing: .12em;
+}
+
+.player-screen.keyboard-focus .player-header__actions {
+  display: flex;
+  align-items: center;
+}
+
+.keyboard-focus-done {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 250, 240, .86);
+  font-size: 12px;
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
 .player-screen.keyboard-focus .player-stage {
-  padding: 4px 12px 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px 0;
+}
+
+.player-screen.keyboard-focus .player-mode-panel-stack {
+  flex: 1;
+  height: auto;
+}
+
+.player-screen.keyboard-focus .player-mode-panel,
+.player-screen.keyboard-focus .write-mode,
+.player-screen.keyboard-focus .write-transcript {
+  min-height: 0;
+  height: 100%;
 }
 
 .player-screen.keyboard-focus .read-mode,
@@ -2152,6 +2198,10 @@ button {
 
 .player-screen.keyboard-focus .write-mode {
   padding: 0;
+}
+
+.player-screen.keyboard-focus .write-transcript {
+  padding-bottom: 86px;
 }
 
 .player-screen.keyboard-focus .write-context-row {
@@ -2196,13 +2246,31 @@ button {
 }
 
 .player-screen.keyboard-focus .write-current .dictation-actions {
-  position: sticky;
-  z-index: 3;
-  bottom: 0;
-  margin: 0 -4px -4px;
-  padding: 8px 4px 4px;
-  background: color-mix(in srgb, var(--player-surface) 84%, transparent);
-  backdrop-filter: blur(12px);
+  position: absolute;
+  z-index: 40;
+  right: 16px;
+  bottom: max(12px, var(--safe-bottom));
+  left: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 250, 240, .16);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--player-surface) 92%, transparent);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, .24);
+  backdrop-filter: blur(18px);
+}
+
+.player-screen.keyboard-focus .write-current .dictation-actions .sl-button {
+  width: 100%;
+}
+
+.player-screen.keyboard-focus .write-current .dictation-actions .skip-link {
+  min-width: 76px;
+  margin-left: 0;
+  padding: 0 12px;
 }
 
 .player-header {

@@ -136,6 +136,9 @@ const identitySubline = computed(() => {
     `${course.value.cues.length} 句`,
   ].join(' · ')
 })
+const keyboardFocusTitle = computed(
+  () => `输入中 · 第 ${String(activeCueIndex.value + 1).padStart(2, '0')} 句`,
+)
 const playlistIds = computed(() =>
   catalog.currentLessonIds.length
     ? catalog.currentLessonIds
@@ -1041,6 +1044,10 @@ function handleWriteFocusOut() {
   focusSyncTimer = setTimeout(syncKeyboardFocus, 0)
 }
 
+function finishKeyboardFocus() {
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+}
+
 let touchStartY = 0
 function touchStart(event: TouchEvent) {
   touchStartY = event.touches[0]?.clientY ?? 0
@@ -1280,22 +1287,38 @@ onBeforeUnmount(() => {
           <SlIcon name="arrow-down-s" :size="22" />
         </button>
         <div class="player-header__title">
-          <span>{{ bookInfo?.title || course.categoryName || 'NOW LEARNING' }}</span>
-          <strong>正在学习</strong>
+          <span>
+            {{
+              keyboardFocus
+                ? keyboardFocusTitle
+                : bookInfo?.title || course.categoryName || 'NOW LEARNING'
+            }}
+          </span>
+          <strong>{{ keyboardFocus ? 'KEYBOARD FOCUS' : '正在学习' }}</strong>
         </div>
         <div class="player-header__actions" role="group" aria-label="课程操作">
           <button
-            class="sl-icon-button"
+            v-if="keyboardFocus"
+            class="keyboard-focus-done"
             type="button"
-            :disabled="offlineBusy || offlineDownloaded"
-            :aria-label="offlineBusy ? '正在下载' : offlineDownloaded ? '已下载本课时' : '下载本课时供离线学习'"
-            @click.stop="downloadOffline"
+            @click.stop="finishKeyboardFocus"
           >
-            <SlIcon :name="offlineDownloaded ? 'check' : 'arrow-down'" :size="19" />
+            完成
           </button>
-          <button class="sl-icon-button" :class="{ 'sl-icon-button--active': course.favorite }" type="button" aria-label="收藏课程" @click.stop="toggleFavorite">
-            <SlIcon name="heart" :size="20" :weight="course.favorite ? 'fill' : 'line'" />
-          </button>
+          <template v-else>
+            <button
+              class="sl-icon-button"
+              type="button"
+              :disabled="offlineBusy || offlineDownloaded"
+              :aria-label="offlineBusy ? '正在下载' : offlineDownloaded ? '已下载本课时' : '下载本课时供离线学习'"
+              @click.stop="downloadOffline"
+            >
+              <SlIcon :name="offlineDownloaded ? 'check' : 'arrow-down'" :size="19" />
+            </button>
+            <button class="sl-icon-button" :class="{ 'sl-icon-button--active': course.favorite }" type="button" aria-label="收藏课程" @click.stop="toggleFavorite">
+              <SlIcon name="heart" :size="20" :weight="course.favorite ? 'fill' : 'line'" />
+            </button>
+          </template>
         </div>
       </header>
 
@@ -2027,6 +2050,10 @@ onBeforeUnmount(() => {
 .player-mode-write .player-stage,
 .player-mode-speak .player-stage {
   padding-bottom: 94px;
+}
+
+.player-screen.player-mode-write.keyboard-focus .player-stage {
+  padding-bottom: 0;
 }
 
 .player-screen:not(.controls-visible) .player-stage {

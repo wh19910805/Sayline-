@@ -363,8 +363,19 @@ test('keyboard focus keeps sentence context and scrolls only the write transcrip
 
   const player = page.locator('.player-screen')
   await expect(player).toHaveClass(/keyboard-focus/)
-  await expect(page.locator('.player-header__actions')).toBeHidden()
+  await expect(page.locator('.player-header__title')).toContainText('输入中')
+  await expect(page.locator('.keyboard-focus-done')).toBeVisible()
   await expect(page.locator('.player-mode-switch')).toBeHidden()
+  const keyboardLayout = await page.evaluate(() => {
+    const screen = document.querySelector<HTMLElement>('.player-screen')!.getBoundingClientRect()
+    const actions = document.querySelector<HTMLElement>('.dictation-actions')!.getBoundingClientRect()
+    return {
+      actionsBottom: actions.bottom,
+      screenBottom: screen.bottom,
+    }
+  })
+  expect(keyboardLayout.actionsBottom).toBeLessThanOrEqual(keyboardLayout.screenBottom)
+  expect(keyboardLayout.screenBottom - keyboardLayout.actionsBottom).toBeLessThan(80)
 
   await page.waitForTimeout(100)
   const contextVisibility = await page.evaluate(() => {
@@ -381,17 +392,28 @@ test('keyboard focus keeps sentence context and scrolls only the write transcrip
   expect(contextVisibility.before).toBeGreaterThan(0)
   expect(contextVisibility.after).toBeGreaterThan(0)
 
-  const transcript = page.locator('.write-transcript')
-  await transcript.evaluate((element) => {
-    element.scrollTop = 0
-  })
   const inputs = page.locator('.write-current .sl-word-input input')
   await inputs.last().focus()
-  await expect.poll(() => transcript.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+  const inputClearance = await page.evaluate(() => {
+    const input = document.querySelectorAll<HTMLElement>('.write-current .sl-word-input input')
+    const lastInput = input[input.length - 1]!.getBoundingClientRect()
+    const actions = document.querySelector<HTMLElement>('.dictation-actions')!.getBoundingClientRect()
+    return actions.top - lastInput.bottom
+  })
+  expect(inputClearance).toBeGreaterThan(0)
+
+  const transcript = page.locator('.write-transcript')
+  const maxScroll = await transcript.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+    return element.scrollHeight - element.clientHeight
+  })
+  expect(maxScroll).toBeGreaterThan(0)
+  await firstInput.focus()
+  await expect.poll(() => transcript.evaluate((element) => element.scrollTop)).toBeLessThan(maxScroll)
   expect(await page.evaluate(() => window.scrollY)).toBe(0)
 
+  await page.locator('.keyboard-focus-done').click()
   await page.evaluate(() => {
-    ;(document.activeElement as HTMLElement | null)?.blur()
     const viewport = window.visualViewport as VisualViewport & { height: number }
     viewport.height = 844
     viewport.dispatchEvent(new Event('resize'))
