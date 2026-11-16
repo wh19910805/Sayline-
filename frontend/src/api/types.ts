@@ -2,6 +2,9 @@ export type UserRole = 'USER' | 'ADMIN'
 export type UserStatus = 'ENABLED' | 'DISABLED'
 export type LearningMode = 'LISTEN' | 'READ' | 'WRITE' | 'SPEAK'
 export type CourseStatus = 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
+export type BookLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
+export type BookAccent = 'US' | 'UK' | 'AU' | 'MIXED'
+export type BookSpeakingPace = 'SLOW' | 'NORMAL' | 'NATURAL'
 
 export interface User {
   id: number
@@ -64,6 +67,11 @@ export interface BookSummary {
   id: number
   title: string
   description?: string | null
+  level?: BookLevel | null
+  accent?: BookAccent | null
+  speakingPace?: BookSpeakingPace | null
+  learningGoal?: string | null
+  totalDurationMs?: number
   categoryId: number
   categoryName: string
   coverUrl?: string | null
@@ -223,6 +231,10 @@ export interface AdminBook {
   categoryName: string
   title: string
   description?: string | null
+  level?: BookLevel | null
+  accent?: BookAccent | null
+  speakingPace?: BookSpeakingPace | null
+  learningGoal?: string | null
   coverObjectKey?: string | null
   coverUrl?: string | null
   themeColorPrimary?: string | null

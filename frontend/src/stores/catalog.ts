@@ -11,8 +11,9 @@ export const useCatalogStore = defineStore('catalog', () => {
   const selectedCategoryId = ref<number | 'favorite'>('favorite')
   const currentBookId = ref<number | null>(null)
   const currentLessonIds = ref<number[]>([])
-  const loading = ref(false)
+  const loading = ref(true)
   let interestsResolved = false
+  let booksGeneration = 0
 
   const selectedCategory = computed(() =>
     interests.value.find((category) => category.id === selectedCategoryId.value),
@@ -47,15 +48,49 @@ export const useCatalogStore = defineStore('catalog', () => {
     return saved
   }
 
+  async function fetchBooks(categoryId: number | 'favorite') {
+    return categoryId === 'favorite'
+      ? learnerApi.favoriteBooks()
+      : learnerApi.books(categoryId)
+  }
+
   async function loadBooks() {
+    const generation = ++booksGeneration
+    const categoryId = selectedCategoryId.value
     loading.value = true
     try {
-      books.value = selectedCategoryId.value === 'favorite'
-        ? await learnerApi.favoriteBooks()
-        : await learnerApi.books(selectedCategoryId.value)
+      const result = await fetchBooks(categoryId)
+      if (generation === booksGeneration && categoryId === selectedCategoryId.value) {
+        books.value = result
+      }
     } finally {
-      loading.value = false
+      if (generation === booksGeneration) loading.value = false
     }
+  }
+
+  async function loadHome() {
+    loading.value = true
+    const remembered = sessionStorage.getItem('sayline:home-category')
+    const provisionalCategory = remembered === 'favorite'
+      ? 'favorite'
+      : remembered && Number.isSafeInteger(Number(remembered))
+        ? Number(remembered)
+        : null
+    const provisionalBooks = provisionalCategory === null
+      ? null
+      : fetchBooks(provisionalCategory).catch(() => null)
+
+    const saved = await loadInterests()
+    if (provisionalCategory !== null && provisionalBooks) {
+      const result = await provisionalBooks
+      if (result && provisionalCategory === selectedCategoryId.value) {
+        books.value = result
+        loading.value = false
+        return saved
+      }
+    }
+    await loadBooks()
+    return saved
   }
 
   async function selectCategory(value: number | 'favorite') {
@@ -93,6 +128,7 @@ export const useCatalogStore = defineStore('catalog', () => {
     currentLessonIds,
     loading,
     loadInterests,
+    loadHome,
     loadBooks,
     selectCategory,
     toggleBookFavorite,

@@ -264,6 +264,40 @@ function selectionStyle(book: BookSummary) {
   }
 }
 
+function accentLabel(accent: BookSummary['accent']) {
+  const labels: Record<string, string> = {
+    US: '美音',
+    UK: '英音',
+    AU: '澳音',
+    MIXED: '混合口音',
+  }
+  return labels[accent ?? ''] ?? ''
+}
+
+function paceLabel(pace: BookSummary['speakingPace']) {
+  const labels: Record<string, string> = {
+    SLOW: '慢速',
+    NORMAL: '常速',
+    NATURAL: '自然语速',
+  }
+  return labels[pace ?? ''] ?? ''
+}
+
+function durationLabel(durationMs?: number) {
+  if (!durationMs) return ''
+  const minutes = Math.max(1, Math.round(durationMs / 60_000))
+  return `${minutes} 分钟`
+}
+
+function discoveryMeta(book: BookSummary) {
+  return [
+    book.level,
+    accentLabel(book.accent),
+    paceLabel(book.speakingPace),
+    durationLabel(book.totalDurationMs),
+  ].filter(Boolean).join(' · ')
+}
+
 onMounted(() => {
   updateBooks()
   scrollContainer = getScrollContainer(scrollEl.value)
@@ -367,6 +401,12 @@ onBeforeUnmount(() => {
         <span class="book-selection-card__copy">
           <strong>{{ activeBook.title }}</strong>
           <small>{{ activeBook.lessonCount }} 课时</small>
+          <small v-if="discoveryMeta(activeBook)" class="book-selection-card__meta">
+            {{ discoveryMeta(activeBook) }}
+          </small>
+          <small v-if="activeBook.learningGoal" class="book-selection-card__goal">
+            {{ activeBook.learningGoal }}
+          </small>
         </span>
         <button
           class="book-selection-card__action"
@@ -751,6 +791,19 @@ onBeforeUnmount(() => {
   line-height: 1.35;
 }
 
+.book-selection-card__copy > .book-selection-card__meta {
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.book-selection-card__copy > .book-selection-card__goal {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .book-selection-card__action {
   min-width: 68px;
   min-height: 44px;
@@ -808,6 +861,67 @@ onBeforeUnmount(() => {
 @media (min-width: 768px) {
   .book-selection-card {
     bottom: calc(96px + var(--safe-bottom));
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .book-shelf {
+    --bw: min(720px, calc(100vw - 96px));
+    padding-inline: 48px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .book-shelf {
+    --bw: min(660px, calc(100vw - 540px));
+    padding-right: clamp(360px, 29vw, 460px);
+    padding-left: clamp(40px, 6vw, 96px);
+  }
+
+  .book-shelf__stage {
+    padding-top: max(96px, calc(50dvh - var(--bd) * .9));
+    padding-bottom: calc(50dvh + 32px);
+  }
+
+  .book-selection-card {
+    top: 50%;
+    right: clamp(40px, 7vw, 120px);
+    bottom: auto;
+    left: auto;
+    width: clamp(300px, 24vw, 340px);
+    min-height: 112px;
+    grid-template-columns: 84px minmax(0, 1fr);
+    grid-template-areas:
+      "cover copy"
+      "cover action";
+    column-gap: 14px;
+    row-gap: 6px;
+    padding: 14px;
+    border-radius: 28px;
+    transform: translateY(-50%);
+  }
+
+  .book-selection-card__cover-frame {
+    grid-area: cover;
+    width: 84px;
+    align-self: stretch;
+    aspect-ratio: auto;
+    border-radius: 18px;
+  }
+
+  .book-selection-card__copy {
+    grid-area: copy;
+    align-self: end;
+  }
+
+  .book-selection-card__action {
+    grid-area: action;
+    justify-self: start;
+  }
+
+  .book-selection-enter-from,
+  .book-selection-leave-to {
+    transform: translateY(calc(-50% + 6px));
   }
 }
 

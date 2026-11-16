@@ -49,22 +49,22 @@ describe('read visibility progress', () => {
     vi.useRealTimers()
   })
 
-  it('counts a cue only after it stays visible for one second', () => {
+  it('counts a cue only after it stays visible for two seconds', () => {
     const completed: number[] = []
     const tracker = createVisibleCueTimers({ onElapsed: (cueId) => completed.push(cueId) })
 
     tracker.enter(1)
-    vi.advanceTimersByTime(600)
+    vi.advanceTimersByTime(1_900)
     tracker.leave(1)
-    vi.advanceTimersByTime(600)
+    vi.advanceTimersByTime(100)
     expect(completed).toEqual([])
 
     tracker.enter(2)
-    vi.advanceTimersByTime(1_000)
+    vi.advanceTimersByTime(2_000)
     expect(completed).toEqual([2])
 
     tracker.enter(2)
-    vi.advanceTimersByTime(1_000)
+    vi.advanceTimersByTime(2_000)
     expect(completed).toEqual([2])
   })
 })

@@ -454,7 +454,7 @@ button {
   border: 0;
   background: transparent;
   color: var(--color-text-tertiary);
-  font-size: 10px;
+  font-size: 12px;
   cursor: pointer;
 }
 
@@ -473,8 +473,13 @@ button {
   padding: 0 22px 12px;
   background: var(--color-paper-50);
   color: var(--color-text-tertiary);
-  font-size: 10px;
+  font-size: 12px;
   text-align: center;
+}
+
+.login-footnote a {
+  color: var(--color-text-secondary);
+  text-underline-offset: 3px;
 }
 
 /* Shared app navigation */
@@ -2282,6 +2287,46 @@ button {
   padding: 10px 18px 6px;
 }
 
+.player-mode-panel-stack {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+
+.player-mode-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+.mode-panel-enter-active,
+.mode-panel-leave-active {
+  position: absolute;
+  inset: 0;
+}
+
+.mode-panel-enter-active {
+  z-index: 2;
+  pointer-events: auto;
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+}
+
+.mode-panel-leave-active {
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 120ms var(--ease-in);
+}
+
+.mode-panel-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.mode-panel-leave-to {
+  opacity: 0;
+}
+
 .listen-mode,
 .read-mode,
 .write-mode,
@@ -3006,7 +3051,7 @@ button {
   border-radius: 11px;
   background: transparent;
   color: rgba(255,250,240,.58);
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
 }
 
@@ -3049,8 +3094,8 @@ button {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  color: rgba(255,250,240,.7);
-  font-size: 11px;
+  color: rgba(255,250,240,.58);
+  font-size: 12px;
 }
 
 .audio-deck__times span:last-child {
@@ -3182,8 +3227,10 @@ button {
 }
 
 .standalone-app {
-  position: relative;
-  width: 100%;
+  position: fixed;
+  top: var(--app-viewport-top, 0);
+  left: var(--app-viewport-left, 0);
+  width: var(--app-viewport-width, 100%);
   overflow: hidden;
   background: var(--app-bg);
 }
@@ -3409,5 +3456,15 @@ button {
   .record-wave.is-live i,
   .record-button.is-recording {
     animation: none;
+  }
+
+  .mode-panel-enter-active,
+  .mode-panel-leave-active {
+    transition: none;
+  }
+
+  .mode-panel-enter-from,
+  .mode-panel-leave-to {
+    transform: none;
   }
 }

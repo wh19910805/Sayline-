@@ -87,8 +87,10 @@ onMounted(load)
             <strong>{{ record.course.title }}</strong>
             <small>{{ formatBytes(record.sizeBytes) }} · {{ new Date(record.downloadedAt).toLocaleDateString('zh-CN') }}</small>
           </div>
-          <button class="sl-button sl-button--accent sl-button--sm" type="button" @click="router.push(`/learn/${record.course.bookId}/${record.id}`)">离线学习</button>
-          <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="remove(record)">删除</button>
+          <div class="offline-list__actions">
+            <button class="sl-button sl-button--accent sl-button--sm" type="button" @click="router.push(`/learn/${record.course.bookId}/${record.id}`)">离线学习</button>
+            <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="remove(record)">删除</button>
+          </div>
         </article>
       </section>
     </div>
@@ -151,7 +153,7 @@ onMounted(load)
 
 .offline-list article {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto auto;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 12px;
@@ -180,6 +182,12 @@ onMounted(load)
   font-size: 12px;
 }
 
+.offline-list__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .offline-empty {
   min-height: 220px;
   display: grid;
@@ -199,8 +207,14 @@ onMounted(load)
     grid-template-columns: 48px minmax(0, 1fr);
   }
 
-  .offline-list article button {
-    grid-column: span 1;
+  .offline-list__actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .offline-list__actions button {
+    width: 100%;
   }
 }
 </style>

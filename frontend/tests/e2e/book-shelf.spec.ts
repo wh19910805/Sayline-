@@ -23,6 +23,7 @@ test('3D book faces stay visible under prefers-reduced-motion', async ({ page })
 })
 
 test('book shelf renders the default category book and opens its lessons', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
 
   await expect(page.locator('.book3d')).toHaveCount(1)
@@ -56,6 +57,41 @@ test('book shelf renders the default category book and opens its lessons', async
 
   await page.locator('.book-slot.is-active').click()
   await expect(page).toHaveURL(/\/learn\/\d+/)
+})
+
+test('book selection exposes level, accent, pace, duration and learning goal', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.route('**/api/v1/books?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([{
+        id: 1,
+        title: 'Interview English',
+        description: 'Practice realistic answers.',
+        categoryId: 1,
+        categoryName: '职场英语',
+        coverUrl: '/covers/work.jpg',
+        coverThumbnailUrl: '/covers/work.jpg',
+        lessonCount: 2,
+        totalDurationMs: 600_000,
+        progress: 0,
+        favorite: false,
+        level: 'B1',
+        accent: 'US',
+        speakingPace: 'NATURAL',
+        learningGoal: '掌握面试中的自我介绍与追问',
+      }]),
+    }),
+  )
+  await page.goto('/')
+
+  const card = page.locator('.book-selection-card')
+  await expect(card).toContainText('B1')
+  await expect(card).toContainText('美音')
+  await expect(card).toContainText('自然语速')
+  await expect(card).toContainText('10 分钟')
+  await expect(card).toContainText('掌握面试中的自我介绍与追问')
 })
 
 test('current book card disables learning when no lessons are published', async ({ page }) => {
@@ -328,4 +364,28 @@ test('centered shelf keeps equal focus gaps and paints later books above earlier
   const cardBox = await card.boundingBox()
   const navBox = await page.locator('.app-bottom-nav').boundingBox()
   expect((cardBox?.y ?? 0) + (cardBox?.height ?? 0)).toBeLessThanOrEqual(navBox?.y ?? 0)
+})
+
+test('four-book desktop shelf uses a side selection card', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.route('**/api/v1/books?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { id: 1, title: '第一本', categoryId: 1, categoryName: '职场英语', coverUrl: '/covers/work.jpg', coverThumbnailUrl: '/covers/work.jpg', lessonCount: 2, progress: 20, favorite: false },
+        { id: 2, title: '第二本', categoryId: 1, categoryName: '职场英语', coverUrl: '/covers/spoken.jpg', coverThumbnailUrl: '/covers/spoken.jpg', lessonCount: 3, progress: 0, favorite: false },
+        { id: 3, title: '第三本', categoryId: 1, categoryName: '职场英语', coverUrl: '/covers/listening.jpg', coverThumbnailUrl: '/covers/listening.jpg', lessonCount: 4, progress: 0, favorite: false },
+        { id: 4, title: '第四本', categoryId: 1, categoryName: '职场英语', coverUrl: '/covers/work.jpg', coverThumbnailUrl: '/covers/work.jpg', lessonCount: 5, progress: 0, favorite: false },
+      ]),
+    }),
+  )
+  await page.goto('/')
+  await expect(page.locator('.book-slot')).toHaveCount(4)
+
+  const cover = await page.locator('.book-slot.is-active .book3d__front').boundingBox()
+  const card = await page.locator('.book-selection-card').boundingBox()
+  expect(cover?.width ?? 0).toBeGreaterThan(560)
+  expect(card?.x ?? 0).toBeGreaterThan(900)
+  expect(card?.y ?? 1000).toBeLessThan(500)
 })

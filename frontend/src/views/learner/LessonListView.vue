@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -14,6 +14,7 @@ import { useBookEnter } from '@/composables/useBookEnter'
 import { useScrollMemory } from '@/composables/useScrollMemory'
 import { usePlayerSession } from '@/composables/usePlayerSession'
 import { formatDuration } from '@/utils/format'
+import { runWhenIdle } from '@/utils/idleTask'
 
 const route = useRoute()
 const router = useRouter()
@@ -29,6 +30,7 @@ const loading = ref(true)
 const filter = ref<'ALL' | 'UNSTARTED' | 'ONGOING' | 'COMPLETED'>('ALL')
 const scrollMemory = useScrollMemory(lessonScroll, () => `lessons:${bookId.value}`)
 const filterState = { UNSTARTED: 'todo', ONGOING: 'ongoing', COMPLETED: 'done' } as const
+let cancelPlayerPrefetch: (() => void) | undefined
 const filteredLessons = computed(() => {
   const lessons = book.value?.lessons ?? []
   const activeFilter = filter.value
@@ -63,10 +65,24 @@ onMounted(async () => {
     loading.value = false
     await nextTick()
     settle()
+    requestAnimationFrame(() => {
+      if (!performance.getEntriesByName('book-open-start').length) return
+      performance.mark('lesson-visible')
+      performance.measure(
+        'learner-home-to-lesson',
+        'book-open-start',
+        'lesson-visible',
+      )
+    })
     await scrollMemory.restore()
     scrollMemory.attach()
+    cancelPlayerPrefetch = runWhenIdle(() => {
+      void import('@/views/learner/PlayerView.vue')
+    })
   }
 })
+
+onBeforeUnmount(() => cancelPlayerPrefetch?.())
 
 function applyAmbient(book: BookDetail) {
   if (book.themeColorPrimary) {

@@ -21,6 +21,7 @@ const state = reactive({
 
 let timers: ReturnType<typeof setTimeout>[] = []
 let settleAttempts = 0
+let navigationGeneration = 0
 
 function clearTimers() {
   for (const timer of timers) clearTimeout(timer)
@@ -34,9 +35,30 @@ function reset() {
   state.settling = false
 }
 
+function wait(milliseconds: number) {
+  return new Promise<void>((resolve) => {
+    timers.push(setTimeout(resolve, milliseconds))
+  })
+}
+
+async function waitForCover(url: string | null) {
+  if (!url) return
+  const image = new Image()
+  image.src = url
+  try {
+    await Promise.race([
+      image.decode(),
+      wait(220),
+    ])
+  } catch {
+    // Keep the branded gradient fallback when decoding fails.
+  }
+}
+
 export function useBookEnter() {
   function enter(payload: BookEnterPayload, navigate: () => void | Promise<unknown>) {
     clearTimers()
+    const generation = ++navigationGeneration
 
     // 尊重系统「减少动态效果」设置，直接跳转
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -54,16 +76,16 @@ export function useBookEnter() {
     state.active = true
     settleAttempts = 0
 
-    // 预解码封面图，避免放大时图片解码导致的停顿
-    if (payload.coverUrl) {
-      const image = new Image()
-      image.src = payload.coverUrl
-    }
+    requestAnimationFrame(() => {
+      if (generation === navigationGeneration) state.shown = true
+    })
 
-    // 等遮罩完成首次绘制后再开始放大，避免起步掉帧
-    timers.push(setTimeout(() => { state.shown = true }, 50))
-    // 放大结束后切路由；课时列表在遮罩下加载，缩略图就位后再收进卡片
-    timers.push(setTimeout(() => { void navigate() }, 410))
+    void Promise.all([
+      waitForCover(payload.coverUrl),
+      wait(180),
+    ]).then(() => {
+      if (generation === navigationGeneration) void navigate()
+    })
   }
 
   // 课时列表封面缩略图就位后调用：把全屏遮罩收进缩略图
@@ -72,11 +94,11 @@ export function useBookEnter() {
     const target = document.querySelector('.book-head__cover')
     if (!target) {
       settleAttempts += 1
-      if (settleAttempts > 20) {
+      if (settleAttempts > 6) {
         state.leaving = true
-        timers.push(setTimeout(reset, 200))
+        timers.push(setTimeout(reset, 180))
       } else {
-        timers.push(setTimeout(settle, 80))
+        timers.push(setTimeout(settle, 40))
       }
       return
     }
@@ -87,7 +109,7 @@ export function useBookEnter() {
     state.settleTy = rect.top + rect.height / 2 - vh / 2
     state.settleScale = rect.width / vw
     state.settling = true
-    timers.push(setTimeout(reset, 240))
+    timers.push(setTimeout(reset, 200))
   }
 
   return { state, enter, settle }

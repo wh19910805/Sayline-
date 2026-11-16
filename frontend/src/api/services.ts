@@ -199,11 +199,20 @@ export const adminApi = {
     await http.patch<void>('/api/v1/admin/books/batch-visibility', { bookIds, visible })
     invalidateCatalogCache()
   },
-  courses: (filters: { bookId?: number; status?: CourseStatus; q?: string; page?: number }) => {
+  courses: (filters: {
+    bookId?: number
+    status?: CourseStatus
+    q?: string
+    media?: 'ALL' | 'COMPLETE' | 'MISSING'
+    sort?: string
+    page?: number
+  }) => {
     const params = new URLSearchParams({ size: '20', page: String(filters.page ?? 0) })
     if (filters.bookId) params.set('bookId', String(filters.bookId))
     if (filters.status) params.set('status', filters.status)
     if (filters.q) params.set('q', filters.q)
+    if (filters.media) params.set('media', filters.media)
+    if (filters.sort) params.set('sort', filters.sort)
     return http.get<PageResponse<AdminCourse>>(`/api/v1/admin/courses?${params}`)
   },
   course: (courseId: number) => http.get<AdminCourse>(`/api/v1/admin/courses/${courseId}`),
@@ -254,6 +263,8 @@ export const adminApi = {
     invalidateCatalogCache()
     return result
   },
+  retryFailedImport: (jobId: number) =>
+    http.post<ImportJob>(`/api/v1/admin/imports/${jobId}/retry-failed`),
   imports: (page = 0, size = 20) => {
     const params = new URLSearchParams({ page: String(page), size: String(size) })
     return http.get<PageResponse<ImportJob>>(`/api/v1/admin/imports?${params}`)

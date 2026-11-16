@@ -1,4 +1,6 @@
 import type { Page, Route } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 const categories = [
   {
@@ -188,14 +190,42 @@ export async function mockUserApi(
   const learning = createLearning(options.listenProgress ?? 40)
   const adminBookVisibility = new Map(books.map((book) => [book.id, true]))
   const importJobs: Array<Record<string, unknown>> = []
-  await page.route('**/upload/**', (route) => route.fulfill({ status: 200, body: '' }))
-  await page.route('**/audio/demo.wav', (route) =>
+  const courseCover = readFileSync(resolve(process.cwd(), 'public', 'covers', 'work.jpg'))
+  const demoAudio = silentWav(20)
+  await page.route('**/covers/course-work.jpg', (route) =>
     route.fulfill({
       status: 200,
-      contentType: 'audio/wav',
-      body: silentWav(),
+      contentType: 'image/jpeg',
+      body: courseCover,
     }),
   )
+  await page.route('**/upload/**', (route) => route.fulfill({ status: 200, body: '' }))
+  await page.route('**/audio/demo.wav', (route) => {
+    const range = route.request().headers().range
+    if (!range) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'audio/wav',
+        headers: { 'Accept-Ranges': 'bytes' },
+        body: demoAudio,
+      })
+    }
+    const match = /^bytes=(\d+)-(\d*)$/.exec(range)
+    if (!match) return route.fulfill({ status: 416 })
+    const start = Number(match[1])
+    const end = match[2] ? Math.min(Number(match[2]), demoAudio.length - 1) : demoAudio.length - 1
+    const chunk = demoAudio.subarray(start, end + 1)
+    return route.fulfill({
+      status: 206,
+      contentType: 'audio/wav',
+      headers: {
+        'Accept-Ranges': 'bytes',
+        'Content-Range': `bytes ${start}-${end}/${demoAudio.length}`,
+        'Content-Length': String(chunk.length),
+      },
+      body: chunk,
+    })
+  })
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request()
     const url = new URL(request.url())

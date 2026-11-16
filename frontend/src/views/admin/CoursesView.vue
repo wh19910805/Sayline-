@@ -15,6 +15,8 @@ const courses = ref<AdminCourse[]>([])
 const books = ref<AdminBook[]>([])
 const bookFilter = ref<number | ''>('')
 const statusFilter = ref<CourseStatus | ''>('')
+const mediaFilter = ref<'ALL' | 'COMPLETE' | 'MISSING'>('ALL')
+const sortFilter = ref('sortOrder,asc')
 const query = ref('')
 const page = ref(0)
 const totalPages = ref(1)
@@ -37,6 +39,8 @@ async function load() {
       bookId: bookFilter.value || undefined,
       status: statusFilter.value || undefined,
       q: query.value.trim() || undefined,
+      media: mediaFilter.value,
+      sort: sortFilter.value,
       page: page.value,
     })
     courses.value = response.content
@@ -160,6 +164,17 @@ onMounted(() => {
         <option value="PUBLISHED">已发布</option>
         <option value="OFFLINE">已下架</option>
       </select>
+      <select v-model="mediaFilter" class="sl-field__control" style="width: 150px" aria-label="按媒体状态筛选" @change="page = 0; load()">
+        <option value="ALL">全部媒体</option>
+        <option value="COMPLETE">媒体完整</option>
+        <option value="MISSING">媒体缺失</option>
+      </select>
+      <select v-model="sortFilter" class="sl-field__control" style="width: 170px" aria-label="课时排序" @change="page = 0; load()">
+        <option value="sortOrder,asc">排序值：升序</option>
+        <option value="sortOrder,desc">排序值：降序</option>
+        <option value="updatedAt,desc">更新时间：新到旧</option>
+        <option value="title,asc">课时名称：A–Z</option>
+      </select>
       <input v-model="query" class="sl-field__control" style="width: min(320px, 100%)" placeholder="搜索课时名" @keyup.enter="page = 0; load()" />
       <button class="sl-button sl-button--secondary" type="button" @click="page = 0; load()">搜索</button>
     </div>
@@ -173,7 +188,7 @@ onMounted(() => {
       <SlTable :loading="loading" :empty="!courses.length" empty-title="暂无课时" empty-description="批量导入多节课程，或点右上角新建">
         <template #head>
           <tr>
-            <th><input type="checkbox" :checked="allSelected" aria-label="选择全部课时" @change="toggleAll" /></th>
+            <th><label class="admin-check"><input type="checkbox" :checked="allSelected" aria-label="选择全部课时" @change="toggleAll" /></label></th>
             <th>课时</th>
             <th>媒体</th>
             <th>状态</th>
@@ -182,7 +197,7 @@ onMounted(() => {
           </tr>
         </template>
         <tr v-for="course in courses" :key="course.id">
-          <td><input type="checkbox" :checked="selectedIds.includes(course.id)" :aria-label="`选择 ${course.title}`" @change="toggleCourse(course.id)" /></td>
+          <td><label class="admin-check"><input type="checkbox" :checked="selectedIds.includes(course.id)" :aria-label="`选择 ${course.title}`" @change="toggleCourse(course.id)" /></label></td>
           <td>
             <div class="admin-course-cell">
               <span
@@ -343,5 +358,22 @@ onMounted(() => {
 
 .admin-row-menu__panel .is-danger {
   color: var(--color-danger);
+}
+
+@media (max-width: 900px) {
+  .admin-page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .admin-page-head h1 {
+    white-space: nowrap;
+  }
+
+  .admin-page-head .admin-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

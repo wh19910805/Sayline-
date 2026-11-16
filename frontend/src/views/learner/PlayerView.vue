@@ -17,6 +17,7 @@ import { apiErrorMessage } from '@/api/http'
 import { cacheDelete } from '@/api/cache'
 import { learnerApi } from '@/api/services'
 import { setAmbient, setThemeColor, syncThemeColor } from '@/composables/useAmbient'
+import { enqueueOfflineMutation } from '@/utils/offlineMutationQueue'
 import type {
   BookDetail,
   CourseDetail,
@@ -30,6 +31,10 @@ import WordDictation from '@/components/player/WordDictation.vue'
 import { useControlVisibility } from '@/composables/useControlVisibility'
 import { useCatalogStore } from '@/stores/catalog'
 import { formatClock, formatDuration } from '@/utils/format'
+import {
+  assessSpeechRecording,
+  type SpeechRecordingQuality,
+} from '@/utils/speechQuality'
 import { createVisibleCueTimers } from '@/utils/visibleCueTimers'
 import { downloadCourse, getOfflineCourse } from '@/utils/offlineCourse'
 import { usePlayerSession, type PlaybackMode } from '@/composables/usePlayerSession'
@@ -64,6 +69,7 @@ const lyricsWindow = ref<HTMLElement | null>(null)
 const writeTranscript = ref<HTMLElement | null>(null)
 const recording = ref(false)
 const recordSeconds = ref(0)
+const recordQuality = ref<SpeechRecordingQuality | null>(null)
 const audioRecordingUrl = ref('')
 const recordingAudio = ref<HTMLAudioElement | null>(null)
 const writeSubmitted = ref(false)
@@ -80,6 +86,9 @@ const chineseOverrides = ref<Record<LearningMode, boolean | null>>({
 })
 let mediaRecorder: MediaRecorder | null = null
 let recordingStartedAt = 0
+let recordingPeakLevel = 0
+let recordingAudioContext: AudioContext | undefined
+let recordingLevelTimer: ReturnType<typeof setInterval> | undefined
 let heartbeatTimer: ReturnType<typeof setInterval> | undefined
 let progressTimer: ReturnType<typeof setInterval> | undefined
 let countdownTimer: ReturnType<typeof setInterval> | undefined
@@ -87,6 +96,7 @@ let suppressRouteReload = false
 let modeCountdownTimer: ReturnType<typeof setInterval> | undefined
 let positionTimer: ReturnType<typeof setInterval> | undefined
 let activeSince = performance.now()
+let cueSelectionLockUntil = 0
 const sentActions = new Set<string>()
 const transcriptElements = new Map<number, HTMLElement>()
 let readObserver: IntersectionObserver | null = null
@@ -167,19 +177,37 @@ const backgroundStyle = computed(() => ({
 const audioProgress = computed(() =>
   duration.value > 0 ? Math.min(100, (currentTime.value / duration.value) * 100) : 0,
 )
+const coverFailed = ref(false)
+const playerCoverUrl = ref<string | null>(null)
 const playerCoverStyle = computed(() => {
   const primary = course.value?.themeColorPrimary || '#53634e'
   const secondary = course.value?.themeColorSecondary || '#1f2a22'
   const gradient = `linear-gradient(145deg, ${primary}, ${secondary})`
   return {
-    backgroundImage: course.value?.coverUrl
-      ? `linear-gradient(145deg, rgba(255,255,255,.08), rgba(0,0,0,.24)), url("${course.value.coverUrl}")`
-      : gradient,
+    backgroundImage: gradient,
   }
 })
 const coverBackdropStyle = computed(() => ({
-  backgroundImage: course.value?.coverUrl ? `url("${course.value.coverUrl}")` : undefined,
+  backgroundImage: playerCoverUrl.value ? `url("${playerCoverUrl.value}")` : undefined,
 }))
+watch(
+  () => [course.value?.id, course.value?.coverUrl, bookInfo.value?.coverUrl] as const,
+  () => {
+    coverFailed.value = false
+    playerCoverUrl.value = course.value?.coverUrl || bookInfo.value?.coverUrl || null
+  },
+  { immediate: true },
+)
+
+function handlePlayerCoverError() {
+  const fallback = bookInfo.value?.coverUrl
+  if (fallback && fallback !== playerCoverUrl.value) {
+    playerCoverUrl.value = fallback
+    return
+  }
+  coverFailed.value = true
+  playerCoverUrl.value = null
+}
 const modes = [
   { value: 'LISTEN' as const, label: '听', icon: 'headphone' },
   { value: 'READ' as const, label: '读', icon: 'book-read' },
@@ -307,7 +335,8 @@ async function downloadOffline() {
   if (!course.value || offlineBusy.value || offlineDownloaded.value) return
   offlineBusy.value = true
   try {
-    const record = await downloadCourse(course.value)
+    const snapshot = JSON.parse(JSON.stringify(course.value)) as CourseDetail
+    const record = await downloadCourse(snapshot)
     setOfflineAudio(record.audio)
     setAudioSource(offlineAudioUrl.value)
     offlineDownloaded.value = true
@@ -321,6 +350,11 @@ async function downloadOffline() {
 
 function selectMode(next: LearningMode) {
   if (recording.value) return
+  if (next === mode.value) return
+  performance.clearMarks('learner-mode-start')
+  performance.clearMarks('learner-mode-visible')
+  performance.clearMeasures('learner-mode-transition')
+  performance.mark('learner-mode-start')
   if (next !== 'LISTEN' && playMode.value !== 'study') {
     playMode.value = 'study'
   }
@@ -328,6 +362,16 @@ function selectMode(next: LearningMode) {
   sentenceStopMs.value = null
   writeSubmitted.value = false
   visibility.show()
+  void nextTick().then(() => {
+    requestAnimationFrame(() => {
+      performance.mark('learner-mode-visible')
+      performance.measure(
+        'learner-mode-transition',
+        'learner-mode-start',
+        'learner-mode-visible',
+      )
+    })
+  })
   learnerApi
     .position(courseId.value, {
       mode: next,
@@ -380,12 +424,20 @@ function seek(seconds: number) {
 }
 
 function seekToCue(cue: Cue) {
+  if (mode.value === 'WRITE') cueSelectionLockUntil = performance.now() + 500
   activeCueIndex.value = course.value?.cues.findIndex((item) => item.id === cue.id) ?? 0
   activeSince = performance.now()
   if (audio.value) {
-    audio.value.currentTime = cue.startMs / 1_000
+    const target = cue.startMs / 1_000
     sentenceStopMs.value = mode.value === 'LISTEN' ? null : cue.endMs
-    audio.value.play().catch(() => undefined)
+    if (Math.abs(audio.value.currentTime - target) < 0.05) {
+      audio.value.play().catch(() => undefined)
+    } else {
+      audio.value.addEventListener('seeked', () => {
+        audio.value?.play().catch(() => undefined)
+      }, { once: true })
+      audio.value.currentTime = target
+    }
   }
   visibility.show()
 }
@@ -437,14 +489,15 @@ function onTimeUpdate() {
   if (!audio.value || !course.value) return
   currentTime.value = audio.value.currentTime
   duration.value = audio.value.duration || course.value.durationMs / 1_000
-  if (
-    sentenceStopMs.value !== null &&
-    audio.value.currentTime * 1_000 >= sentenceStopMs.value
-  ) {
-    audio.value.pause()
-    sentenceStopMs.value = null
+  if (sentenceStopMs.value !== null) {
+    if (audio.value.currentTime * 1_000 >= sentenceStopMs.value) {
+      audio.value.pause()
+      sentenceStopMs.value = null
+    }
     return
   }
+  if (mode.value !== 'LISTEN') return
+  if (performance.now() < cueSelectionLockUntil) return
   let nextIndex = -1
   for (let index = course.value.cues.length - 1; index >= 0; index -= 1) {
     if (audio.value.currentTime * 1_000 >= course.value.cues[index]!.startMs) {
@@ -471,17 +524,27 @@ function markCue(cueId: number, actionMode: LearningMode, answer?: string) {
   const key = `${cue.id}-${actionMode}-${answer ?? ''}`
   if (sentActions.has(key)) return
   sentActions.add(key)
-  learnerApi
-    .action(courseId.value, {
-      cueId: cue.id,
-      mode: actionMode,
-      durationMs: Math.max(0, Math.round(performance.now() - activeSince)),
-      answer,
-    })
+  const payload = {
+    cueId: cue.id,
+    mode: actionMode,
+    durationMs: Math.max(0, Math.round(performance.now() - activeSince)),
+    answer,
+  }
+  return learnerApi
+    .action(courseId.value, payload)
     .then((state) => {
       learning.value = state
     })
     .catch((reason) => {
+      if (reason instanceof TypeError) {
+        enqueueOfflineMutation({
+          type: 'action',
+          courseId: courseId.value,
+          payload,
+        })
+        notice.value = '网络不可用，学习进度已保存在本机'
+        return
+      }
       sentActions.delete(key)
       notice.value = apiErrorMessage(reason)
     })
@@ -489,13 +552,22 @@ function markCue(cueId: number, actionMode: LearningMode, answer?: string) {
 
 function savePosition() {
   if (!course.value) return
+  const payload = {
+    mode: mode.value,
+    cueId: activeCue.value?.id,
+    positionMs: Math.round(currentTime.value * 1_000),
+  }
   learnerApi
-    .position(courseId.value, {
-      mode: mode.value,
-      cueId: activeCue.value?.id,
-      positionMs: Math.round(currentTime.value * 1_000),
+    .position(courseId.value, payload)
+    .catch((reason) => {
+      if (reason instanceof TypeError) {
+        enqueueOfflineMutation({
+          type: 'position',
+          courseId: courseId.value,
+          payload,
+        })
+      }
     })
-    .catch(() => undefined)
 }
 
 function recordWriting(cueId: number, answer: string) {
@@ -504,22 +576,28 @@ function recordWriting(cueId: number, answer: string) {
 
 function submitWriting(cueId: number, answer: string) {
   writeSubmitted.value = true
-  markCue(cueId, 'WRITE', answer)
+  return markCue(cueId, 'WRITE', answer)
 }
 
 function selectCue(index: number) {
   if (recording.value) return
-  activeCueIndex.value = index
+  const cue = course.value?.cues[index]
+  if (cue) {
+    seekToCue(cue)
+  } else {
+    activeCueIndex.value = index
+  }
   writeSubmitted.value = false
   nextTick(scrollWriteToCurrent)
 }
 
-function handleDictationComplete(cueId: number, answer: string) {
+async function handleDictationComplete(cueId: number, answer: string) {
   if (writeSubmitted.value) return
-  submitWriting(cueId, answer)
+  const writePromise = submitWriting(cueId, answer)
   if (activeCueIndex.value < (course.value?.cues.length ?? 0) - 1) {
     writeSubmitted.value = false
     moveCue(1)
+    await writePromise
   }
 }
 
@@ -528,12 +606,6 @@ async function toggleRecording() {
   if (recording.value) {
     mediaRecorder?.stop()
     recording.value = false
-    const elapsed = performance.now() - recordingStartedAt
-    if (elapsed >= 1_000) {
-      markCurrentCue('SPEAK')
-    } else {
-      notice.value = '录音至少 1 秒才会记入进度'
-    }
     return
   }
   if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
@@ -549,12 +621,50 @@ async function toggleRecording() {
     }
     mediaRecorder.onstop = () => {
       stream.getTracks().forEach((track) => track.stop())
+      if (recordingLevelTimer) clearInterval(recordingLevelTimer)
+      recordingLevelTimer = undefined
+      void recordingAudioContext?.close()
+      recordingAudioContext = undefined
       if (audioRecordingUrl.value) URL.revokeObjectURL(audioRecordingUrl.value)
       audioRecordingUrl.value = URL.createObjectURL(new Blob(chunks, { type: 'audio/webm' }))
+      const quality = assessSpeechRecording({
+        durationMs: performance.now() - recordingStartedAt,
+        peakLevel: recordingPeakLevel,
+      })
+      recordQuality.value = quality
+      if (quality === 'ready') {
+        markCurrentCue('SPEAK')
+      } else if (quality === 'too-short') {
+        notice.value = '录音至少 1 秒才会记入进度'
+      } else {
+        notice.value = '声音太小，请靠近麦克风重试'
+      }
+    }
+    recordingPeakLevel = 1
+    if (typeof AudioContext !== 'undefined') {
+      try {
+        recordingAudioContext = new AudioContext()
+        const analyser = recordingAudioContext.createAnalyser()
+        analyser.fftSize = 512
+        recordingAudioContext.createMediaStreamSource(stream).connect(analyser)
+        const samples = new Float32Array(analyser.fftSize)
+        recordingPeakLevel = 0
+        recordingLevelTimer = setInterval(() => {
+          analyser.getFloatTimeDomainData(samples)
+          for (const sample of samples) {
+            recordingPeakLevel = Math.max(recordingPeakLevel, Math.abs(sample))
+          }
+        }, 50)
+        void recordingAudioContext.resume()
+      } catch {
+        recordingPeakLevel = 1
+      }
     }
     mediaRecorder.start()
     recordingStartedAt = performance.now()
     recordSeconds.value = 0
+    recordQuality.value = null
+    recordingPeakLevel = 0
     recording.value = true
   } catch {
     notice.value = '麦克风权限未开启，请在浏览器设置中允许访问'
@@ -604,13 +714,23 @@ function beginModeAdvance() {
 }
 
 async function finishModeAdvance(target: LearningMode | null, playbackCompleted = false) {
+  const completedMode = mode.value
   try {
-    const completedMode = mode.value
     const state = await learnerApi.confirm(courseId.value, completedMode, playbackCompleted)
     learning.value = state
     if (state.completed) beginAutoNext()
     else if (target) selectMode(target)
   } catch (reason) {
+    if (reason instanceof TypeError) {
+      enqueueOfflineMutation({
+        type: 'confirm',
+        courseId: courseId.value,
+        payload: { mode: completedMode, playbackCompleted },
+      })
+      notice.value = '网络不可用，本环节完成状态将在联网后同步'
+      if (target) selectMode(target)
+      return
+    }
     notice.value = apiErrorMessage(reason)
   }
 }
@@ -868,6 +988,12 @@ function scrollWriteToCurrent() {
   container.scrollTop = Math.max(0, current.offsetTop - container.clientHeight * 0.16)
 }
 
+function focusFirstWriteInput() {
+  writeTranscript.value
+    ?.querySelector<HTMLInputElement>('.write-current .sl-word-input input')
+    ?.focus()
+}
+
 let touchStartY = 0
 function touchStart(event: TouchEvent) {
   touchStartY = event.touches[0]?.clientY ?? 0
@@ -895,6 +1021,26 @@ watch(
     courseId.value = id
     loadCourse()
   },
+)
+
+watch(
+  () => route.query.cue,
+  (value) => {
+    const cueId = Number(value)
+    if (route.name !== 'player' || !Number.isSafeInteger(cueId) || !course.value) return
+    const index = course.value.cues.findIndex((cue) => cue.id === cueId)
+    if (index >= 0) activeCueIndex.value = index
+  },
+)
+
+watch(
+  activeCueIndex,
+  async () => {
+    if (mode.value !== 'WRITE') return
+    await nextTick()
+    focusFirstWriteInput()
+  },
+  { flush: 'post' },
 )
 
 watch(mode, () => {
@@ -1034,6 +1180,8 @@ onBeforeUnmount(() => {
   clearInterval(positionTimer)
   clearInterval(countdownTimer)
   clearInterval(modeCountdownTimer)
+  clearInterval(recordingLevelTimer)
+  void recordingAudioContext?.close()
   stopReadObservation()
   mediaRecorder?.stream?.getTracks().forEach((track) => track.stop())
   if (audioRecordingUrl.value) URL.revokeObjectURL(audioRecordingUrl.value)
@@ -1051,7 +1199,7 @@ onBeforeUnmount(() => {
     :style="backgroundStyle"
     @click="handleSurfaceClick"
   >
-    <div v-if="course?.coverUrl" class="player-cover-backdrop" :key="course.id" :style="coverBackdropStyle" aria-hidden="true" />
+    <div v-if="playerCoverUrl" class="player-cover-backdrop" :key="course?.id" :style="coverBackdropStyle" aria-hidden="true" />
     <div class="player-atmosphere" aria-hidden="true" />
     <div class="player-overlay" aria-hidden="true" />
     <div class="player-top-surface" aria-hidden="true" />
@@ -1088,7 +1236,22 @@ onBeforeUnmount(() => {
       </header>
 
       <section class="player-identity" @click.stop>
-        <div class="player-identity__cover" :style="playerCoverStyle" />
+        <div class="player-identity__cover" :style="playerCoverStyle">
+          <img
+            v-if="playerCoverUrl"
+            :src="playerCoverUrl"
+            alt=""
+            @error="handlePlayerCoverError"
+          />
+          <span
+            v-else
+            class="player-identity__cover-fallback"
+            aria-hidden="true"
+          >
+            <SlIcon name="book-open" :size="16" />
+            <b>{{ course.title.slice(0, 1).toUpperCase() }}</b>
+          </span>
+        </div>
         <div class="player-identity__copy">
           <h1>
             {{ course.title }}
@@ -1104,6 +1267,9 @@ onBeforeUnmount(() => {
         @touchstart.passive="touchStart"
         @touchend="touchEnd"
       >
+        <div class="player-mode-panel-stack">
+          <Transition name="mode-panel">
+            <div :key="mode" class="player-mode-panel">
         <div v-if="mode === 'LISTEN'" class="listen-mode">
           <div ref="lyricsWindow" class="lyrics-window">
             <button
@@ -1146,9 +1312,16 @@ onBeforeUnmount(() => {
               <span class="transcript-row__copy">
                 <strong lang="en">{{ cue.englishText }}</strong>
                 <span v-if="showChinese" lang="zh">{{ cue.chineseText }}</span>
+                <small v-if="index === activeCueIndex" class="read-row-status">
+                  {{ learning.cues[index]?.read ? '本句已读' : '停留 2 秒完成' }}
+                </small>
               </span>
               <SlIcon name="play" :size="16" />
             </button>
+          </div>
+          <div class="read-mode__guidance">
+            <SlIcon name="time" :size="15" />
+            <span>句子出现在屏幕中并停留 2 秒后，会标记为本句已读</span>
           </div>
         </div>
 
@@ -1159,6 +1332,7 @@ onBeforeUnmount(() => {
                 v-if="index !== activeCueIndex"
                 class="write-context-row"
                 :class="index < activeCueIndex ? 'is-before' : 'is-after'"
+                  :data-cue-id="cue.id"
                 role="button"
                 tabindex="0"
                 @click="selectCue(index)"
@@ -1231,7 +1405,7 @@ onBeforeUnmount(() => {
             <span>{{ activeCueIndex + 1 }}/{{ course.cues.length }} 句</span>
             <span class="record-state" :class="{ 'is-complete': currentCueSpoken }">
               <SlIcon :name="currentCueSpoken ? 'check' : 'mic'" :size="14" />
-              {{ currentCueSpoken ? '本句已完成' : '本句待跟读' }}
+              {{ currentCueSpoken ? '录音已完成' : '本句待录音' }}
             </span>
           </div>
           <div class="speak-quote">
@@ -1256,8 +1430,26 @@ onBeforeUnmount(() => {
               />
             </div>
             <p class="record-duration" aria-live="polite">
-              <strong>{{ recording ? `${recordSeconds}s` : audioRecordingUrl ? '录音已就绪' : '等待录音' }}</strong>
-              <span>{{ recording ? '再次点击结束录音' : '建议跟读 1 秒以上' }}</span>
+              <strong>
+                {{
+                  recording
+                    ? `${recordSeconds}s`
+                    : recordQuality === 'too-quiet'
+                      ? '音量过低'
+                      : audioRecordingUrl
+                        ? '录音已就绪'
+                        : '等待录音'
+                }}
+              </strong>
+              <span>
+                {{
+                  recording
+                    ? '再次点击结束录音'
+                    : recordQuality === 'ready'
+                      ? '录音有效，可以听自己或下一句'
+                      : '建议跟读 1 秒以上'
+                }}
+              </span>
             </p>
             <div class="speak-actions" aria-label="跟读操作">
               <button type="button" @click="replayCue">
@@ -1291,6 +1483,9 @@ onBeforeUnmount(() => {
             </div>
             <audio v-if="audioRecordingUrl" ref="recordingAudio" :src="audioRecordingUrl" />
           </div>
+        </div>
+            </div>
+          </Transition>
         </div>
       </section>
 
@@ -1504,6 +1699,28 @@ onBeforeUnmount(() => {
   background-size: cover;
 }
 
+.player-identity__cover img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.player-identity__cover-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 2px;
+  color: rgba(255, 250, 240, .9);
+}
+
+.player-identity__cover-fallback b {
+  font: var(--weight-semibold) 10px/1 var(--font-ui);
+}
+
 .player-identity__cover::before {
   content: "";
   position: absolute;
@@ -1531,12 +1748,12 @@ onBeforeUnmount(() => {
 
 .player-header__title span {
   color: var(--player-text-muted);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: .12em;
 }
 
 .player-header__title strong {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: var(--weight-medium);
 }
 
@@ -1568,8 +1785,8 @@ onBeforeUnmount(() => {
 .audio-deck__times {
   width: 100%;
   grid-template-columns: 1fr auto 1fr;
-  color: rgba(255, 250, 240, .38);
-  font-size: 10px;
+  color: rgba(255, 250, 240, .58);
+  font-size: 12px;
   line-height: 1;
 }
 
@@ -1579,9 +1796,9 @@ onBeforeUnmount(() => {
 
 .audio-deck__range {
   width: 100%;
-  height: 12px;
+  height: 44px;
   display: block;
-  margin: 5px 0 12px;
+  margin: -11px 0 1px;
   padding: 0;
   appearance: none;
   background: transparent;
@@ -1678,7 +1895,7 @@ onBeforeUnmount(() => {
   border-radius: 99px;
   background: rgba(255, 250, 240, .1);
   color: rgba(255, 250, 240, .68);
-  font: var(--weight-medium) 11px/1 var(--font-ui);
+  font: var(--weight-medium) 12px/1 var(--font-ui);
   cursor: pointer;
 }
 
@@ -1782,8 +1999,23 @@ onBeforeUnmount(() => {
   overscroll-behavior: contain;
 }
 
+.read-mode__guidance {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding-right: 72px;
+  color: rgba(255, 250, 240, .68);
+  font-size: 12px;
+}
+
 .transcript-row {
   padding: 14px 12px;
+}
+
+.read-row-status {
+  color: var(--color-oat-300);
+  font-size: 11px;
 }
 
 .speak-mode {

@@ -165,6 +165,11 @@ function toggleReset() {
         <span>前往用户学习端</span>
       </RouterLink>
     </form>
-    <p class="login-footnote">继续即表示你同意用户协议与隐私政策</p>
+    <p class="login-footnote">
+      继续即表示你同意
+      <RouterLink to="/terms">用户协议</RouterLink>
+      与
+      <RouterLink to="/privacy">隐私政策</RouterLink>
+    </p>
   </main>
 </template>

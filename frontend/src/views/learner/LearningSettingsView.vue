@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import SlIcon from '@/components/ui/SlIcon.vue'
 import { useRouter } from 'vue-router'
 
@@ -13,6 +13,8 @@ const initialSnapshot = ref('')
 const error = ref('')
 const saved = ref(false)
 const saving = ref(false)
+const showSaveToast = ref(false)
+let saveToastTimer: ReturnType<typeof setTimeout> | undefined
 const dirty = computed(
   () => !!settings.value && JSON.stringify(settings.value) !== initialSnapshot.value,
 )
@@ -49,12 +51,25 @@ async function save() {
     settings.value = await learnerApi.updateSettings(settings.value)
     initialSnapshot.value = JSON.stringify(settings.value)
     saved.value = true
+    showSaveToast.value = true
+    if (saveToastTimer) clearTimeout(saveToastTimer)
+    saveToastTimer = setTimeout(() => {
+      showSaveToast.value = false
+    }, 2_500)
   } catch (reason) {
     error.value = apiErrorMessage(reason)
   } finally {
     saving.value = false
   }
 }
+
+function jumpToSection(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+onBeforeUnmount(() => {
+  if (saveToastTimer) clearTimeout(saveToastTimer)
+})
 
 </script>
 
@@ -65,9 +80,33 @@ async function save() {
       <h1>学习设置</h1>
       <span />
     </header>
+    <p v-if="showSaveToast" class="settings-save-toast" role="status">学习设置已保存</p>
     <div v-if="settings" class="settings-scroll">
       <form class="settings-form settings-form--editorial" @submit.prevent="save">
-        <section class="settings-section">
+        <nav class="settings-section-nav" aria-label="设置分组">
+          <button type="button" @click="jumpToSection('settings-font')">字号</button>
+          <button type="button" @click="jumpToSection('settings-color')">颜色</button>
+          <button type="button" @click="jumpToSection('settings-speed')">速度</button>
+          <button type="button" @click="jumpToSection('settings-goal')">目标</button>
+          <button type="button" @click="jumpToSection('settings-reminder')">提醒</button>
+          <button type="button" @click="jumpToSection('settings-translation')">翻译</button>
+        </nav>
+
+        <section class="subtitle-preview" aria-label="字幕效果预览">
+          <span class="eyebrow">PREVIEW</span>
+          <p
+            class="subtitle-preview__english"
+            :style="{
+              color: settings.subtitleColor,
+              fontSize: `${18 * settings.fontScale}px`,
+            }"
+          >
+            Nice to meet you.
+          </p>
+          <p class="subtitle-preview__chinese">很高兴认识你。</p>
+        </section>
+
+        <section id="settings-font" class="settings-section">
           <span class="eyebrow settings-section__eyebrow">TYPE SCALE</span>
           <h2>字幕字号</h2>
           <p>调整播放器里英文与中文的显示比例。</p>
@@ -84,7 +123,7 @@ async function save() {
           </div>
         </section>
 
-        <section class="settings-section">
+        <section id="settings-color" class="settings-section">
           <span class="eyebrow settings-section__eyebrow">CAPTION COLOR</span>
           <h2>字幕颜色</h2>
           <p>课程背景会随封面变化，建议选择高对比度颜色。</p>
@@ -102,7 +141,7 @@ async function save() {
           </div>
         </section>
 
-        <section class="settings-section">
+        <section id="settings-speed" class="settings-section">
           <span class="eyebrow settings-section__eyebrow">PLAYBACK SPEED</span>
           <h2>播放速度</h2>
           <p>设置后对所有课程的听、读、写、说音频生效。</p>
@@ -119,7 +158,7 @@ async function save() {
           </div>
         </section>
 
-        <section class="settings-section">
+        <section id="settings-goal" class="settings-section">
           <span class="eyebrow settings-section__eyebrow">DAILY PLAN</span>
           <h2>每日学习目标</h2>
           <p>用每天可完成的分钟数衡量进度，范围 1–240 分钟。</p>
@@ -139,7 +178,7 @@ async function save() {
           </label>
         </section>
 
-        <section class="settings-section">
+        <section id="settings-reminder" class="settings-section">
           <span class="eyebrow settings-section__eyebrow">REMINDER</span>
           <h2>学习提醒</h2>
           <p>应用打开时，在设定时间后提醒尚未完成每日目标。</p>
@@ -159,7 +198,7 @@ async function save() {
           </label>
         </section>
 
-        <section class="settings-section">
+        <section id="settings-translation" class="settings-section">
           <span class="eyebrow settings-section__eyebrow">TRANSLATION</span>
           <h2>中文翻译</h2>
           <label class="sl-switch">
@@ -192,17 +231,19 @@ async function save() {
         <p v-if="saved && !dirty" class="inline-success" aria-live="polite">学习设置已保存</p>
       </form>
     </div>
-    <div class="settings-save-dock" :class="{ 'is-dirty': dirty }">
-      <button
-        class="sl-button sl-button--lg sl-button--full learning-settings-save"
-        type="button"
-        :disabled="!dirty || saving"
-        :aria-busy="saving || undefined"
-        @click="save"
-      >
-        {{ saving ? '正在保存…' : dirty ? '保存设置' : '设置已保存' }}
-      </button>
-    </div>
+    <Transition name="save-dock">
+      <div v-if="dirty || saving" class="settings-save-dock is-dirty">
+        <button
+          class="sl-button sl-button--lg sl-button--full learning-settings-save"
+          type="button"
+          :disabled="saving"
+          :aria-busy="saving || undefined"
+          @click="save"
+        >
+          {{ saving ? '正在保存…' : '保存设置' }}
+        </button>
+      </div>
+    </Transition>
   </main>
 </template>
 
@@ -220,9 +261,84 @@ async function save() {
   padding: 8px 0 110px;
 }
 
+.settings-save-toast {
+  position: absolute;
+  z-index: 10;
+  top: calc(72px + var(--safe-top));
+  left: 50%;
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--color-ink-900);
+  box-shadow: var(--shadow-float);
+  color: var(--color-paper-50);
+  font-size: 12px;
+  font-weight: var(--weight-semibold);
+  transform: translateX(-50%);
+}
+
+.settings-section-nav {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px 0 12px;
+  background: color-mix(in srgb, var(--app-bg) 94%, transparent);
+  backdrop-filter: blur(14px);
+  scrollbar-width: none;
+}
+
+.settings-section-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-section-nav button {
+  min-height: 44px;
+  flex: 0 0 auto;
+  padding: 0 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.subtitle-preview {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 8px;
+  padding: 17px;
+  border-radius: var(--radius-lg);
+  background: #1a1a18;
+}
+
+.subtitle-preview .eyebrow {
+  color: rgba(255, 250, 240, .52);
+}
+
+.subtitle-preview__english,
+.subtitle-preview__chinese {
+  margin: 0;
+}
+
+.subtitle-preview__english {
+  font-weight: var(--weight-semibold);
+  line-height: 1.35;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.subtitle-preview__chinese {
+  color: rgba(255, 250, 240, .72);
+  font-size: 13px;
+}
+
 .settings-section {
   gap: 11px;
   padding: 25px 4px;
+  scroll-margin-top: 62px;
   border: 0;
   border-bottom: 1px solid var(--color-border);
   border-radius: 0;
@@ -337,6 +453,19 @@ async function save() {
 .settings-save-dock.is-dirty {
   border-top-color: var(--color-border-strong);
   box-shadow: 0 -10px 30px rgba(26, 26, 24, .07);
+}
+
+.save-dock-enter-active,
+.save-dock-leave-active {
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.save-dock-enter-from,
+.save-dock-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
 }
 
 .daily-goal-field {

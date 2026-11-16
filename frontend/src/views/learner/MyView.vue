@@ -22,6 +22,7 @@ const period = ref<'WEEK' | 'MONTH'>(savedPeriod === 'MONTH' ? 'MONTH' : 'WEEK')
 const meScroll = ref<HTMLElement | null>(null)
 const profile = ref<Profile | null>(null)
 const stats = ref<StatsResponse | null>(null)
+const currentWeekStats = ref<StatsResponse | null>(null)
 const settings = ref<Awaited<ReturnType<typeof learnerApi.settings>> | null>(null)
 const reviews = ref<ReviewCue[]>([])
 const reviewLoading = ref(false)
@@ -55,6 +56,12 @@ const weekDays = computed(() => {
     today: day.date === today,
   }))
 })
+const currentWeekDays = computed(() =>
+  (currentWeekStats.value?.days ?? []).map((day) => ({
+    ...day,
+    minutes: Math.round(day.studyMs / 60_000),
+  })),
+)
 
 const maxMinutes = computed(() => Math.max(...weekDays.value.map((day) => day.minutes), 1))
 const weekSummary = computed(() => {
@@ -65,7 +72,7 @@ const weekSummary = computed(() => {
 })
 const todayMinutes = computed(() => {
   const today = shanghaiDate()
-  return weekDays.value.find((day) => day.date === today)?.minutes ?? 0
+  return currentWeekDays.value.find((day) => day.date === today)?.minutes ?? 0
 })
 const dailyGoalMinutes = computed(() => settings.value?.dailyGoalMinutes || 15)
 const dailyGoalPercent = computed(() =>
@@ -93,8 +100,8 @@ const streakDays = computed(() => {
   return count
 })
 const weeklyGoalPercent = computed(() => {
-  const studyMs = (stats.value?.days ?? [])
-    .slice(-7)
+  const studyMs = currentWeekDays.value
+    .filter((day) => day.date <= shanghaiDate())
     .reduce((total, day) => total + day.studyMs, 0)
   return Math.min(100, Math.round(studyMs / (dailyGoalMinutes.value * 7 * 60_000) * 100))
 })
@@ -182,6 +189,7 @@ async function loadStats() {
     const response = await learnerApi.stats(period.value)
     if (request === latestStatsRequest) {
       stats.value = response
+      if (period.value === 'WEEK') currentWeekStats.value = response
     }
   } finally {
     if (request === latestStatsRequest) {
@@ -194,6 +202,9 @@ onMounted(async () => {
   try {
     await catalog.loadInterests()
     ;[profile.value, settings.value] = await Promise.all([learnerApi.profile(), learnerApi.settings()])
+    if (period.value === 'MONTH') {
+      currentWeekStats.value = await learnerApi.stats('WEEK')
+    }
     await loadStats()
     await scrollMemory.restore()
     scrollMemory.attach()
@@ -218,6 +229,7 @@ async function changePeriod(next: 'WEEK' | 'MONTH') {
     const response = await learnerApi.stats(next)
     if (request === latestStatsRequest) {
       stats.value = response
+      if (next === 'WEEK') currentWeekStats.value = response
     }
   } catch (reason) {
     if (request === latestStatsRequest) {
@@ -315,40 +327,18 @@ async function logout() {
         <button type="button" aria-label="关闭今日提醒" @click="dismissReminder"><SlIcon name="close" :size="16" /></button>
       </div>
 
-      <section class="settings-shortcuts">
-        <div class="profile-insights" aria-label="学习概览">
-          <span><strong>{{ dailyGoalPercent }}%</strong><small>今日目标</small></span>
-          <span><strong>{{ streakDays }} 天</strong><small>连续学习</small></span>
-          <span><strong>{{ pendingReviewCount }}</strong><small>待复习</small></span>
-        </div>
-        <button type="button" @click="router.push('/me/learning')">
-          <span class="settings-shortcuts__icon"><SlIcon name="closed-captioning" :size="18" /></span>
-          <span><strong>学习设置</strong><small>字幕字号、颜色、翻译显示</small></span>
-          <span class="settings-shortcuts__meta">{{ translationCount }}/4 中文</span>
-          <SlIcon name="arrow-right-s" :size="18" />
-        </button>
-        <button type="button" @click="router.push('/me/offline')">
-          <span class="settings-shortcuts__icon"><SlIcon name="arrow-down" :size="18" /></span>
-          <span><strong>离线课程</strong><small>管理已下载音频、字幕和存储空间</small></span>
-          <SlIcon name="arrow-right-s" :size="18" />
-        </button>
-        <button type="button" @click="router.push('/preferences')">
-          <span class="settings-shortcuts__icon"><SlIcon name="settings-3" :size="18" /></span>
-          <span>
-            <strong>学习偏好</strong>
-            <small>{{ catalog.interests.length }} 个兴趣分类 · 默认：{{ catalog.interests[0]?.name || '待设置' }}</small>
-          </span>
-          <SlIcon name="arrow-right-s" :size="18" />
-        </button>
-      </section>
-
       <section class="daily-goal-card" aria-label="今日学习目标">
         <div class="daily-goal-card__head">
           <div>
             <p class="eyebrow">TODAY</p>
             <h2>今日目标</h2>
           </div>
-          <strong>{{ todayMinutes }} / {{ dailyGoalMinutes }} 分钟</strong>
+          <div class="daily-goal-card__actions">
+            <strong>{{ todayMinutes }} / {{ dailyGoalMinutes }} 分钟</strong>
+            <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="router.push('/me/learning')">
+              调整目标
+            </button>
+          </div>
         </div>
         <div
           class="daily-goal-card__track"
@@ -372,9 +362,6 @@ async function logout() {
             <p class="eyebrow">REVIEW</p>
             <h2>错句复习</h2>
           </div>
-          <button class="sl-button sl-button--ghost sl-button--sm" type="button" @click="router.push('/me/learning')">
-            调整目标
-          </button>
         </div>
         <div class="review-controls" role="group" aria-label="复习队列筛选">
           <button
@@ -549,6 +536,33 @@ async function logout() {
         </article>
       </section>
 
+      <section class="settings-shortcuts">
+        <div class="profile-insights" aria-label="学习概览">
+          <span><strong>{{ dailyGoalPercent }}%</strong><small>今日目标</small></span>
+          <span><strong>{{ streakDays }} 天</strong><small>连续学习</small></span>
+          <span><strong>{{ pendingReviewCount }}</strong><small>待复习</small></span>
+        </div>
+        <button type="button" @click="router.push('/me/learning')">
+          <span class="settings-shortcuts__icon"><SlIcon name="closed-captioning" :size="18" /></span>
+          <span><strong>学习设置</strong><small>字幕字号、颜色、翻译显示</small></span>
+          <span class="settings-shortcuts__meta">{{ translationCount }}/4 中文</span>
+          <SlIcon name="arrow-right-s" :size="18" />
+        </button>
+        <button type="button" @click="router.push('/me/offline')">
+          <span class="settings-shortcuts__icon"><SlIcon name="arrow-down" :size="18" /></span>
+          <span><strong>离线课程</strong><small>管理已下载音频、字幕和存储空间</small></span>
+          <SlIcon name="arrow-right-s" :size="18" />
+        </button>
+        <button type="button" @click="router.push('/preferences')">
+          <span class="settings-shortcuts__icon"><SlIcon name="settings-3" :size="18" /></span>
+          <span>
+            <strong>学习偏好</strong>
+            <small>{{ catalog.interests.length }} 个兴趣分类 · 默认：{{ catalog.interests[0]?.name || '待设置' }}</small>
+          </span>
+          <SlIcon name="arrow-right-s" :size="18" />
+        </button>
+      </section>
+
       <section class="account-session">
         <div>
           <strong>账号与安全</strong>
@@ -669,10 +683,21 @@ async function logout() {
   font-weight: var(--weight-regular);
 }
 
-.daily-goal-card__head > strong {
+.daily-goal-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.daily-goal-card__actions > strong {
   font-size: 14px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.daily-goal-card__actions .sl-button {
+  min-height: 44px;
+  padding-inline: 10px;
 }
 
 .daily-goal-card__track {

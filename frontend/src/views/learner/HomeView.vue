@@ -14,6 +14,7 @@ import type { BookSummary, CueSearchResult, CourseSummary, SearchResponse } from
 import { useScrollMemory } from '@/composables/useScrollMemory'
 import { useCatalogStore } from '@/stores/catalog'
 import { useBookEnter } from '@/composables/useBookEnter'
+import { runWhenIdle } from '@/utils/idleTask'
 
 const router = useRouter()
 const catalog = useCatalogStore()
@@ -32,6 +33,7 @@ const popularSearches = ['会议', '咖啡', 'interview', 'team']
 const recentSearches = ref<string[]>(loadRecentSearches())
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 let searchController: AbortController | undefined
+let cancelLessonPrefetch: (() => void) | undefined
 
 const searchActive = computed(() => searchTerm.value.trim().length > 0)
 const searchCount = computed(() => {
@@ -62,17 +64,22 @@ const emptyState = computed(() => {
 async function loadCatalog() {
   error.value = ''
   try {
-    await catalog.loadInterests()
-    await catalog.loadBooks()
+    await catalog.loadHome()
     await scrollMemory.restore()
     scrollMemory.attach()
+    cancelLessonPrefetch = runWhenIdle(() => {
+      void import('@/views/learner/LessonListView.vue')
+    })
   } catch (reason) {
     error.value = apiErrorMessage(reason)
   }
 }
 
 onMounted(loadCatalog)
-onBeforeUnmount(() => searchController?.abort())
+onBeforeUnmount(() => {
+  searchController?.abort()
+  cancelLessonPrefetch?.()
+})
 
 watch(searchTerm, (value) => {
   if (searchTimer) clearTimeout(searchTimer)
@@ -140,6 +147,10 @@ function toggleSearch() {
 
 function openBook(book: BookSummary) {
   rememberSearch()
+  performance.clearMarks('book-open-start')
+  performance.clearMarks('lesson-visible')
+  performance.clearMeasures('learner-home-to-lesson')
+  performance.mark('book-open-start')
   enter(
     {
       coverUrl: book.coverUrl || null,

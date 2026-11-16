@@ -3,7 +3,7 @@ interface Options {
   delay?: number
 }
 
-export function createVisibleCueTimers({ onElapsed, delay = 1_000 }: Options) {
+export function createVisibleCueTimers({ onElapsed, delay = 2_000 }: Options) {
   const timers = new Map<number, ReturnType<typeof setTimeout>>()
   const elapsed = new Set<number>()
 

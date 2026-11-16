@@ -4,7 +4,13 @@ import SlIcon from '@/components/ui/SlIcon.vue'
 
 import { apiErrorMessage } from '@/api/http'
 import { adminApi } from '@/api/services'
-import type { AdminBook, AdminCategory } from '@/api/types'
+import type {
+  AdminBook,
+  AdminCategory,
+  BookAccent,
+  BookLevel,
+  BookSpeakingPace,
+} from '@/api/types'
 import SlDialog from '@/components/ui/SlDialog.vue'
 import SlErrorState from '@/components/ui/SlErrorState.vue'
 import SlTable from '@/components/ui/SlTable.vue'
@@ -32,6 +38,10 @@ const form = reactive({
   categoryId: 0,
   title: '',
   description: '',
+  level: '' as BookLevel | '',
+  accent: '' as BookAccent | '',
+  speakingPace: '' as BookSpeakingPace | '',
+  learningGoal: '',
   coverObjectKey: '',
   themeColorPrimary: '#4f5b47',
   themeColorSecondary: '#8f8e88',
@@ -67,6 +77,10 @@ function openCreate() {
     categoryId: categories.value[0]?.id ?? 0,
     title: '',
     description: '',
+    level: '',
+    accent: '',
+    speakingPace: '',
+    learningGoal: '',
     coverObjectKey: '',
     themeColorPrimary: '#4f5b47',
     themeColorSecondary: '#8f8e88',
@@ -82,6 +96,10 @@ function openEdit(book: AdminBook) {
     categoryId: book.categoryId,
     title: book.title,
     description: book.description || '',
+    level: book.level || '',
+    accent: book.accent || '',
+    speakingPace: book.speakingPace || '',
+    learningGoal: book.learningGoal || '',
     coverObjectKey: book.coverObjectKey || '',
     themeColorPrimary: book.themeColorPrimary || '#4f5b47',
     themeColorSecondary: book.themeColorSecondary || '#8f8e88',
@@ -263,6 +281,48 @@ onMounted(load)
           <label class="sl-field">
             <span class="sl-field__label">简介</span>
             <textarea v-model="form.description" class="sl-field__control" />
+          </label>
+          <div class="admin-form-grid">
+            <label class="sl-field">
+              <span class="sl-field__label">难度</span>
+              <select v-model="form.level" class="sl-field__control">
+                <option value="">未标注</option>
+                <option value="A1">A1 入门</option>
+                <option value="A2">A2 基础</option>
+                <option value="B1">B1 进阶</option>
+                <option value="B2">B2 中高</option>
+                <option value="C1">C1 高级</option>
+                <option value="C2">C2 精通</option>
+              </select>
+            </label>
+            <label class="sl-field">
+              <span class="sl-field__label">口音</span>
+              <select v-model="form.accent" class="sl-field__control">
+                <option value="">未标注</option>
+                <option value="US">美音</option>
+                <option value="UK">英音</option>
+                <option value="AU">澳音</option>
+                <option value="MIXED">混合口音</option>
+              </select>
+            </label>
+            <label class="sl-field">
+              <span class="sl-field__label">语速风格</span>
+              <select v-model="form.speakingPace" class="sl-field__control">
+                <option value="">未标注</option>
+                <option value="SLOW">慢速</option>
+                <option value="NORMAL">常速</option>
+                <option value="NATURAL">自然语速</option>
+              </select>
+            </label>
+          </div>
+          <label class="sl-field">
+            <span class="sl-field__label">学习目标</span>
+            <input
+              v-model="form.learningGoal"
+              class="sl-field__control"
+              maxlength="300"
+              placeholder="例如：掌握会议中的澄清与确认表达"
+            />
           </label>
           <div class="admin-form-grid">
             <label class="sl-field"><span class="sl-field__label">主色</span><input v-model="form.themeColorPrimary" class="sl-field__control" type="color" /></label>

@@ -150,6 +150,9 @@ async function uploadAvatar(event: Event) {
             <input class="sl-field__control" :value="profile?.phone || ''" readonly />
           </label>
           <p>手机号用于登录。修改前需要验证当前密码。</p>
+          <button class="sl-button sl-button--lg sl-button--full profile-save profile-save--local" type="submit">
+            保存个人资料
+          </button>
           <div class="security-form">
             <label class="sl-field">
               <span class="sl-field__label">新手机号</span>
@@ -184,7 +187,6 @@ async function uploadAvatar(event: Event) {
         </section>
         <p v-if="error" class="inline-error">{{ error }}</p>
         <p v-if="saved" class="inline-success">个人资料已保存</p>
-        <button class="sl-button sl-button--lg sl-button--full profile-save" type="submit">保存资料</button>
         <section class="danger-zone">
           <div><strong>注销账号</strong><p>注销后会清除登录身份并停用账号，学习统计以匿名形式保留。</p></div>
           <button class="sl-button sl-button--danger" type="button" @click="deleteOpen = true">注销账号</button>
@@ -248,12 +250,13 @@ async function uploadAvatar(event: Event) {
 }
 
 .profile-save {
-  position: sticky;
-  bottom: 12px;
-  margin-top: 22px;
   background: var(--color-ink-900);
   color: var(--color-paper-50);
   box-shadow: var(--shadow-float);
+}
+
+.profile-save--local {
+  margin-top: 14px;
 }
 
 .security-form {

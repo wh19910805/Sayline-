@@ -4,8 +4,10 @@ import { RouterView } from 'vue-router'
 
 import GlobalAudioPlayer from '@/components/GlobalAudioPlayer.vue'
 import { useBookEnter } from '@/composables/useBookEnter'
+import { useOfflineSync } from '@/composables/useOfflineSync'
 
 const { state } = useBookEnter()
+useOfflineSync()
 
 const fallbackStyle = computed(() => ({
   background: `linear-gradient(150deg, ${state.primary}, ${state.secondary})`,
@@ -20,13 +22,29 @@ const overlayStyle = computed(() => {
   }
   return { transform: 'rotate(90deg) scale(0.55)' }
 })
+
+function markLeavingLayer(element: Element) {
+  const layer = element as HTMLElement
+  layer.inert = true
+  layer.setAttribute('aria-hidden', 'true')
+}
+
+function clearLeavingLayer(element: Element) {
+  const layer = element as HTMLElement
+  layer.inert = false
+  layer.removeAttribute('aria-hidden')
+}
 </script>
 
 <template>
   <div class="standalone-app">
     <GlobalAudioPlayer />
     <RouterView v-slot="{ Component, route }">
-      <Transition name="route" mode="out-in">
+      <Transition
+        name="route"
+        @before-leave="markLeavingLayer"
+        @after-leave="clearLeavingLayer"
+      >
         <KeepAlive :include="['PlayerView']">
           <component
             :is="Component"
@@ -80,24 +98,40 @@ const overlayStyle = computed(() => {
 }
 
 .route-enter-active {
+  z-index: 2;
   transition:
-    opacity var(--duration-base) var(--ease-out),
-    transform var(--duration-base) var(--ease-out);
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
 }
 
 .route-leave-active {
-  transition:
-    opacity var(--duration-fast) var(--ease-in),
-    transform var(--duration-fast) var(--ease-in);
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 120ms var(--ease-in);
 }
 
 .route-enter-from {
-  opacity: 0;
-  transform: translateY(8px) scale(.995);
+  opacity: .06;
+  transform: translateY(6px);
 }
 
 .route-leave-to {
   opacity: 0;
-  transform: translateY(-4px) scale(.998);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-enter-active,
+  .route-leave-active {
+    transition: none;
+  }
+
+  .route-enter-from {
+    opacity: 1;
+    transform: none;
+  }
+
+  .route-leave-to {
+    transform: none;
+  }
 }
 </style>

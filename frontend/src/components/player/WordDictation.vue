@@ -21,6 +21,7 @@ const words = computed(() => dictationWords(props.sentence))
 let completeTimer: ReturnType<typeof setTimeout> | undefined
 let leaveTimer: ReturnType<typeof setTimeout> | undefined
 const reviewed = ref(false)
+const attemptCount = ref(0)
 
 function ensureValues() {
   if (values.value.length !== words.value.length) {
@@ -73,7 +74,10 @@ function answerText() {
   return words.value.map((_, index) => values.value[index] ?? '').join(' ')
 }
 
-const hasAnswer = computed(() => values.value.some((value) => value.trim().length > 0))
+const allWordsFilled = computed(() =>
+  values.value.length === words.value.length &&
+  values.value.every((value) => value.trim().length > 0),
+)
 
 function wordState(word: string, index: number) {
   const value = (values.value[index] ?? '').trim()
@@ -93,7 +97,8 @@ function wordStateLabel(word: string, index: number) {
 }
 
 function submitAnswer() {
-  if (!hasAnswer.value || props.submitted) return
+  if (!allWordsFilled.value || props.submitted) return
+  attemptCount.value += 1
   reviewed.value = true
   emit('submit', answerText())
 }
@@ -110,9 +115,8 @@ function submitIfLeaving() {
   leaveTimer = setTimeout(() => {
     if (root.value?.contains(document.activeElement)) return
     const answer = answerText()
-    if (answer.trim() && !props.submitted) {
-      reviewed.value = true
-      emit('submit', answer)
+    if (allWordsFilled.value && answer.trim() && !props.submitted) {
+      submitAnswer()
     }
   }, 0)
 }
@@ -124,6 +128,27 @@ const correct = computed(() =>
       word.replace(/[^a-zA-Z0-9']/g, '').toLowerCase(),
   ),
 )
+
+const incorrectWordNumbers = computed(() =>
+  words.value.flatMap((word, index) =>
+    wordState(word, index) === 'incorrect' ? [index + 1] : [],
+  ),
+)
+
+const feedbackText = computed(() => {
+  if (correct.value) return '这句写对了。'
+  const positions = incorrectWordNumbers.value
+  if (!positions.length) return '有单词需要修改，可以重新填写后再提交。'
+  if (attemptCount.value >= 3) return `正确答案：${words.value.join(' ')}`
+  if (attemptCount.value >= 2) {
+    const hints = positions.map((position) => {
+      const target = words.value[position - 1]?.replace(/[^a-zA-Z0-9']/g, '') ?? ''
+      return `第 ${position} 个单词首字母 ${target.slice(0, 1)}，共 ${target.length} 个字母`
+    })
+    return `还需要修改：${hints.join('；')}。`
+  }
+  return `第 ${positions.join('、')} 个单词需要修改，可以重新填写后再提交。`
+})
 
 watch(correct, (isCorrect) => {
   if (completeTimer) {
@@ -199,7 +224,7 @@ onBeforeUnmount(() => {
         v-if="!submitted"
         class="sl-button sl-button--accent sl-button--sm"
         type="button"
-        :disabled="!hasAnswer"
+        :disabled="!allWordsFilled"
         @click="submitAnswer"
       >
         提交本句
@@ -220,7 +245,7 @@ onBeforeUnmount(() => {
       :class="correct ? 'is-correct' : 'is-wrong'"
       role="status"
     >
-      {{ correct ? '这句写对了。' : '有单词需要修改，可以重新填写后再提交。' }}
+      {{ feedbackText }}
     </p>
   </div>
 </template>

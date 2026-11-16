@@ -38,9 +38,10 @@ export async function downloadCourse(course: CourseDetail) {
   const response = await fetch(course.audioUrl)
   if (!response.ok) throw new Error('音频下载失败')
   const audio = await response.blob()
+  const serializableCourse = JSON.parse(JSON.stringify(course)) as CourseDetail
   const record: OfflineCourse = {
-    id: course.id,
-    course,
+    id: serializableCourse.id,
+    course: serializableCourse,
     audio,
     downloadedAt: new Date().toISOString(),
     sizeBytes: audio.size,

@@ -39,7 +39,10 @@ const loading = ref(false)
 const preparing = ref(false)
 const executing = ref(false)
 const progressText = ref('')
+const progressValue = ref(0)
 const ignoredCount = ref(0)
+const resultFilter = ref<'ALL' | 'SUCCESS' | 'SKIPPED' | 'FAILED'>('ALL')
+const retrying = ref(false)
 
 const readyCount = computed(() => preview.value?.ready ?? 0)
 const canExecute = computed(
@@ -49,6 +52,15 @@ const canExecute = computed(
     (type.value === 'SUBTITLE' || bookId.value !== '') &&
     !executing.value,
 )
+const displayedResultItems = computed(() => {
+  const items = result.value?.items ?? []
+  if (resultFilter.value === 'ALL') return items
+  if (resultFilter.value === 'FAILED') return items.filter((item) => item.status === 'FAILED')
+  if (resultFilter.value === 'SKIPPED') {
+    return items.filter((item) => item.status === 'DUPLICATE' || item.status === 'UNCHANGED')
+  }
+  return items.filter((item) => item.status === 'CREATED' || item.status === 'UPDATED')
+})
 
 const statusLabel: Record<ImportItemStatus, string> = {
   READY: '可导入',
@@ -223,6 +235,7 @@ async function execute() {
         item.courseId = previewItems[index]?.courseId ?? null
       }
       progressText.value = `正在上传 ${++completed} / ${readyIndexes.size}：${row.title}`
+      progressValue.value = Math.round(completed / readyIndexes.size * 80)
       if (type.value === 'CREATE' && row.audio) {
         item.audioObjectKey = await upload(row.audio, 'AUDIO')
       }
@@ -231,12 +244,14 @@ async function execute() {
       }
     }
     progressText.value = '正在写入课程…'
+    progressValue.value = 85
     result.value = await adminApi.executeImport({
       type: type.value,
       bookId: bookId.value || null,
       resetLearning: type.value === 'SUBTITLE',
       items,
     })
+    progressValue.value = 100
     preview.value = null
     await loadJobs()
   } catch (reason) {
@@ -244,6 +259,7 @@ async function execute() {
   } finally {
     executing.value = false
     progressText.value = ''
+    progressValue.value = 0
   }
 }
 
@@ -252,6 +268,21 @@ async function loadJobs() {
     jobs.value = (await adminApi.imports()).content
   } catch (reason) {
     error.value = apiErrorMessage(reason)
+  }
+}
+
+async function retryFailedItems() {
+  if (!result.value || result.value.failed === 0 || retrying.value) return
+  retrying.value = true
+  error.value = ''
+  try {
+    result.value = await adminApi.retryFailedImport(result.value.id)
+    resultFilter.value = 'FAILED'
+    await loadJobs()
+  } catch (reason) {
+    error.value = apiErrorMessage(reason)
+  } finally {
+    retrying.value = false
   }
 }
 
@@ -418,6 +449,12 @@ onMounted(async () => {
           <SlIcon name="upload-2" :size="17" />
           {{ executing ? '正在执行导入…' : `执行导入（${readyCount}）` }}
         </button>
+        <progress
+          v-if="executing"
+          :value="progressValue"
+          max="100"
+          aria-label="批量导入进度"
+        />
       </div>
     </div>
 
@@ -427,8 +464,23 @@ onMounted(async () => {
         <h2>任务 #{{ result.id }} 已完成</h2>
         <p>成功 {{ result.success }}，跳过 {{ result.skipped }}，失败 {{ result.failed }}。</p>
       </div>
+      <div class="admin-actions" role="group" aria-label="导入结果筛选">
+        <button class="sl-button sl-button--ghost sl-button--sm" type="button" :aria-pressed="resultFilter === 'ALL'" @click="resultFilter = 'ALL'">全部 {{ result.total }}</button>
+        <button class="sl-button sl-button--ghost sl-button--sm" type="button" :aria-pressed="resultFilter === 'SUCCESS'" @click="resultFilter = 'SUCCESS'">成功 {{ result.success }}</button>
+        <button class="sl-button sl-button--ghost sl-button--sm" type="button" :aria-pressed="resultFilter === 'SKIPPED'" @click="resultFilter = 'SKIPPED'">跳过 {{ result.skipped }}</button>
+        <button class="sl-button sl-button--ghost sl-button--sm" type="button" :aria-pressed="resultFilter === 'FAILED'" @click="resultFilter = 'FAILED'">失败 {{ result.failed }}</button>
+        <button
+          v-if="result.failed > 0"
+          class="sl-button sl-button--secondary sl-button--sm"
+          type="button"
+          :disabled="retrying"
+          @click="retryFailedItems"
+        >
+          {{ retrying ? '正在重试…' : '只重试失败项' }}
+        </button>
+      </div>
       <div class="import-report" role="table" aria-label="导入执行结果">
-        <div v-for="item in result.items" :key="item.index" class="import-report__row" role="row">
+        <div v-for="item in displayedResultItems" :key="item.index" class="import-report__row" role="row">
           <span role="cell"><strong>{{ item.title }}</strong><small>{{ item.sourceName }}</small></span>
           <span role="cell">
             <span class="import-status" :class="`is-${item.status.toLowerCase()}`">

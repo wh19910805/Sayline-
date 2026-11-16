@@ -12,6 +12,20 @@ const routes = [
     meta: { public: true },
   },
   {
+    path: '/terms',
+    name: 'terms',
+    component: () => import('@/views/learner/LegalDocumentView.vue'),
+    props: { document: 'terms' },
+    meta: { public: true },
+  },
+  {
+    path: '/privacy',
+    name: 'privacy',
+    component: () => import('@/views/learner/LegalDocumentView.vue'),
+    props: { document: 'privacy' },
+    meta: { public: true },
+  },
+  {
     path: '/interests',
     name: 'interests',
     component: () => import('@/views/learner/InterestSetupView.vue'),
@@ -145,6 +159,12 @@ router.beforeEach(async (to) => {
 
   if (!user) {
     return to.meta.admin ? '/admin/login' : '/login'
+  }
+  if (auth.isOffline) {
+    if (to.meta.admin) return { name: 'offline-lessons' }
+    if (to.name !== 'player' && to.name !== 'offline-lessons') {
+      return { name: 'offline-lessons' }
+    }
   }
   if (to.meta.admin && user.role !== 'ADMIN') return '/'
   return true

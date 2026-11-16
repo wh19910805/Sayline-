@@ -6,21 +6,31 @@ import { clearAllCaches } from '@/api/cache'
 import { authApi } from '@/api/services'
 import { clearAmbient } from '@/composables/useAmbient'
 import type { AuthResponse, User } from '@/api/types'
+import {
+  clearOfflineIdentity,
+  readOfflineIdentity,
+  rememberOfflineIdentity,
+} from '@/utils/offlineSession'
+import { clearOfflineMutations } from '@/utils/offlineMutationQueue'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const accessToken = ref<string | null>(null)
   const ready = ref(false)
   const loading = ref(false)
+  const offline = ref(false)
 
   const isAuthenticated = computed(() => Boolean(user.value))
   const isAdmin = computed(() => user.value?.role === 'ADMIN')
+  const isOffline = computed(() => offline.value)
 
   function acceptSession(response: AuthResponse) {
     clearUserState()
     user.value = response.user
     accessToken.value = response.accessToken
     http.setAccessToken(response.accessToken)
+    rememberOfflineIdentity(response.user)
+    offline.value = false
     ready.value = true
   }
 
@@ -51,11 +61,22 @@ export const useAuthStore = defineStore('auth', () => {
       const current = await authApi.me()
       user.value = { ...current }
       accessToken.value = http.getAccessToken()
+      rememberOfflineIdentity(user.value)
+      offline.value = false
       return user.value
-    } catch {
+    } catch (reason) {
+      const cachedUser = reason instanceof TypeError ? readOfflineIdentity() : null
+      if (cachedUser) {
+        user.value = cachedUser
+        accessToken.value = null
+        http.setAccessToken(null)
+        offline.value = true
+        return cachedUser
+      }
       user.value = null
       accessToken.value = null
       http.setAccessToken(null)
+      offline.value = false
       return null
     } finally {
       loading.value = false
@@ -71,13 +92,20 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null
       accessToken.value = null
       http.setAccessToken(null)
+      offline.value = false
     }
   }
 
   function clearUserState() {
     clearAllCaches()
     clearAmbient()
+    clearOfflineIdentity()
+    clearOfflineMutations()
     navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_USER_CACHE' })
+  }
+
+  function markOnline() {
+    offline.value = false
   }
 
   return {
@@ -87,9 +115,11 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     isAuthenticated,
     isAdmin,
+    isOffline,
     login,
     register,
     restore,
     logout,
+    markOnline,
   }
 })
