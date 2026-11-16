@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.sayline.englishstudy.admin.AdminDtos.BookAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.BookRequest;
@@ -15,6 +16,7 @@ import com.sayline.englishstudy.admin.AdminDtos.BatchCourseStatusRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CourseAdminView;
+import com.sayline.englishstudy.admin.AdminDtos.CourseMediaFilter;
 import com.sayline.englishstudy.admin.AdminDtos.CourseRequest;
 import com.sayline.englishstudy.admin.AdminDtos.DashboardView;
 import com.sayline.englishstudy.admin.AdminDtos.DailyStudyPoint;
@@ -211,6 +213,8 @@ public class AdminService {
         Long bookId,
         CourseStatus status,
         String query,
+        CourseMediaFilter media,
+        String sort,
         int page,
         int size
     ) {
@@ -218,12 +222,30 @@ public class AdminService {
         PageRequest pageable = PageRequest.of(
             Math.max(0, page),
             Math.min(50, Math.max(1, size)),
-            Sort.by(
-                Sort.Order.asc("book.sortOrder"),
-                Sort.Order.asc("sortOrder"),
-                Sort.Order.asc("id")));
-        return PageResponse.from(courseRepository.searchAdmin(bookId, status, normalizedQuery, pageable)
+            courseSort(sort));
+        return PageResponse.from(courseRepository.searchAdmin(
+                bookId,
+                status,
+                normalizedQuery,
+                (media == null ? CourseMediaFilter.ALL : media).name(),
+                pageable)
             .map(this::toView));
+    }
+
+    private Sort courseSort(String requested) {
+        Set<String> allowed = Set.of("sortOrder", "updatedAt", "createdAt", "title", "status");
+        String[] parts = requested == null ? new String[0] : requested.split(",", -1);
+        String property = parts.length > 0 ? parts[0].trim() : "sortOrder";
+        String direction = parts.length > 1 ? parts[1].trim() : "asc";
+        if (!allowed.contains(property) || (!direction.equals("asc") && !direction.equals("desc"))) {
+            throw new ApiException("INVALID_SORT", HttpStatus.BAD_REQUEST, "不支持的排序方式");
+        }
+        Sort.Direction sortDirection = direction.equals("desc")
+            ? Sort.Direction.DESC
+            : Sort.Direction.ASC;
+        return Sort.by(new Sort.Order(sortDirection, property))
+            .and(Sort.by("book.sortOrder").ascending())
+            .and(Sort.by("id").ascending());
     }
 
     @Transactional(readOnly = true)
@@ -406,6 +428,10 @@ public class AdminService {
         book.setCategory(category);
         book.setTitle(request.title().trim());
         book.setDescription(request.description());
+        book.setLevel(request.level());
+        book.setAccent(request.accent());
+        book.setSpeakingPace(request.speakingPace());
+        book.setLearningGoal(request.learningGoal());
         book.setCoverObjectKey(request.coverObjectKey());
         book.setThemeColorPrimary(request.themeColorPrimary());
         book.setThemeColorSecondary(request.themeColorSecondary());
@@ -499,6 +525,10 @@ public class AdminService {
             book.getCategory().getName(),
             book.getTitle(),
             book.getDescription(),
+            book.getLevel(),
+            book.getAccent(),
+            book.getSpeakingPace(),
+            book.getLearningGoal(),
             book.getCoverObjectKey(),
             coverUrl(book.getCoverObjectKey()),
             book.getThemeColorPrimary(),

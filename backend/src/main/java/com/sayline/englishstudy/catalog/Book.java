@@ -36,6 +36,18 @@ public class Book extends AuditableEntity {
     @Column(length = 1000)
     private String description;
 
+    @Column(length = 2)
+    private String level;
+
+    @Column(length = 10)
+    private String accent;
+
+    @Column(name = "speaking_pace", length = 12)
+    private String speakingPace;
+
+    @Column(name = "learning_goal", length = 300)
+    private String learningGoal;
+
     @Column(name = "cover_object_key", length = 255)
     private String coverObjectKey;
 

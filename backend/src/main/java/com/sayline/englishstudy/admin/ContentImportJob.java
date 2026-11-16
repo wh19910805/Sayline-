@@ -63,4 +63,8 @@ public class ContentImportJob extends AuditableEntity {
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     @Column(name = "report_json", nullable = false)
     private String reportJson;
+
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
+    @Column(name = "request_json")
+    private String requestJson;
 }

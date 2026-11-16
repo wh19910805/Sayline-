@@ -148,10 +148,16 @@ public class CourseCatalogService {
         int bookProgress = lessonCount == 0
             ? 0
             : (int) Math.round(completedIds.size() * 100.0 / lessonCount);
+        long totalDurationMs = lessons.stream().mapToLong(Course::getDurationMs).sum();
         return new BookDetail(
             book.getId(),
             book.getTitle(),
             book.getDescription(),
+            book.getLevel(),
+            book.getAccent(),
+            book.getSpeakingPace(),
+            book.getLearningGoal(),
+            totalDurationMs,
             book.getCategory().getId(),
             book.getCategory().getName(),
             mediaUrl(book.getCoverObjectKey()),
@@ -290,6 +296,9 @@ public class CourseCatalogService {
             bookIds, CourseStatus.PUBLISHED);
         Map<Long, Long> lessonCountByBook = lessons.stream().collect(Collectors.groupingBy(
             lesson -> lesson.getBook().getId(), Collectors.counting()));
+        Map<Long, Long> durationByBook = lessons.stream().collect(Collectors.groupingBy(
+            lesson -> lesson.getBook().getId(),
+            Collectors.summingLong(Course::getDurationMs)));
         List<Long> lessonIds = lessons.stream().map(Course::getId).toList();
         Set<Long> completedIds = lessonIds.isEmpty()
             ? Set.of()
@@ -302,11 +311,12 @@ public class CourseCatalogService {
         Set<Long> lessonFavoriteBookIds = Set.copyOf(favoriteRepository.findFavoriteBookIdsViaLessons(userId));
         return books.stream().map(book -> {
             long count = lessonCountByBook.getOrDefault(book.getId(), 0L);
+            long totalDurationMs = durationByBook.getOrDefault(book.getId(), 0L);
             long completed = completedByBook.getOrDefault(book.getId(), 0L);
             int progress = count == 0 ? 0 : (int) Math.round(completed * 100.0 / count);
             boolean favorite = bookFavoriteIds.contains(book.getId())
                 || lessonFavoriteBookIds.contains(book.getId());
-            return toBookSummary(book, (int) count, progress, favorite);
+            return toBookSummary(book, (int) count, totalDurationMs, progress, favorite);
         }).toList();
     }
 
@@ -354,11 +364,22 @@ public class CourseCatalogService {
             category.getThemeColorSecondary());
     }
 
-    private BookSummary toBookSummary(Book book, int lessonCount, int progress, boolean favorite) {
+    private BookSummary toBookSummary(
+        Book book,
+        int lessonCount,
+        long totalDurationMs,
+        int progress,
+        boolean favorite
+    ) {
         return new BookSummary(
             book.getId(),
             book.getTitle(),
             book.getDescription(),
+            book.getLevel(),
+            book.getAccent(),
+            book.getSpeakingPace(),
+            book.getLearningGoal(),
+            totalDurationMs,
             book.getCategory().getId(),
             book.getCategory().getName(),
             mediaUrl(book.getCoverObjectKey()),

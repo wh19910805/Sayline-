@@ -1,0 +1,5 @@
+ALTER TABLE books
+    ADD COLUMN level VARCHAR(2) NULL,
+    ADD COLUMN accent VARCHAR(10) NULL,
+    ADD COLUMN speaking_pace VARCHAR(12) NULL,
+    ADD COLUMN learning_goal VARCHAR(300) NULL;

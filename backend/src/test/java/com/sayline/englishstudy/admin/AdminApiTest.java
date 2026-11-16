@@ -142,6 +142,58 @@ class AdminApiTest {
     }
 
     @Test
+    void persistsBookDiscoveryMetadataForAdminsAndLearners() throws Exception {
+        String adminToken = createUserAndLogin("13800138513", UserRole.ADMIN);
+        String learnerToken = createUserAndLogin("13800138514", UserRole.USER);
+        CourseCategory category = createCategory("Career");
+
+        MvcResult created = mockMvc.perform(post("/api/v1/admin/books")
+                .header("Authorization", bearer(adminToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "categoryId":%d,
+                      "title":"Interview English",
+                      "description":"Practice realistic answers.",
+                      "coverObjectKey":"covers/work.jpg",
+                      "themeColorPrimary":"#284D43",
+                      "themeColorSecondary":"#D7B78B",
+                      "level":"B1",
+                      "accent":"US",
+                      "speakingPace":"NATURAL",
+                      "learningGoal":"掌握面试中的自我介绍与追问",
+                      "sortOrder":1,
+                      "visible":true
+                    }
+                    """.formatted(category.getId())))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.level").value("B1"))
+            .andExpect(jsonPath("$.accent").value("US"))
+            .andExpect(jsonPath("$.speakingPace").value("NATURAL"))
+            .andExpect(jsonPath("$.learningGoal").value("掌握面试中的自我介绍与追问"))
+            .andReturn();
+
+        long bookId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+        mockMvc.perform(get("/api/v1/admin/books")
+                .header("Authorization", bearer(adminToken))
+                .param("categoryId", category.getId().toString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content[0].level").value("B1"))
+            .andExpect(jsonPath("$.content[0].accent").value("US"));
+
+        mockMvc.perform(get("/api/v1/books")
+                .header("Authorization", bearer(learnerToken))
+                .param("categoryId", category.getId().toString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].id").value(bookId))
+            .andExpect(jsonPath("$[0].level").value("B1"))
+            .andExpect(jsonPath("$[0].accent").value("US"))
+            .andExpect(jsonPath("$[0].speakingPace").value("NATURAL"))
+            .andExpect(jsonPath("$[0].learningGoal").value("掌握面试中的自我介绍与追问"))
+            .andExpect(jsonPath("$[0].totalDurationMs").value(0));
+    }
+
+    @Test
     void parsesUploadedSubtitleAndPublishesCourseForLearners() throws Exception {
         String adminToken = createUserAndLogin("13800138502", UserRole.ADMIN);
         String learnerToken = createUserAndLogin("13800138503", UserRole.USER);
@@ -405,6 +457,97 @@ class AdminApiTest {
             .andExpect(jsonPath("$.success").value(1))
             .andExpect(jsonPath("$.failed").value(0))
             .andExpect(jsonPath("$.items[0].courseId").value(courseId));
+    }
+
+    @Test
+    void filtersCoursesByMediaAndSortsWithAWhitelist() throws Exception {
+        String adminToken = createUserAndLogin("13800138514", UserRole.ADMIN);
+        CourseCategory category = createCategory("Filtered Courses");
+        long bookId = createBookViaApi(adminToken, category.getId());
+
+        mockMvc.perform(post("/api/v1/admin/courses")
+                .header("Authorization", bearer(adminToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(courseBody(bookId)))
+            .andExpect(status().isCreated());
+
+        String incompleteBody = courseBody(bookId)
+            .replace("Office Small Talk", "Draft Without Media")
+            .replace("\"audioObjectKey\":\"audio/office.mp3\",", "")
+            .replace("\"subtitleObjectKey\":\"subtitles/lesson.srt\",", "")
+            .replace("\"sortOrder\":1", "\"sortOrder\":2");
+        mockMvc.perform(post("/api/v1/admin/courses")
+                .header("Authorization", bearer(adminToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(incompleteBody))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/v1/admin/courses")
+                .param("media", "MISSING")
+                .header("Authorization", bearer(adminToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalElements").value(1))
+            .andExpect(jsonPath("$.content[0].title").value("Draft Without Media"));
+
+        mockMvc.perform(get("/api/v1/admin/courses")
+                .param("sort", "sortOrder,desc")
+                .header("Authorization", bearer(adminToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content[0].title").value("Draft Without Media"));
+
+        mockMvc.perform(get("/api/v1/admin/courses")
+                .param("sort", "passwordHash,desc")
+                .header("Authorization", bearer(adminToken)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("INVALID_SORT"));
+    }
+
+    @Test
+    void retriesOnlyFailedImportItems() throws Exception {
+        String adminToken = createUserAndLogin("13800138515", UserRole.ADMIN);
+        CourseCategory category = createCategory("Retry Imports");
+        long bookId = createBookViaApi(adminToken, category.getId(), "Retry Book", true);
+
+        String body = """
+            {
+              "type":"CREATE",
+              "bookId":%d,
+              "resetLearning":false,
+              "items":[
+                {
+                  "sourceName":"ready.mp3",
+                  "title":"Ready Lesson",
+                  "audioMd5":"22222222222222222222222222222222",
+                  "durationMs":1000,
+                  "audioObjectKey":"audio/imported.mp3",
+                  "subtitleObjectKey":"subtitles/imported.srt"
+                },
+                {
+                  "sourceName":"failed.mp3",
+                  "title":"Failed Lesson",
+                  "audioMd5":"33333333333333333333333333333333",
+                  "durationMs":1000
+                }
+              ]
+            }
+            """.formatted(bookId);
+        MvcResult executed = mockMvc.perform(post("/api/v1/admin/imports")
+                .header("Authorization", bearer(adminToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(1))
+            .andExpect(jsonPath("$.failed").value(1))
+            .andReturn();
+        long jobId = objectMapper.readTree(executed.getResponse().getContentAsString()).get("id").asLong();
+
+        mockMvc.perform(post("/api/v1/admin/imports/{id}/retry-failed", jobId)
+                .header("Authorization", bearer(adminToken)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.total").value(1))
+            .andExpect(jsonPath("$.failed").value(1))
+            .andExpect(jsonPath("$.items.length()").value(1))
+            .andExpect(jsonPath("$.items[0].sourceName").value("failed.mp3"));
     }
 
     private String courseBody(long bookId) {

@@ -38,6 +38,9 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
         join c.book book
         where (:bookId is null or book.id = :bookId)
           and (:status is null or c.status = :status)
+          and (:media = 'ALL'
+            or (:media = 'COMPLETE' and c.audioObjectKey is not null and c.subtitleObjectKey is not null)
+            or (:media = 'MISSING' and (c.audioObjectKey is null or c.subtitleObjectKey is null)))
           and (:query is null
             or lower(c.title) like lower(concat('%', :query, '%'))
             or lower(book.title) like lower(concat('%', :query, '%')))
@@ -46,6 +49,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
         @Param("bookId") Long bookId,
         @Param("status") CourseStatus status,
         @Param("query") String query,
+        @Param("media") String media,
         Pageable pageable);
 
     @Query("""

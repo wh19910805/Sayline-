@@ -34,11 +34,14 @@ import com.sayline.englishstudy.user.UserRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AdminImportService {
 
     private static final TypeReference<List<ImportItemView>> ITEM_LIST = new TypeReference<>() {
+    };
+    private static final TypeReference<List<ImportItemRequest>> REQUEST_LIST = new TypeReference<>() {
     };
 
     private final CourseRepository courseRepository;
@@ -151,6 +154,7 @@ public class AdminImportService {
         job.setSkippedCount(skipped);
         job.setFailedCount(failed);
         job.setReportJson(writeItems(results));
+        job.setRequestJson(writeRequests(request.items()));
         jobRepository.save(job);
         auditService.log(
             admin,
@@ -193,6 +197,38 @@ public class AdminImportService {
         jobRepository.save(job);
         auditService.log(admin, "ROLLBACK_IMPORT", "CONTENT_IMPORT_JOB", jobId, "items=" + items.size());
         return toView(job);
+    }
+
+    @Transactional
+    public ImportJobView retryFailed(AuthenticatedUser admin, Long jobId) {
+        ContentImportJob job = jobRepository.findById(jobId)
+            .orElseThrow(() -> new ApiException("IMPORT_JOB_NOT_FOUND", HttpStatus.NOT_FOUND, "导入任务不存在"));
+        if (job.getRequestJson() == null || job.getRequestJson().isBlank()) {
+            throw new ApiException(
+                "IMPORT_RETRY_UNAVAILABLE",
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                "该历史任务不支持失败项重试");
+        }
+        List<ImportItemRequest> requests = readRequests(job.getRequestJson());
+        List<ImportItemRequest> failedRequests = readItems(job.getReportJson()).stream()
+            .filter(item -> item.status() == ImportItemStatus.FAILED)
+            .map(item -> item.index() < requests.size() ? requests.get(item.index()) : null)
+            .filter(item -> item != null)
+            .toList();
+        if (failedRequests.isEmpty()) {
+            throw new ApiException(
+                "NO_FAILED_IMPORT_ITEMS",
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                "该任务没有可重试的失败项");
+        }
+        ImportExecuteRequest retryRequest = new ImportExecuteRequest(
+            job.getType(),
+            job.getBook() == null ? null : job.getBook().getId(),
+            false,
+            failedRequests);
+        ImportJobView result = execute(admin, retryRequest);
+        auditService.log(admin, "RETRY_FAILED_IMPORT", "CONTENT_IMPORT_JOB", result.id(), "items=" + failedRequests.size());
+        return result;
     }
 
     private List<ImportItemView> previewCreate(ImportPreviewRequest request, List<Course> courses) {
@@ -398,6 +434,22 @@ public class AdminImportService {
             return objectMapper.readValue(json, ITEM_LIST);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("无法读取导入报告", exception);
+        }
+    }
+
+    private String writeRequests(List<ImportItemRequest> items) {
+        try {
+            return objectMapper.writeValueAsString(items);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("无法保存导入请求", exception);
+        }
+    }
+
+    private List<ImportItemRequest> readRequests(String json) {
+        try {
+            return objectMapper.readValue(json, REQUEST_LIST);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("无法读取导入请求", exception);
         }
     }
 

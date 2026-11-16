@@ -9,6 +9,7 @@ import com.sayline.englishstudy.admin.AdminDtos.BatchCourseStatusRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryAdminView;
 import com.sayline.englishstudy.admin.AdminDtos.CategoryRequest;
 import com.sayline.englishstudy.admin.AdminDtos.CourseAdminView;
+import com.sayline.englishstudy.admin.AdminDtos.CourseMediaFilter;
 import com.sayline.englishstudy.admin.AdminDtos.CourseRequest;
 import com.sayline.englishstudy.admin.AdminDtos.DashboardView;
 import com.sayline.englishstudy.admin.AdminDtos.UserAdminView;
@@ -182,15 +183,25 @@ public class AdminController {
         return importService.rollback(user, jobId);
     }
 
+    @PostMapping("/imports/{jobId}/retry-failed")
+    public ImportJobView retryFailedImport(
+        @AuthenticationPrincipal AuthenticatedUser user,
+        @PathVariable Long jobId
+    ) {
+        return importService.retryFailed(user, jobId);
+    }
+
     @GetMapping("/courses")
     public PageResponse<CourseAdminView> courses(
         @RequestParam(required = false) Long bookId,
         @RequestParam(required = false) CourseStatus status,
         @RequestParam(required = false) String q,
+        @RequestParam(defaultValue = "ALL") CourseMediaFilter media,
+        @RequestParam(defaultValue = "sortOrder,asc") String sort,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size
     ) {
-        return adminService.courses(bookId, status, q, page, size);
+        return adminService.courses(bookId, status, q, media, sort, page, size);
     }
 
     @GetMapping("/courses/{courseId}")

@@ -19,6 +19,12 @@ public final class AdminDtos {
     private AdminDtos() {
     }
 
+    public enum CourseMediaFilter {
+        ALL,
+        COMPLETE,
+        MISSING
+    }
+
     public record CategoryRequest(
         @NotBlank @Size(max = 50) String name,
         @Size(max = 300) String description,
@@ -47,6 +53,10 @@ public final class AdminDtos {
         @NotNull Long categoryId,
         @NotBlank @Size(max = 120) String title,
         @Size(max = 1000) String description,
+        @Pattern(regexp = "^(A1|A2|B1|B2|C1|C2)$") String level,
+        @Pattern(regexp = "^(US|UK|AU|MIXED)$") String accent,
+        @Pattern(regexp = "^(SLOW|NORMAL|NATURAL)$") String speakingPace,
+        @Size(max = 300) String learningGoal,
         @Size(max = 255) String coverObjectKey,
         @Pattern(regexp = "^#[0-9A-Fa-f]{6}$") String themeColorPrimary,
         @Pattern(regexp = "^#[0-9A-Fa-f]{6}$") String themeColorSecondary,
@@ -61,6 +71,10 @@ public final class AdminDtos {
         String categoryName,
         String title,
         String description,
+        String level,
+        String accent,
+        String speakingPace,
+        String learningGoal,
         String coverObjectKey,
         String coverUrl,
         String themeColorPrimary,
