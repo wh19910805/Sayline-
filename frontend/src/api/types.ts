@@ -135,6 +135,11 @@ export interface ReviewCue {
   due: boolean
 }
 
+export interface ReviewAttemptResult {
+  correct: boolean
+  status: ReviewCue['status']
+}
+
 export interface PageResponse<T> {
   content: T[]
   page: number

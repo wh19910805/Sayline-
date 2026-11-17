@@ -212,6 +212,76 @@ class LearningFlowTest {
     }
 
     @Test
+    void completesReviewAttemptWithoutChangingLessonProgress() throws Exception {
+        action(firstCue, "WRITE", 0, "wrong answer").andExpect(status().isOk());
+        action(secondCue, "LISTEN", 1_500, null).andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/learning/reviews/{cueId}/attempts", firstCue.getId())
+                .header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"answer":"Hello there."}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.correct").value(true))
+            .andExpect(jsonPath("$.status").value("MASTERED"));
+
+        mockMvc.perform(get("/api/v1/learning/courses/{courseId}", course.getId())
+                .header("Authorization", bearer()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.lastMode").value("LISTEN"))
+            .andExpect(jsonPath("$.lastCueId").value(secondCue.getId()));
+        mockMvc.perform(get("/api/v1/learning/reviews")
+                .header("Authorization", bearer()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void newLessonMistakeRestoresMasteredReviewCue() throws Exception {
+        action(firstCue, "WRITE", 0, "wrong answer").andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/learning/reviews/{cueId}/attempts", firstCue.getId())
+                .header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"answer":"Hello there."}
+                    """))
+            .andExpect(status().isOk());
+
+        action(firstCue, "WRITE", 0, "still wrong").andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/learning/reviews")
+                .header("Authorization", bearer()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].cueId").value(firstCue.getId()))
+            .andExpect(jsonPath("$[0].status").value("LEARNING"))
+            .andExpect(jsonPath("$[0].due").value(true));
+    }
+
+    @Test
+    void wrongReviewAttemptKeepsCueInReviewQueue() throws Exception {
+        action(firstCue, "WRITE", 0, "wrong answer").andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/learning/reviews/{cueId}/attempts", firstCue.getId())
+                .header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"answer":"still wrong"}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.correct").value(false))
+            .andExpect(jsonPath("$.status").value("LEARNING"));
+
+        mockMvc.perform(get("/api/v1/learning/reviews")
+                .header("Authorization", bearer()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].cueId").value(firstCue.getId()))
+            .andExpect(jsonPath("$[0].status").value("LEARNING"));
+    }
+
+    @Test
     void countsOneSessionAtThirtySecondsAndStartsNewSessionAfterTenMinutes() throws Exception {
         heartbeat(10_000).andExpect(jsonPath("$.sessionCounted").value(false));
         heartbeat(10_000).andExpect(jsonPath("$.sessionCounted").value(false));

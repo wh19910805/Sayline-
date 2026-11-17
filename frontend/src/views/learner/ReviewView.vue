@@ -68,7 +68,7 @@ function reviewDueLabel(review: ReviewCue) {
 }
 
 function openReview(review: ReviewCue) {
-  router.push(`/learn/${review.bookId}/${review.courseId}?cue=${review.cueId}&mode=WRITE`)
+  router.push(`/me/reviews/session?start=${review.cueId}`)
 }
 
 onMounted(loadReviews)
@@ -89,7 +89,7 @@ onMounted(loadReviews)
         <div>
           <p class="eyebrow">REVIEW QUEUE</p>
           <h2>{{ pendingCount }} 句待复习</h2>
-          <p>错误越多的句子越靠前。打开句子后会直接进入对应的写作位置。</p>
+          <p>错误越多的句子越靠前。写对当前错句后，会自动进入队列里的下一句。</p>
         </div>
         <span v-if="masteredCount" class="review-mastered-count">{{ masteredCount }} 已掌握</span>
       </section>
@@ -129,14 +129,15 @@ onMounted(loadReviews)
           <button
             class="review-item__open"
             type="button"
-            :aria-label="`复习 ${review.englishText}`"
+            :aria-label="`开始复习第 ${review.sequenceNo} 句`"
+            :disabled="review.status === 'MASTERED'"
             @click="openReview(review)"
           >
             <span class="review-item__count">{{ review.wrongCount }}</span>
             <span class="review-item__copy">
-              <strong lang="en">{{ review.englishText }}</strong>
-              <span lang="zh">{{ review.chineseText }}</span>
-              <small>{{ review.bookTitle }} · {{ review.courseTitle }} · 第 {{ review.sequenceNo }} 句</small>
+              <strong lang="zh">{{ review.chineseText }}</strong>
+              <span>{{ review.bookTitle }} · {{ review.courseTitle }}</span>
+              <small>第 {{ review.sequenceNo }} 句 · 错 {{ review.wrongCount }} 次</small>
             </span>
             <SlIcon name="arrow-right-s" :size="18" />
           </button>
@@ -287,6 +288,11 @@ onMounted(loadReviews)
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
+}
+
+.review-item__open:disabled {
+  opacity: .55;
+  cursor: default;
 }
 
 .review-item__count {

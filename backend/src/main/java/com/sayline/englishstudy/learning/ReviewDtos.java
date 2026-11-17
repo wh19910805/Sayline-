@@ -2,6 +2,7 @@ package com.sayline.englishstudy.learning;
 
 import java.time.Instant;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public final class ReviewDtos {
@@ -31,5 +32,11 @@ public final class ReviewDtos {
         @NotNull ReviewStatus status,
         Instant nextReviewAt
     ) {
+    }
+
+    public record ReviewAttemptRequest(@NotBlank String answer) {
+    }
+
+    public record ReviewAttemptResult(boolean correct, ReviewStatus status) {
     }
 }

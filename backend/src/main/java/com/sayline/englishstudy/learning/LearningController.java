@@ -11,6 +11,8 @@ import com.sayline.englishstudy.learning.LearningDtos.HeartbeatResponse;
 import com.sayline.englishstudy.learning.LearningDtos.LearningState;
 import com.sayline.englishstudy.learning.LearningDtos.PositionRequest;
 import com.sayline.englishstudy.learning.LearningDtos.StatsResponse;
+import com.sayline.englishstudy.learning.ReviewDtos.ReviewAttemptRequest;
+import com.sayline.englishstudy.learning.ReviewDtos.ReviewAttemptResult;
 import com.sayline.englishstudy.learning.ReviewDtos.ReviewCue;
 import com.sayline.englishstudy.learning.ReviewDtos.ReviewStateRequest;
 import jakarta.validation.Valid;
@@ -110,5 +112,14 @@ public class LearningController {
         @Valid @RequestBody ReviewStateRequest request
     ) {
         reviewService.updateState(user.id(), cueId, request);
+    }
+
+    @PostMapping("/reviews/{cueId}/attempts")
+    public ReviewAttemptResult reviewAttempt(
+        @AuthenticationPrincipal AuthenticatedUser user,
+        @PathVariable Long cueId,
+        @Valid @RequestBody ReviewAttemptRequest request
+    ) {
+        return reviewService.recordAttempt(user.id(), cueId, request.answer());
     }
 }

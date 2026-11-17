@@ -1101,7 +1101,7 @@ test('home restores the selected category and scroll position after navigation',
     .toBeGreaterThan(0)
 })
 
-test('learner sees daily goal progress and can retry a missed sentence', async ({ page }) => {
+test('learner sees daily goal progress and can start a missed sentence review', async ({ page }) => {
   await page.goto('/me')
 
   await expect(page.getByRole('heading', { name: '今日目标' })).toBeVisible()
@@ -1110,11 +1110,9 @@ test('learner sees daily goal progress and can retry a missed sentence', async (
   await page.getByRole('button', { name: /查看全部错句/ }).click()
   await expect(page).toHaveURL(/\/me\/reviews$/)
 
-  await page.getByRole('button', { name: /Could we move the meeting to Friday morning/ }).click()
-  await expect(page).toHaveURL(/\/learn\/1\/1\?cue=3&mode=WRITE/)
-  await expect(page.locator('.write-current__translation')).toContainText(
-    '我们能把会议改到周五上午吗？',
-  )
+  await page.getByRole('button', { name: '开始复习第 3 句' }).click()
+  await expect(page).toHaveURL(/\/me\/reviews\/session\?start=3$/)
+  await expect(page.locator('.review-session__prompt')).toContainText('我们能把会议改到周五上午吗？')
 })
 
 test('lesson list offers a continue CTA and progress filters', async ({ page }) => {
@@ -1377,6 +1375,131 @@ test('review queue lives on a secondary page and scrolls large error sets', asyn
   expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight)
   expect(metrics.horizontalOverflow).toBe(false)
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false)
+})
+
+test('review session advances across courses and keeps skipped cues pending', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const reviews = [
+    {
+      bookId: 1,
+      courseId: 1,
+      cueId: 101,
+      bookTitle: '职场英语',
+      courseTitle: '安排会议',
+      sequenceNo: 1,
+      englishText: 'Could we move the meeting to Friday morning?',
+      chineseText: '我们能把会议改到周五上午吗？',
+      lastAnswer: 'Could we move the meeting to Friday?',
+      wrongCount: 3,
+      lastWrongAt: '2026-11-12T02:00:00Z',
+      status: 'LEARNING',
+      nextReviewAt: null,
+      due: true,
+    },
+    {
+      bookId: 2,
+      courseId: 2,
+      cueId: 202,
+      bookTitle: '日常沟通',
+      courseTitle: '发送报告',
+      sequenceNo: 4,
+      englishText: 'I will send the report today',
+      chineseText: '我今天会发送报告。',
+      lastAnswer: 'I will send report today',
+      wrongCount: 1,
+      lastWrongAt: '2026-11-11T02:00:00Z',
+      status: 'LEARNING',
+      nextReviewAt: null,
+      due: true,
+    },
+  ]
+  const attempts: Array<{ cueId: number; answer: string }> = []
+
+  await page.route('**/api/v1/learning/reviews?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(reviews),
+    }),
+  )
+  await page.route('**/api/v1/learning/reviews/*/attempts', async (route) => {
+    const cueId = Number(route.request().url().match(/reviews\/(\d+)\/attempts/)?.[1])
+    const answer = (route.request().postDataJSON() as { answer: string }).answer
+    attempts.push({ cueId, answer })
+    const review = reviews.find((item) => item.cueId === cueId)!
+    const expected = review.englishText.replace(/[^a-zA-Z0-9'\s]/g, '').trim()
+    const correct = answer === expected
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        correct,
+        status: correct ? 'MASTERED' : 'LEARNING',
+      }),
+    })
+  })
+  await page.route(/\/api\/v1\/courses\/(\d+)$/, (route) => {
+    const courseId = Number(route.request().url().split('/').at(-1))
+    const cue = reviews.find((item) => item.courseId === courseId)!
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: courseId,
+        audioUrl: `/audio/course-${courseId}.wav`,
+        cues: [{
+          id: cue.cueId,
+          sequenceNo: cue.sequenceNo,
+          startMs: 0,
+          endMs: 3_000,
+          englishText: cue.englishText,
+          chineseText: cue.chineseText,
+        }],
+      }),
+    })
+  })
+
+  await page.goto('/me/reviews')
+  const firstReview = page.locator('.review-item').first()
+  await expect(firstReview).toContainText('我们能把会议改到周五上午吗？')
+  await expect(firstReview).not.toContainText('Could we move the meeting')
+  await firstReview.locator('.review-item__open').click()
+
+  await expect(page).toHaveURL(/\/me\/reviews\/session\?start=101$/)
+  await expect(page.getByRole('heading', { name: '错句复习' })).toBeVisible()
+  await expect(page.locator('.review-session__progress')).toContainText('1 / 2')
+
+  const firstWords = ['Could', 'we', 'move', 'the', 'meeting', 'to', 'Friday', 'morning']
+  for (let index = 0; index < firstWords.length - 1; index += 1) {
+    await page.locator('.review-session .sl-word-input input').nth(index).fill(firstWords[index]!)
+  }
+  await page.locator('.review-session .sl-word-input input').last().fill('evening')
+  await page.locator('.review-session .sl-word-input input').last().evaluate((element) => element.blur())
+  await expect(page.locator('.dictation-feedback')).toHaveClass(/is-wrong/)
+  await expect(page.getByText('我们能把会议改到周五上午吗？')).toBeVisible()
+  expect(attempts).toHaveLength(1)
+
+  await page.getByRole('button', { name: '重新填写' }).click()
+  for (let index = 0; index < firstWords.length; index += 1) {
+    await page.locator('.review-session .sl-word-input input').nth(index).fill(firstWords[index]!)
+  }
+
+  await expect(page.getByText('我今天会发送报告。')).toBeVisible()
+  expect(attempts).toEqual([
+    {
+      cueId: 101,
+      answer: 'Could we move the meeting to Friday evening',
+    },
+    {
+      cueId: 101,
+      answer: 'Could we move the meeting to Friday morning',
+    },
+  ])
+  await expect(page).toHaveURL(/\/me\/reviews\/session\?start=101$/)
+
+  await page.getByRole('button', { name: '跳过本句' }).click()
+  await expect(page.getByRole('heading', { name: '本轮复习完成' })).toBeVisible()
+  expect(attempts).toHaveLength(2)
 })
 
 test('offline lesson manager explains storage and empty state', async ({ page }) => {

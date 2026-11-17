@@ -47,6 +47,7 @@ public class LearningService {
     private final LearningDailyStatRepository dailyStatRepository;
     private final StudySessionRepository sessionRepository;
     private final UserRepository userRepository;
+    private final ReviewService reviewService;
 
     public LearningService(
         CourseRepository courseRepository,
@@ -56,7 +57,8 @@ public class LearningService {
         DictationAttemptRepository dictationRepository,
         LearningDailyStatRepository dailyStatRepository,
         StudySessionRepository sessionRepository,
-        UserRepository userRepository
+        UserRepository userRepository,
+        ReviewService reviewService
     ) {
         this.courseRepository = courseRepository;
         this.cueRepository = cueRepository;
@@ -66,6 +68,7 @@ public class LearningService {
         this.dailyStatRepository = dailyStatRepository;
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
+        this.reviewService = reviewService;
     }
 
     @Transactional(readOnly = true)
@@ -98,8 +101,12 @@ public class LearningService {
                     attempt.setCourse(course);
                     attempt.setCue(cue);
                     attempt.setAnswerText(answer);
-                    attempt.setCorrect(normalize(answer).equals(normalize(cue.getEnglishText())));
+                    boolean correct = normalize(answer).equals(normalize(cue.getEnglishText()));
+                    attempt.setCorrect(correct);
                     dictationRepository.save(attempt);
+                    if (!correct) {
+                        reviewService.resetToLearning(user.id(), cue.getId());
+                    }
                 }
             }
         }

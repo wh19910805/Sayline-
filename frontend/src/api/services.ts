@@ -26,6 +26,7 @@ import type {
   PresignResponse,
   Profile,
   RecentLesson,
+  ReviewAttemptResult,
   ReviewCue,
   SessionInfo,
   SearchResponse,
@@ -103,6 +104,8 @@ export const learnerApi = {
     ),
   updateReview: (cueId: number, payload: { status: ReviewCue['status']; nextReviewAt?: string }) =>
     http.patch<void>(`/api/v1/learning/reviews/${cueId}`, payload),
+  submitReviewAttempt: (cueId: number, answer: string) =>
+    http.post<ReviewAttemptResult>(`/api/v1/learning/reviews/${cueId}/attempts`, { answer }),
   favoriteBook: async (bookId: number) => {
     const result = await http.post<{ favorited: boolean }>(`/api/v1/books/${bookId}/favorite`)
     invalidateBookCaches(bookId)

@@ -56,6 +56,11 @@ const routes = [
     component: () => import('@/views/learner/ReviewView.vue'),
   },
   {
+    path: '/me/reviews/session',
+    name: 'review-session',
+    component: () => import('@/views/learner/ReviewSessionView.vue'),
+  },
+  {
     path: '/recent',
     name: 'recent',
     component: () => import('@/views/learner/RecentView.vue'),

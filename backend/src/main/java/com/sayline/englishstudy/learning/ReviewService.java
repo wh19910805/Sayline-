@@ -4,11 +4,13 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.sayline.englishstudy.catalog.CourseStatus;
 import com.sayline.englishstudy.catalog.SubtitleCueRepository;
 import com.sayline.englishstudy.common.ApiException;
+import com.sayline.englishstudy.learning.ReviewDtos.ReviewAttemptResult;
 import com.sayline.englishstudy.learning.ReviewDtos.ReviewCue;
 import com.sayline.englishstudy.learning.ReviewDtos.ReviewStateRequest;
 import com.sayline.englishstudy.user.UserRepository;
@@ -108,5 +110,61 @@ public class ReviewService {
         state.setStatus(request.status());
         state.setNextReviewAt(request.status() == ReviewStatus.SNOOZED ? request.nextReviewAt() : null);
         stateRepository.save(state);
+    }
+
+    @Transactional
+    public ReviewAttemptResult recordAttempt(Long userId, Long cueId, String answer) {
+        var cue = cueRepository.findById(cueId)
+            .orElseThrow(() -> new ApiException("CUE_NOT_FOUND", HttpStatus.NOT_FOUND, "字幕不存在"));
+        var course = cue.getCourse();
+        if (course.getStatus() != CourseStatus.PUBLISHED) {
+            throw new ApiException("COURSE_NOT_FOUND", HttpStatus.NOT_FOUND, "课程未发布");
+        }
+
+        String normalizedAnswer = answer.trim();
+        boolean correct = normalize(normalizedAnswer).equals(normalize(cue.getEnglishText()));
+        DictationAttempt attempt = new DictationAttempt();
+        attempt.setUser(userRepository.getReferenceById(userId));
+        attempt.setCourse(course);
+        attempt.setCue(cue);
+        attempt.setAnswerText(normalizedAnswer);
+        attempt.setCorrect(correct);
+        dictationRepository.save(attempt);
+
+        var existingState = stateRepository.findByUserIdAndCueId(userId, cueId);
+        if (correct) {
+            ReviewCueState state = existingState.orElseGet(() -> {
+                ReviewCueState created = new ReviewCueState();
+                created.setUser(userRepository.getReferenceById(userId));
+                created.setCue(cue);
+                return created;
+            });
+            state.setStatus(ReviewStatus.MASTERED);
+            state.setNextReviewAt(null);
+            stateRepository.save(state);
+            return new ReviewAttemptResult(true, ReviewStatus.MASTERED);
+        }
+
+        existingState.ifPresent(state -> {
+            state.setStatus(ReviewStatus.LEARNING);
+            state.setNextReviewAt(null);
+            stateRepository.save(state);
+        });
+        return new ReviewAttemptResult(false, ReviewStatus.LEARNING);
+    }
+
+    public void resetToLearning(Long userId, Long cueId) {
+        stateRepository.findByUserIdAndCueId(userId, cueId).ifPresent(state -> {
+            state.setStatus(ReviewStatus.LEARNING);
+            state.setNextReviewAt(null);
+            stateRepository.save(state);
+        });
+    }
+
+    private String normalize(String text) {
+        return text.toLowerCase(Locale.ROOT)
+            .replaceAll("[^a-z0-9\\s]", "")
+            .trim()
+            .replaceAll("\\s+", " ");
     }
 }
