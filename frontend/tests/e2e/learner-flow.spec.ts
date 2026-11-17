@@ -301,7 +301,7 @@ test('write mode auto-validates completed answers and offers retry only after er
 
   await expect(firstWord).toHaveClass(/is-empty/)
   await expect(submit).toHaveCount(0)
-  await expect(page.getByRole('button', { name: '跳过本句' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '跳过' })).toBeVisible()
 
   await page.locator('.sl-word-input input').first().fill('Ni')
   await expect(firstWord).toHaveClass(/is-filling/)
@@ -319,7 +319,7 @@ test('write mode auto-validates completed answers and offers retry only after er
   await expect(page.locator('.dictation-feedback')).toHaveClass(/is-wrong/)
   await expect(page.getByRole('button', { name: '重新填写' })).toBeVisible()
   const retry = await page.getByRole('button', { name: '重新填写' }).boundingBox()
-  const skip = await page.getByRole('button', { name: '跳过本句' }).boundingBox()
+  const skip = await page.getByRole('button', { name: '跳过' }).boundingBox()
   expect(retry?.y ?? 0).toBeGreaterThan(skip?.y ?? 0)
 
   await page.getByRole('button', { name: '重新填写' }).click()
@@ -356,7 +356,7 @@ test('write mode does not submit an incomplete sentence when toggling English', 
   const firstInput = page.locator('.sl-word-input input').first()
   await firstInput.fill('Nice')
 
-  await page.getByRole('button', { name: '英文' }).click()
+  await page.getByRole('button', { name: '英' }).click()
   await page.waitForTimeout(100)
 
   await expect(page.locator('.dictation-feedback')).toHaveCount(0)
@@ -466,6 +466,16 @@ test('keyboard focus keeps sentence context and scrolls only the write transcrip
 
   await page.goto('/learn/1/1')
   await page.locator('[aria-label="写"]').click()
+  const sentenceActions = page.locator('.write-current__actions')
+  await expect(sentenceActions.locator('button')).toHaveCount(3)
+  await expect(sentenceActions.locator('button').nth(0)).toHaveText(/播放|暂停/)
+  await expect(sentenceActions.locator('button').nth(1)).toHaveText('中')
+  await expect(sentenceActions.locator('button').nth(2)).toHaveText('英')
+  await expect(page.locator('.write-skip-button')).toHaveText('跳过')
+  for (const button of await sentenceActions.locator('button').all()) {
+    await expect(button).toHaveCSS('white-space', 'nowrap')
+  }
+  await expect(page.locator('.write-skip-button')).toHaveCSS('white-space', 'nowrap')
   await page.locator('.write-context-row[data-cue-id="3"]').click()
   const firstInput = page.locator('.write-current .sl-word-input input').first()
   await firstInput.focus()
@@ -480,8 +490,9 @@ test('keyboard focus keeps sentence context and scrolls only the write transcrip
   await expect(page.locator('.player-header__title')).toContainText('输入中')
   await expect(page.locator('.keyboard-focus-done')).toHaveText('收起键盘')
   await expect(page.locator('.player-mode-switch')).toBeHidden()
+  await expect(sentenceActions).toBeVisible()
   await expect(page.locator('.dictation-actions')).toHaveCount(0)
-  const skipButton = page.locator('.write-current__head').getByRole('button', { name: '跳过本句' })
+  const skipButton = page.locator('.write-current__head').getByRole('button', { name: '跳过' })
   await expect(skipButton).toBeVisible()
   const skipBox = await skipButton.boundingBox()
   expect(skipBox?.width ?? 0).toBeGreaterThanOrEqual(44)

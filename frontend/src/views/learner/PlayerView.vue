@@ -1484,7 +1484,7 @@ onBeforeUnmount(() => {
                       <button type="button" :aria-label="playing ? '暂停当前句' : '播放当前句'" @click.stop="replayCue">
                         <SlIcon name="pause" v-if="playing" :size="17" weight="fill" />
                         <SlIcon name="play" v-else :size="17" weight="fill" />
-                        <span>{{ playing ? '暂停' : '听原句' }}</span>
+                        <span>{{ playing ? '暂停' : '播放' }}</span>
                       </button>
                       <button
                         type="button"
@@ -1493,7 +1493,7 @@ onBeforeUnmount(() => {
                         @click.stop="toggleChinese"
                       >
                         <SlIcon name="closed-captioning" :size="17" />
-                        <span>中文</span>
+                        <span>中</span>
                       </button>
                       <button
                         type="button"
@@ -1502,7 +1502,7 @@ onBeforeUnmount(() => {
                         @click.stop="showEnglishWrite = !showEnglishWrite"
                       >
                         <SlIcon name="book-open" :size="17" />
-                        <span>英文</span>
+                        <span>英</span>
                       </button>
                     </div>
                     <button
@@ -1510,7 +1510,7 @@ onBeforeUnmount(() => {
                       type="button"
                       @click.stop="moveCue(1)"
                     >
-                      跳过本句
+                      跳过
                     </button>
                   </div>
                 </div>
