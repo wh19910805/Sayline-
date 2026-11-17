@@ -1107,6 +1107,8 @@ test('learner sees daily goal progress and can retry a missed sentence', async (
   await expect(page.getByRole('heading', { name: '今日目标' })).toBeVisible()
   await expect(page.getByText('15 / 15 分钟')).toBeVisible()
   await expect(page.getByRole('heading', { name: '错句复习' })).toBeVisible()
+  await page.getByRole('button', { name: /查看全部错句/ }).click()
+  await expect(page).toHaveURL(/\/me\/reviews$/)
 
   await page.getByRole('button', { name: /Could we move the meeting to Friday morning/ }).click()
   await expect(page).toHaveURL(/\/learn\/1\/1\?cue=3&mode=WRITE/)
@@ -1328,10 +1330,53 @@ test('global search shows scope, suggestions and keyboard result selection', asy
 })
 
 test('review queue can mark a sentence as mastered', async ({ page }) => {
-  await page.goto('/me')
+  await page.goto('/me/reviews')
   await expect(page.getByRole('button', { name: '只看未掌握' })).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', { name: '已掌握' }).click()
   await expect(page.getByText('当前筛选下没有待复习内容。')).toBeVisible()
+})
+
+test('review queue lives on a secondary page and scrolls large error sets', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const reviews = Array.from({ length: 18 }, (_, index) => ({
+    bookId: 1,
+    courseId: 1,
+    cueId: index + 1,
+    bookTitle: '职场英语',
+    courseTitle: 'Meeting a New Colleague',
+    sequenceNo: index + 1,
+    englishText: `Review sentence number ${index + 1}.`,
+    chineseText: `第 ${index + 1} 个复习句。`,
+    lastAnswer: `Review sentence ${index + 1}.`,
+    wrongCount: 18 - index,
+    lastWrongAt: '2026-11-12T02:00:00Z',
+    status: 'LEARNING',
+    nextReviewAt: null,
+    due: true,
+  }))
+  await page.route('**/api/v1/learning/reviews*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(reviews),
+    }),
+  )
+
+  await page.goto('/me')
+  await expect(page.locator('.review-list')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /查看全部错句/ })).toContainText('18')
+  await page.getByRole('button', { name: /查看全部错句/ }).click()
+  await expect(page).toHaveURL(/\/me\/reviews$/)
+  await expect(page.locator('.review-item')).toHaveCount(18)
+
+  const metrics = await page.locator('.review-scroll').evaluate((element) => ({
+    scrollHeight: element.scrollHeight,
+    clientHeight: element.clientHeight,
+    horizontalOverflow: element.scrollWidth > element.clientWidth,
+  }))
+  expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight)
+  expect(metrics.horizontalOverflow).toBe(false)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false)
 })
 
 test('offline lesson manager explains storage and empty state', async ({ page }) => {

@@ -27,8 +27,6 @@ const settings = ref<Awaited<ReturnType<typeof learnerApi.settings>> | null>(nul
 const reviews = ref<ReviewCue[]>([])
 const reviewLoading = ref(false)
 const reviewError = ref('')
-const showUnmasteredOnly = ref(true)
-const sortByWrongCount = ref(true)
 const error = ref('')
 let latestStatsRequest = 0
 const statsLoading = ref(false)
@@ -122,14 +120,6 @@ const reminderDue = computed(() => {
 const pendingReviewCount = computed(
   () => reviews.value.filter((review) => review.status !== 'MASTERED').length,
 )
-const displayedReviews = computed(() => {
-  const items = showUnmasteredOnly.value
-    ? reviews.value.filter((review) => review.status !== 'MASTERED')
-    : [...reviews.value]
-  return items.sort((a, b) => sortByWrongCount.value
-    ? b.wrongCount - a.wrongCount
-    : Date.parse(b.lastWrongAt) - Date.parse(a.lastWrongAt))
-})
 
 interface CalendarCell {
   key: string
@@ -254,37 +244,9 @@ async function loadReviews() {
   }
 }
 
-async function updateReviewState(review: ReviewCue, status: ReviewCue['status']) {
-  const nextReviewAt = status === 'SNOOZED'
-    ? new Date(Date.now() + 24 * 60 * 60 * 1_000).toISOString()
-    : undefined
-  try {
-    await learnerApi.updateReview(review.cueId, { status, nextReviewAt })
-    reviews.value = reviews.value.map((item) =>
-      item.cueId === review.cueId
-        ? { ...item, status, nextReviewAt: nextReviewAt ?? null, due: status !== 'SNOOZED' }
-        : item,
-    )
-  } catch (reason) {
-    reviewError.value = apiErrorMessage(reason)
-  }
-}
-
-function reviewDueLabel(review: ReviewCue) {
-  if (review.status === 'MASTERED') return '已掌握'
-  if (review.status === 'SNOOZED' && review.nextReviewAt) {
-    return `复习到期 · ${new Date(review.nextReviewAt).toLocaleDateString('zh-CN')}`
-  }
-  return `错 ${review.wrongCount} 次 · 建议今天复习`
-}
-
 function dismissReminder() {
   reminderDismissed.value = true
   localStorage.setItem('sayline:reminder-dismissed', shanghaiDate())
-}
-
-function openReview(review: ReviewCue) {
-  router.push(`/learn/${review.bookId}/${review.courseId}?cue=${review.cueId}&mode=WRITE`)
 }
 
 function shanghaiDate() {
@@ -362,74 +324,29 @@ async function logout() {
             <p class="eyebrow">REVIEW</p>
             <h2>错句复习</h2>
           </div>
+          <span class="review-summary-count">{{ pendingReviewCount }} 句</span>
         </div>
-        <div class="review-controls" role="group" aria-label="复习队列筛选">
-          <button
-            type="button"
-            :aria-pressed="showUnmasteredOnly"
-            @click="showUnmasteredOnly = !showUnmasteredOnly"
-          >
-            <SlIcon name="check" :size="15" />
-            只看未掌握
-          </button>
-          <button
-            type="button"
-            :aria-pressed="sortByWrongCount"
-            @click="sortByWrongCount = !sortByWrongCount"
-          >
-            <SlIcon name="line-chart" :size="15" />
-            按错误次数
-          </button>
-        </div>
-        <div v-if="reviewLoading" class="review-loading">正在整理最近错句…</div>
-        <SlErrorState
-          v-else-if="reviewError"
-          :message="reviewError"
-          title="复习队列暂时不可用"
-          @retry="loadReviews"
-        />
-        <div v-else-if="displayedReviews.length" class="review-list">
-          <article
-            v-for="review in displayedReviews"
-            :key="`${review.courseId}-${review.cueId}`"
-            class="review-item"
-          >
-            <button
-              class="review-item__open"
-              type="button"
-              :aria-label="`复习 ${review.englishText}`"
-              @click="openReview(review)"
-            >
-              <span class="review-item__count">{{ review.wrongCount }}</span>
-              <span class="review-item__copy">
-                <strong lang="en">{{ review.englishText }}</strong>
-                <small>{{ review.bookTitle }} · {{ reviewDueLabel(review) }}</small>
-              </span>
-              <SlIcon name="arrow-right-s" :size="18" />
-            </button>
-            <div class="review-item__actions">
-              <button
-                type="button"
-                :disabled="review.status === 'MASTERED'"
-                @click="updateReviewState(review, 'MASTERED')"
-              >
-                <SlIcon name="check" :size="16" />
-                已掌握
-              </button>
-              <button
-                type="button"
-                :disabled="review.status === 'SNOOZED'"
-                @click="updateReviewState(review, 'SNOOZED')"
-              >
-                <SlIcon name="time" :size="16" />
-                稍后复习
-              </button>
-            </div>
-          </article>
-        </div>
-        <p v-else class="review-empty">
-          {{ reviews.length ? '当前筛选下没有待复习内容。' : '最近没有错句。继续学习后，错句会自动出现在这里。' }}
+        <p v-if="reviewLoading" class="review-summary-copy">正在整理最近错句…</p>
+        <p v-else-if="reviewError" class="review-summary-copy">{{ reviewError }}</p>
+        <p v-else class="review-summary-copy">
+          {{
+            pendingReviewCount
+              ? '按错误次数整理，进入独立页面查看全部错句并集中复习。'
+              : '最近没有待复习错句。继续学习后，错句会自动出现在这里。'
+          }}
         </p>
+        <button
+          class="review-entry"
+          type="button"
+          :disabled="reviewLoading"
+          @click="router.push('/me/reviews')"
+        >
+          <span>
+            <strong>查看全部错句</strong>
+            <small>{{ pendingReviewCount }} 句待复习</small>
+          </span>
+          <SlIcon name="arrow-right-s" :size="18" />
+        </button>
       </section>
 
       <SlErrorState
@@ -683,6 +600,59 @@ async function logout() {
   font-weight: var(--weight-regular);
 }
 
+.review-summary-count {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.review-summary-copy {
+  margin: 10px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.review-entry {
+  width: 100%;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 13px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.review-entry > span {
+  display: grid;
+  gap: 3px;
+}
+
+.review-entry strong {
+  font-size: 14px;
+}
+
+.review-entry small {
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+}
+
+.review-entry:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
 .daily-goal-card__actions {
   display: flex;
   align-items: center;
@@ -749,8 +719,7 @@ async function logout() {
   margin-left: auto;
 }
 
-.daily-goal-card p,
-.review-empty {
+.daily-goal-card p {
   margin: 9px 0 0;
   color: var(--color-text-tertiary);
   font-size: var(--text-caption);
@@ -762,126 +731,6 @@ async function logout() {
   margin-top: 5px;
   color: var(--color-text-secondary);
   font-size: 12px;
-}
-
-.review-list {
-  display: grid;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.review-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 13px;
-}
-
-.review-controls button {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 11px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.review-controls button[aria-pressed="true"] {
-  border-color: var(--color-ink-900);
-  background: var(--color-ink-900);
-  color: var(--color-paper-50);
-}
-
-.review-item {
-  width: 100%;
-  display: grid;
-  gap: 6px;
-  padding: 9px 4px;
-  border-top: 1px solid var(--color-border);
-}
-
-.review-item__open {
-  min-height: 64px;
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) 24px;
-  align-items: center;
-  gap: 10px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-text);
-  text-align: left;
-  cursor: pointer;
-}
-
-.review-item__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 7px;
-}
-
-.review-item__actions button {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0 11px;
-  border: 1px solid var(--color-border);
-  border-radius: 9px;
-  background: var(--color-bg-elevated);
-  color: var(--color-text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.review-item__actions button:disabled {
-  opacity: .45;
-  cursor: default;
-}
-
-.review-item__count {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--color-warning-soft);
-  color: var(--color-warning);
-  font-size: 11px;
-  font-weight: var(--weight-bold);
-}
-
-.review-item__copy {
-  min-width: 0;
-  display: grid;
-  gap: 4px;
-}
-
-.review-item__copy strong,
-.review-item__copy small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.review-item__copy strong {
-  font-size: 13px;
-}
-
-.review-item__copy small {
-  color: var(--color-text-tertiary);
-  font-size: 10px;
-}
-
-.review-loading {
-  padding: 24px 0 10px;
-  color: var(--color-text-tertiary);
-  font-size: var(--text-caption);
 }
 
 .report-card__summary {
