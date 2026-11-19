@@ -18,15 +18,28 @@ function readSaved(): AmbientState | null {
 
 /** 同时设置页面根背景与状态栏主题色；安全区取色不会和页面内容产生接缝。 */
 export function setThemeColor(color: string) {
-  document.documentElement.style.setProperty('--app-bg', color)
+  const root = document.documentElement
+  root.style.setProperty('--app-bg', color)
+  root.style.backgroundColor = color
+  if (document.body) document.body.style.backgroundColor = color
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', color)
+  if (meta && meta.getAttribute('content') !== color) {
+    const next = meta.cloneNode(false) as HTMLMetaElement
+    next.setAttribute('content', color)
+    meta.replaceWith(next)
+  }
 }
 
 /** 以 ambient 混白 30% 生成统一页面底色，并同步状态栏颜色。 */
 export function syncThemeColor(primary?: string) {
   const base = primary || document.documentElement.style.getPropertyValue('--ambient') || DEFAULT_SURFACE
   setThemeColor(mixWithWhite(base, 0.3))
+}
+
+/** 从系统恢复或旋转后重新应用当前页面色，避免原生状态栏保留旧颜色。 */
+export function refreshThemeColor() {
+  const color = document.documentElement.style.getPropertyValue('--app-bg').trim()
+  if (color) setThemeColor(color)
 }
 
 function mixWithWhite(hex: string, weight: number): string {

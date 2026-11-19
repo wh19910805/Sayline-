@@ -3,7 +3,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import { router } from './router'
 import { pinia } from './stores'
-import { restoreAmbient } from './composables/useAmbient'
+import { refreshThemeColor, restoreAmbient } from './composables/useAmbient'
 import './styles/global.css'
 
 function syncAppViewport() {
@@ -20,6 +20,12 @@ window.visualViewport?.addEventListener('resize', syncAppViewport)
 window.visualViewport?.addEventListener('scroll', syncAppViewport)
 
 restoreAmbient()
+
+window.addEventListener('pageshow', refreshThemeColor)
+window.addEventListener('orientationchange', refreshThemeColor)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') refreshThemeColor()
+})
 
 // 生产环境注册 Service Worker（PWA 离线缓存），开发环境跳过避免影响 HMR
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

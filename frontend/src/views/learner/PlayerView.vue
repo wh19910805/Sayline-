@@ -306,6 +306,9 @@ async function loadCourse(showLoader = true, knownDetail?: CourseDetail) {
     activeCueIndex.value = requestedIndex >= 0 ? requestedIndex : savedIndex >= 0 ? savedIndex : 0
     await nextTick()
     if (mode.value === 'READ') startReadObservation()
+    if (mode.value === 'WRITE') {
+      requestAnimationFrame(scrollWriteToCurrent)
+    }
     if (audio.value) {
       const requestedCue = activeCue.value
       audio.value.currentTime = requestedIndex >= 0 && requestedCue
@@ -1034,7 +1037,10 @@ function scrollWriteToCurrent() {
   const current = container?.querySelector<HTMLElement>('.write-current')
   if (!container || !current) return
   const centeredOffset = Math.max(24, (container.clientHeight - current.offsetHeight) / 2)
-  container.scrollTop = Math.max(0, current.offsetTop - centeredOffset)
+  const currentTop = container.scrollTop
+    + current.getBoundingClientRect().top
+    - container.getBoundingClientRect().top
+  container.scrollTop = Math.max(0, currentTop - centeredOffset)
 }
 
 function focusFirstWriteInput() {

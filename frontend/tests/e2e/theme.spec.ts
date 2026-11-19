@@ -14,8 +14,14 @@ async function surfaceColors(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
     const screen = document.querySelector<HTMLElement>('.app-screen')
+    const probe = document.createElement('span')
+    probe.style.color = meta?.content ?? ''
+    document.body.append(probe)
+    const themeRgb = getComputedStyle(probe).color
+    probe.remove()
     return {
       themeColor: meta?.content ?? '',
+      themeRgb,
       html: getComputedStyle(document.documentElement).backgroundColor,
       body: getComputedStyle(document.body).backgroundColor,
       standalone: getComputedStyle(document.querySelector('.standalone-app')!).backgroundColor,
@@ -93,4 +99,29 @@ test('player surface uses the same dark color as its system theme', async ({ pag
   expect(colors.body).toBe(colors.screen)
   expect(colors.standalone).toBe(colors.screen)
   expect(topSurfaceColor).toBe(colors.screen)
+})
+
+test('player status and page surfaces match without a transition delay', async ({ page }) => {
+  await page.goto('/learn/1/1')
+  await expect(page.locator('.player-screen .player-header')).toBeVisible()
+
+  const colors = await surfaceColors(page)
+  expect(colors.themeRgb).toBe(colors.screen)
+  expect(colors.html).toBe(colors.screen)
+  expect(colors.body).toBe(colors.screen)
+  expect(colors.standalone).toBe(colors.screen)
+})
+
+test('resuming the app restores the current status bar theme', async ({ page }) => {
+  await page.goto('/learn/1/1')
+  await expect(page.locator('.player-screen .player-header')).toBeVisible()
+
+  const expected = (await surfaceColors(page)).themeColor
+  await page.evaluate(() => {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')!
+    meta.content = '#c4c6d2'
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+  })
+
+  await expect.poll(async () => (await surfaceColors(page)).themeColor).toBe(expected)
 })

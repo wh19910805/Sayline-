@@ -578,6 +578,74 @@ test('write mode plays the selected sentence when switching lines', async ({ pag
   expect(currentTime).toBeGreaterThanOrEqual(7)
 })
 
+test('playing the current writing sentence keeps its transcript position stable', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const longCues = Array.from({ length: 54 }, (_, index) => ({
+    id: index + 1,
+    sequenceNo: index + 1,
+    startMs: index * 4_000,
+    endMs: (index + 1) * 4_000,
+    englishText: `Practice sentence number ${index + 1}.`,
+    chineseText: `第 ${index + 1} 句练习。`,
+  }))
+  await page.route('**/api/v1/courses/1', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 1,
+        bookId: 1,
+        title: 'Long writing practice',
+        categoryId: 1,
+        categoryName: '职场英语',
+        durationMs: 216_000,
+        progress: 0,
+        favorite: false,
+        themeColorPrimary: '#7b637d',
+        themeColorSecondary: '#383b52',
+        audioUrl: '/audio/demo.wav',
+        cues: longCues,
+      }),
+    }),
+  )
+
+  await page.goto('/learn/1/1?cue=21&mode=WRITE')
+  await expect(page.locator('.write-current__label')).toContainText('21')
+  await page.locator('audio').evaluate((element) => {
+    ;(element as HTMLAudioElement).pause()
+  })
+
+  const before = await page.locator('.write-transcript').evaluate((container) => {
+    const active = container.querySelector<HTMLElement>('.write-current')!
+    return {
+      scrollTop: container.scrollTop,
+      activeTop: active.getBoundingClientRect().top,
+      activeBottom: active.getBoundingClientRect().bottom,
+      containerTop: container.getBoundingClientRect().top,
+      containerBottom: container.getBoundingClientRect().bottom,
+    }
+  })
+  expect(before.activeTop).toBeGreaterThanOrEqual(before.containerTop)
+  expect(before.activeBottom).toBeLessThanOrEqual(before.containerBottom)
+
+  await page.locator('.write-current__actions button').first().click()
+  await page.waitForTimeout(300)
+
+  const after = await page.locator('.write-transcript').evaluate((container) => {
+    const active = container.querySelector<HTMLElement>('.write-current')!
+    return {
+      scrollTop: container.scrollTop,
+      activeTop: active.getBoundingClientRect().top,
+      activeBottom: active.getBoundingClientRect().bottom,
+      containerTop: container.getBoundingClientRect().top,
+      containerBottom: container.getBoundingClientRect().bottom,
+    }
+  })
+  expect(Math.abs(after.scrollTop - before.scrollTop)).toBeLessThanOrEqual(1)
+  expect(after.activeTop).toBeGreaterThanOrEqual(after.containerTop)
+  expect(after.activeBottom).toBeLessThanOrEqual(after.containerBottom)
+})
+
 test('read completion and speaking states describe what the app actually checks', async ({ page }) => {
   await page.goto('/learn/1/1')
   await page.locator('[aria-label="读"]').click()

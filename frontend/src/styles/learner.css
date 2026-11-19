@@ -20,7 +20,6 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   text-wrap: pretty;
-  transition: background-color 600ms ease;
 }
 
 button,
