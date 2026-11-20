@@ -629,7 +629,9 @@ test('playing the current writing sentence keeps its transcript position stable'
   expect(before.activeBottom).toBeLessThanOrEqual(before.containerBottom)
 
   await page.locator('.write-current__actions button').first().click()
-  await page.waitForTimeout(300)
+  await expect.poll(
+    () => page.locator('.write-transcript').evaluate((container) => container.scrollTop),
+  ).toBe(before.scrollTop)
 
   const after = await page.locator('.write-transcript').evaluate((container) => {
     const active = container.querySelector<HTMLElement>('.write-current')!
@@ -641,7 +643,6 @@ test('playing the current writing sentence keeps its transcript position stable'
       containerBottom: container.getBoundingClientRect().bottom,
     }
   })
-  expect(Math.abs(after.scrollTop - before.scrollTop)).toBeLessThanOrEqual(1)
   expect(after.activeTop).toBeGreaterThanOrEqual(after.containerTop)
   expect(after.activeBottom).toBeLessThanOrEqual(after.containerBottom)
 })

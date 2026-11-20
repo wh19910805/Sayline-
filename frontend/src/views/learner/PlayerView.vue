@@ -306,9 +306,6 @@ async function loadCourse(showLoader = true, knownDetail?: CourseDetail) {
     activeCueIndex.value = requestedIndex >= 0 ? requestedIndex : savedIndex >= 0 ? savedIndex : 0
     await nextTick()
     if (mode.value === 'READ') startReadObservation()
-    if (mode.value === 'WRITE') {
-      requestAnimationFrame(scrollWriteToCurrent)
-    }
     if (audio.value) {
       const requestedCue = activeCue.value
       audio.value.currentTime = requestedIndex >= 0 && requestedCue
@@ -498,6 +495,14 @@ function replayCue() {
   audio.value.currentTime = activeCue.value.startMs / 1_000
   sentenceStopMs.value = activeCue.value.endMs
   audio.value.play().catch(() => undefined)
+}
+
+function replayCueFromWriteControl() {
+  const container = writeTranscript.value
+  replayCue()
+  if (!container) return
+  scrollWriteToCurrent()
+  setTimeout(scrollWriteToCurrent, 0)
 }
 
 function toggleCuePlayback() {
@@ -1238,6 +1243,15 @@ watch(activeCueIndex, () => {
 })
 
 watch(
+  writeTranscript,
+  (container) => {
+    if (!container || mode.value !== 'WRITE') return
+    void nextTick(scrollWriteToCurrent)
+  },
+  { flush: 'post' },
+)
+
+watch(
   () => course.value?.themeColorPrimary,
   (color) => {
     if (!color) return
@@ -1487,7 +1501,11 @@ onBeforeUnmount(() => {
                   <span class="write-current__label">当前句 · {{ String(index + 1).padStart(2, '0') }}</span>
                   <div class="write-current__tools">
                     <div class="write-current__actions">
-                      <button type="button" :aria-label="playing ? '暂停当前句' : '播放当前句'" @click.stop="replayCue">
+                      <button
+                        type="button"
+                        :aria-label="playing ? '暂停当前句' : '播放当前句'"
+                        @click.stop="replayCueFromWriteControl"
+                      >
                         <SlIcon name="pause" v-if="playing" :size="17" weight="fill" />
                         <SlIcon name="play" v-else :size="17" weight="fill" />
                         <span>{{ playing ? '暂停' : '播放' }}</span>
