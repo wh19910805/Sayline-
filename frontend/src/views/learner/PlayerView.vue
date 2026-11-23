@@ -98,6 +98,7 @@ let modeCountdownTimer: ReturnType<typeof setInterval> | undefined
 let positionTimer: ReturnType<typeof setInterval> | undefined
 let focusSyncTimer: ReturnType<typeof setTimeout> | undefined
 let keyboardFocusFrame: number | undefined
+let writeResizeObserver: ResizeObserver | undefined
 let viewportBaselineHeight = 0
 let coverPreloadGeneration = 0
 let activeSince = performance.now()
@@ -1076,7 +1077,16 @@ function syncKeyboardFocus() {
     viewportBaselineHeight = viewportHeight
   }
   const keyboardOpen = viewportHeight < viewportBaselineHeight * 0.82
-  keyboardFocus.value = mode.value === 'WRITE' && keyboardOpen
+  const active = document.activeElement
+  const inputFocused = active instanceof HTMLInputElement
+    && !!writeTranscript.value?.contains(active)
+  const nextKeyboardFocus = mode.value === 'WRITE' && inputFocused && keyboardOpen
+
+  if (keyboardFocus.value && !nextKeyboardFocus && mode.value === 'WRITE') {
+    if (keyboardFocusFrame) cancelAnimationFrame(keyboardFocusFrame)
+    keyboardFocusFrame = requestAnimationFrame(scrollWriteToCurrent)
+  }
+  keyboardFocus.value = nextKeyboardFocus
 
   if (!keyboardFocus.value) return
   if (keyboardFocusFrame) cancelAnimationFrame(keyboardFocusFrame)
@@ -1245,8 +1255,14 @@ watch(activeCueIndex, () => {
 watch(
   writeTranscript,
   (container) => {
+    writeResizeObserver?.disconnect()
+    writeResizeObserver = undefined
     if (!container || mode.value !== 'WRITE') return
     void nextTick(scrollWriteToCurrent)
+    writeResizeObserver = new ResizeObserver(() => {
+      if (mode.value === 'WRITE') scrollWriteToCurrent()
+    })
+    writeResizeObserver.observe(container)
   },
   { flush: 'post' },
 )
@@ -1298,6 +1314,7 @@ onDeactivated(() => {
 onBeforeUnmount(() => {
   playerSession.registerToggleHandler(null)
   unsubscribeAudio?.()
+  writeResizeObserver?.disconnect()
   window.removeEventListener('keydown', handleKeydown)
   window.visualViewport?.removeEventListener('resize', syncKeyboardFocus)
   window.visualViewport?.removeEventListener('scroll', syncKeyboardFocus)

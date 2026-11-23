@@ -645,6 +645,29 @@ test('playing the current writing sentence keeps its transcript position stable'
   })
   expect(after.activeTop).toBeGreaterThanOrEqual(after.containerTop)
   expect(after.activeBottom).toBeLessThanOrEqual(after.containerBottom)
+
+  await page.locator('.write-current .sl-word-input input').first().focus()
+  await page.setViewportSize({ width: 390, height: 500 })
+  await page.waitForTimeout(250)
+  const playButton = page.locator('.write-current__actions button').first()
+  const playButtonBox = await playButton.boundingBox()
+  if (!playButtonBox) throw new Error('Play button is not visible')
+  await page.mouse.click(
+    playButtonBox.x + playButtonBox.width / 2,
+    playButtonBox.y + playButtonBox.height / 2,
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.locator('.player-screen')).not.toHaveClass(/keyboard-focus/)
+
+  await expect.poll(
+    () => page.locator('.write-transcript').evaluate((container) => {
+      const active = container.querySelector<HTMLElement>('.write-current')!
+      return Math.abs(
+        (active.getBoundingClientRect().top + active.getBoundingClientRect().bottom) / 2
+        - (container.getBoundingClientRect().top + container.getBoundingClientRect().bottom) / 2,
+      )
+    }),
+  ).toBeLessThanOrEqual(4)
 })
 
 test('read completion and speaking states describe what the app actually checks', async ({ page }) => {

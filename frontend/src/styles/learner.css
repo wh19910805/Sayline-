@@ -2707,6 +2707,7 @@ button {
   gap: 8px;
   padding: 1px 1px 14px;
   overscroll-behavior: contain;
+  overflow-anchor: none;
   scrollbar-width: none;
   touch-action: pan-y;
 }
