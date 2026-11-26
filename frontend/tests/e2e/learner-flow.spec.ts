@@ -363,6 +363,78 @@ test('write mode does not submit an incomplete sentence when toggling English', 
   await expect(firstInput).toBeEnabled()
 })
 
+test('write mode accepts punctuation and hyphenated words from the source sentence', async ({ page }) => {
+  const cues = [
+    {
+      id: 1,
+      sequenceNo: 1,
+      startMs: 0,
+      endMs: 4_000,
+      englishText: 'It can be a video, a short podcast, five-minute slow English.',
+      chineseText: '可以是视频、短视频或五分钟慢速英语。',
+    },
+    {
+      id: 2,
+      sequenceNo: 2,
+      startMs: 4_000,
+      endMs: 8_000,
+      englishText: 'The meeting starts at 9 a.m.',
+      chineseText: '会议上午九点开始。',
+    },
+  ]
+  await page.route('**/api/v1/courses/1', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 1,
+        bookId: 1,
+        title: 'Punctuation practice',
+        categoryId: 1,
+        categoryName: '职场英语',
+        durationMs: 8_000,
+        progress: 0,
+        favorite: false,
+        audioUrl: '/audio/demo.wav',
+        cues,
+      }),
+    }),
+  )
+
+  await page.goto('/learn/1/1?cue=1&mode=WRITE')
+  const firstWords = ['It', 'can', 'be', 'a', 'video,', 'a', 'short', 'podcast,', 'five-minute', 'slow', 'English.']
+  for (const [index, word] of firstWords.entries()) {
+    await page.locator('.sl-word-input input').nth(index).fill(word)
+  }
+  await expect(page.locator('.write-current__label')).toContainText('02')
+
+  const secondWords = ['The', 'meeting', 'starts', 'at', '9', 'a.m.']
+  for (const [index, word] of secondWords.entries()) {
+    await page.locator('.sl-word-input input').nth(index).fill(word)
+  }
+  await expect(page.locator('.dictation-feedback')).toHaveClass(/is-correct/)
+})
+
+test('skipping a failed writing sentence leaves the next sentence editable', async ({ page }) => {
+  await page.goto('/learn/1/1')
+  await page.locator('[aria-label="写"]').click()
+  const inputs = page.locator('.sl-word-input input')
+  const count = await inputs.count()
+  for (let index = 0; index < count; index += 1) {
+    await inputs.nth(index).fill('x')
+  }
+  await inputs.last().evaluate((element) => element.blur())
+  await expect(page.locator('.dictation-feedback')).toHaveClass(/is-wrong/)
+
+  await page.locator('.write-skip-button').click()
+  await expect(page.locator('.write-current__label')).toContainText('02')
+  const firstInput = page.locator('.sl-word-input input').first()
+  await expect(firstInput).toBeEnabled()
+  await expect(firstInput).toHaveValue('')
+  await firstInput.fill('Nice')
+  await expect(page.locator('.sl-word-input__word').first()).not.toHaveClass(/is-empty/)
+})
+
 test('write mode focuses the first word after advancing to the next sentence', async ({ page }) => {
   await page.goto('/learn/1/1')
   await page.locator('[aria-label="写"]').click()
@@ -867,6 +939,27 @@ test('continuous mode prefetches the next lesson before the current audio ends',
   await page.locator('audio').evaluate((element) => (element as HTMLAudioElement).pause())
 
   await expect.poll(() => nextLessonRequests.length, { timeout: 2_000 }).toBeGreaterThan(0)
+})
+
+test('continuous mode advances when a background audio end skips the ended event', async ({ page }) => {
+  await page.goto('/learn/1/1')
+  await page.getByRole('button', { name: '播放模式：学习' }).click()
+  await expect(page.getByRole('button', { name: '播放模式：连播' })).toBeVisible()
+  await expect.poll(
+    () => page.locator('audio').evaluate((element) => (element as HTMLAudioElement).duration),
+  ).toBeGreaterThan(0)
+
+  await page.locator('audio').evaluate((element) => {
+    const audio = element as HTMLAudioElement
+    Object.defineProperty(audio, 'currentTime', {
+      configurable: true,
+      get: () => audio.duration - 0.4,
+      set: () => undefined,
+    })
+    audio.dispatchEvent(new Event('timeupdate'))
+    delete (audio as unknown as Record<string, unknown>).currentTime
+  })
+  await expect(page).toHaveURL(/\/learn\/1\/2$/)
 })
 
 test('leaving the player keeps playback state on the lesson page', async ({ page }) => {

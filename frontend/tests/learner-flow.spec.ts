@@ -11,6 +11,11 @@ describe('dictation letter states', () => {
     expect(getLetterStates('mat', 'met')).toEqual(['correct', 'wrong', 'correct'])
     expect(getLetterStates('m', 'met')).toEqual(['correct', 'empty', 'empty'])
   })
+
+  it('ignores punctuation and hyphens when comparing letters', () => {
+    expect(getLetterStates('fiveminute', 'five-minute').every((state) => state === 'correct')).toBe(true)
+    expect(getLetterStates('am', 'a.m.').every((state) => state === 'correct')).toBe(true)
+  })
 })
 
 describe('auto hiding player controls', () => {

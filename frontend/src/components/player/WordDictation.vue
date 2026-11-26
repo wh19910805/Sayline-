@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
-import { dictationWords, getLetterStates } from '@/utils/dictation'
+import { dictationWords, getLetterStates, normalizeDictationWord } from '@/utils/dictation'
 
 const props = defineProps<{
   sentence: string
@@ -86,10 +86,10 @@ const allWordsFilled = computed(() =>
 )
 
 function wordState(word: string, index: number) {
-  const value = (values.value[index] ?? '').trim()
-  const target = word.replace(/[^a-zA-Z0-9']/g, '')
+  const value = normalizeDictationWord(values.value[index] ?? '')
+  const target = normalizeDictationWord(word)
   if (!value) return 'empty'
-  if (value.toLowerCase() === target.toLowerCase()) return 'correct'
+  if (value === target) return 'correct'
   if (value.length >= target.length || reviewed.value || props.submitted) return 'incorrect'
   return 'filling'
 }
@@ -157,8 +157,7 @@ function cancelScheduledValidation() {
 const correct = computed(() =>
   words.value.every(
     (word, index) =>
-      (values.value[index] ?? '').toLowerCase() ===
-      word.replace(/[^a-zA-Z0-9']/g, '').toLowerCase(),
+      normalizeDictationWord(values.value[index] ?? '') === normalizeDictationWord(word),
   ),
 )
 
@@ -175,7 +174,7 @@ const feedbackText = computed(() => {
   if (attemptCount.value >= 3) return `正确答案：${words.value.join(' ')}`
   if (attemptCount.value >= 2) {
     const hints = positions.map((position) => {
-      const target = words.value[position - 1]?.replace(/[^a-zA-Z0-9']/g, '') ?? ''
+      const target = (words.value[position - 1] ?? '').replace(/[^a-zA-Z0-9']/g, '')
       return `第 ${position} 个单词首字母 ${target.slice(0, 1)}，共 ${target.length} 个字母`
     })
     return `还需要修改：${hints.join('；')}。`
@@ -223,11 +222,11 @@ onBeforeUnmount(() => {
         class="sl-word-input__word"
         :class="`is-${wordState(word, wordIndex)}`"
         :data-word-state="wordState(word, wordIndex)"
-        :style="{ '--letters': Math.max(2, word.replace(/[^a-zA-Z0-9']/g, '').length) }"
+        :style="{ '--letters': Math.max(2, normalizeDictationWord(word).length) }"
       >
         <span
           class="sl-word-input__cell"
-          :style="{ width: `calc(${Math.max(2, word.replace(/[^a-zA-Z0-9']/g, '').length)} * 10px + 14px)` }"
+          :style="{ width: `calc(${Math.max(2, normalizeDictationWord(word).length)} * 10px + 14px)` }"
         >
           <span class="sl-word-input__mirror" aria-hidden="true">
             <span

@@ -99,6 +99,7 @@ let positionTimer: ReturnType<typeof setInterval> | undefined
 let focusSyncTimer: ReturnType<typeof setTimeout> | undefined
 let keyboardFocusFrame: number | undefined
 let writeResizeObserver: ResizeObserver | undefined
+let courseAdvanceInFlight = false
 let viewportBaselineHeight = 0
 let coverPreloadGeneration = 0
 let activeSince = performance.now()
@@ -334,6 +335,7 @@ async function loadCourse(showLoader = true, knownDetail?: CourseDetail) {
     }
   } finally {
     loading.value = false
+    courseAdvanceInFlight = false
   }
 }
 
@@ -546,6 +548,15 @@ function onTimeUpdate() {
   if (!audio.value || !course.value) return
   currentTime.value = audio.value.currentTime
   duration.value = audio.value.duration || course.value.durationMs / 1_000
+  if (
+    playMode.value !== 'study' &&
+    Number.isFinite(audio.value.duration) &&
+    audio.value.duration > 0 &&
+    audio.value.currentTime >= audio.value.duration - 0.5
+  ) {
+    advanceAfterCourseEnd()
+    return
+  }
   if (sentenceStopMs.value !== null) {
     if (audio.value.currentTime * 1_000 >= sentenceStopMs.value) {
       audio.value.pause()
@@ -646,6 +657,11 @@ function selectCue(index: number) {
   }
   writeSubmitted.value = false
   nextTick(scrollWriteToCurrent)
+}
+
+function skipWriteCue() {
+  writeSubmitted.value = false
+  moveCue(1)
 }
 
 async function handleDictationComplete(cueId: number, answer: string) {
@@ -877,14 +893,14 @@ function moveCourse(direction: 1 | -1, fromStart = false, loop = false) {
     if (loop) target = ids.length - 1
     else {
       notice.value = '已经是第一门课程'
-      return
+      return false
     }
   }
   if (target >= ids.length) {
     if (loop) target = 0
     else {
       notice.value = '已播放完最后一课'
-      return
+      return false
     }
   }
   savePosition()
@@ -906,18 +922,21 @@ function moveCourse(direction: 1 | -1, fromStart = false, loop = false) {
     }
     if (!knownDetail) audio.value?.play().catch(() => undefined)
   })
+  return true
+}
+
+function advanceAfterCourseEnd() {
+  if (courseAdvanceInFlight) return
+  if (playMode.value === 'sequential' || playMode.value === 'loop') {
+    courseAdvanceInFlight = true
+    if (!moveCourse(1, true, playMode.value === 'loop')) courseAdvanceInFlight = false
+  }
 }
 
 function onEnded() {
   playing.value = false
-  if (playMode.value === 'sequential') {
-    moveCourse(1, true, false)
-    return
-  }
-  if (playMode.value === 'loop') {
-    moveCourse(1, true, true)
-    return
-  }
+  advanceAfterCourseEnd()
+  if (playMode.value !== 'study') return
   if (mode.value === 'LISTEN' && learning.value && !learning.value.completed) {
     cancelModeAdvance()
     const target = nextUnconfirmedMode(learning.value, 'LISTEN')
@@ -1549,7 +1568,7 @@ onBeforeUnmount(() => {
                     <button
                       class="write-skip-button"
                       type="button"
-                      @click.stop="moveCue(1)"
+                      @click.stop="skipWriteCue"
                     >
                       跳过
                     </button>
